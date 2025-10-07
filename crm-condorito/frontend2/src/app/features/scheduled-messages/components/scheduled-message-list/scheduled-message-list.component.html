@@ -1,0 +1,689 @@
+<div class="scheduled-messages-container">
+  <!-- ============================================================================ -->
+  <!-- HEADER -->
+  <!-- ============================================================================ -->
+  <header class="messages-header">
+    <div class="header-top">
+      <div class="header-title">
+        <div class="title-icon">
+          <i class="fas fa-clock"></i>
+        </div>
+        <div class="title-text">
+          <h1>Mensajes Programados</h1>
+          <p>Programa y gestiona mensajes automáticos</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-primary" (click)="createScheduledMessage()">
+          <i class="fas fa-plus"></i>
+          Programar Mensaje
+        </button>
+      </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    @if (statistics()) {
+      <div class="stats-section">
+        <div class="stats-grid">
+          <div class="stat-card total">
+            <div class="stat-icon">
+              <i class="fas fa-clock"></i>
+            </div>
+            <div class="stat-content">
+              <h3>{{ statistics()!.total }}</h3>
+              <p>Total Programados</p>
+            </div>
+          </div>
+
+          <div class="stat-card active">
+            <div class="stat-icon">
+              <i class="fas fa-play"></i>
+            </div>
+            <div class="stat-content">
+              <h3>{{ statistics()!.active }}</h3>
+              <p>Activos</p>
+            </div>
+          </div>
+
+          <div class="stat-card pending">
+            <div class="stat-icon">
+              <i class="fas fa-hourglass-half"></i>
+            </div>
+            <div class="stat-content">
+              <h3>{{ statistics()!.pending }}</h3>
+              <p>Pendientes</p>
+            </div>
+          </div>
+
+          <div class="stat-card completed">
+            <div class="stat-icon">
+              <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="stat-content">
+              <h3>{{ statistics()!.completed }}</h3>
+              <p>Completados</p>
+            </div>
+          </div>
+
+          <div class="stat-card errors">
+            <div class="stat-icon">
+              <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <div class="stat-content">
+              <h3>{{ statistics()!.errors }}</h3>
+              <p>Con Errores</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- Filters Section -->
+    <div class="filters-section" [formGroup]="filterForm">
+      <!-- Search Row -->
+      <div class="search-row">
+        <div class="search-container">
+          <input
+            type="text"
+            formControlName="search"
+            placeholder="Buscar por nombre, descripción o contenido..."
+            class="search-input"
+          />
+          <i class="fas fa-search search-icon"></i>
+        </div>
+        <div class="search-actions">
+          <!-- View Mode Toggle -->
+          <div class="view-mode-toggle">
+            <button 
+              class="view-mode-btn"
+              [class.active]="viewMode() === 'grid'"
+              (click)="setViewMode('grid')"
+              title="Vista en tarjetas">
+              <i class="fas fa-th"></i>
+            </button>
+            <button 
+              class="view-mode-btn"
+              [class.active]="viewMode() === 'table'"
+              (click)="setViewMode('table')"
+              title="Vista en tabla">
+              <i class="fas fa-list"></i>
+            </button>
+          </div>
+          <button class="clear-filters-btn" (click)="clearFilters()">
+            <i class="fas fa-times"></i>
+            <span class="clear-text">Limpiar</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Filters Grid -->
+      <div class="filters-grid">
+        <!-- Status Filter -->
+        <div class="filter-section">
+          <h4 class="section-title">
+            <i class="fas fa-info-circle"></i>
+            Estado
+          </h4>
+          <div class="section-content">
+            <select formControlName="status" class="filter-select">
+              @for (option of STATUS_OPTIONS; track option.value) {
+                <option [ngValue]="option.value">{{ option.label }}</option>
+              }
+            </select>
+          </div>
+        </div>
+
+        <!-- Send Type Filter -->
+        <div class="filter-section">
+          <h4 class="section-title">
+            <i class="fas fa-paper-plane"></i>
+            Tipo de Envío
+          </h4>
+          <div class="section-content">
+            <select formControlName="send_type" class="filter-select">
+              @for (option of SEND_TYPE_OPTIONS; track option.value) {
+                <option [ngValue]="option.value">{{ option.label }}</option>
+              }
+            </select>
+          </div>
+        </div>
+
+        <!-- Active/Recurring Filters -->
+        <div class="filter-section">
+          <h4 class="section-title">
+            <i class="fas fa-filter"></i>
+            Opciones
+          </h4>
+          <div class="section-content">
+            <div class="filter-group">
+              <select formControlName="is_active" class="filter-select">
+                <option [ngValue]="null">Todos (Activo/Inactivo)</option>
+                <option [ngValue]="true">Solo Activos</option>
+                <option [ngValue]="false">Solo Inactivos</option>
+              </select>
+            </div>
+            <div class="filter-group">
+              <select formControlName="is_recurring" class="filter-select">
+                <option [ngValue]="null">Todos (Recurrente/Único)</option>
+                <option [ngValue]="true">Solo Recurrentes</option>
+                <option [ngValue]="false">Solo Únicos</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sort Options -->
+        <div class="filter-section">
+          <h4 class="section-title">
+            <i class="fas fa-sort"></i>
+            Ordenamiento
+          </h4>
+          <div class="section-content">
+            <div class="filter-group">
+              <select formControlName="sortBy" class="filter-select">
+                <option value="created_at">Fecha de Creación</option>
+                <option value="scheduled_at">Fecha Programada</option>
+                <option value="next_execution">Próxima Ejecución</option>
+                <option value="name">Nombre</option>
+                <option value="status">Estado</option>
+              </select>
+            </div>
+            <div class="filter-group">
+              <select formControlName="sortOrder" class="filter-select">
+                <option value="DESC">Más Recientes</option>
+                <option value="ASC">Más Antiguos</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ============================================================================ -->
+  <!-- MAIN CONTENT -->
+  <!-- ============================================================================ -->
+  <main class="messages-main">
+    @if (loadingService.isLoadingByContext('load-scheduled-messages')) {
+      <div class="loading-container">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Cargando mensajes programados...</span>
+        </div>
+        <p>Cargando mensajes programados...</p>
+      </div>
+    } @else if (!hasMessages()) {
+      <div class="empty-state">
+        <div class="empty-icon">
+          <i class="fas fa-clock"></i>
+        </div>
+        <h3>No hay mensajes programados</h3>
+        @if (hasFilters()) {
+          <p>No se encontraron mensajes con los filtros aplicados.</p>
+          <button class="btn btn-outline-primary" (click)="clearFilters()">
+            <i class="fas fa-times"></i>
+            Limpiar Filtros
+          </button>
+        } @else {
+          <p>Comienza programando tu primer mensaje automático.</p>
+          <button class="btn btn-primary" (click)="createScheduledMessage()">
+            <i class="fas fa-plus"></i>
+            Programar Primer Mensaje
+          </button>
+        }
+      </div>
+    } @else {
+      <!-- ============================================================================ -->
+      <!-- GRID VIEW -->
+      <!-- ============================================================================ -->
+      @if (viewMode() === 'grid') {
+        <div class="messages-grid">
+          @for (message of scheduledMessages(); track trackByMessageId($index, message)) {
+            <div class="message-card">
+              <!-- Card Header -->
+              <div class="card-header">
+                <div class="header-left">
+                  <h3 class="message-name">{{ message.name }}</h3>
+                  <div class="message-badges">
+                    <span class="badge badge-status" [style.background-color]="getStatusColor(message.status)">
+                      {{ getStatusText(message.status) }}
+                    </span>
+                    <span class="badge badge-type">
+                      <i [class]="SEND_TYPE_ICONS[message.send_type]"></i>
+                      {{ getSendTypeText(message.send_type) }}
+                    </span>
+                    @if (message.is_recurring) {
+                      <span class="badge badge-recurring">
+                        <i class="fas fa-sync-alt"></i>
+                        Recurrente
+                      </span>
+                    }
+                  </div>
+                </div>
+                <div class="header-actions">
+                  <div class="action-buttons">
+                    @if (canPause(message)) {
+                      <button 
+                        class="action-btn btn-pause" 
+                        (click)="pauseScheduledMessage(message)"
+                        title="Pausar">
+                        <i class="fas fa-pause"></i>
+                      </button>
+                    }
+                    @if (canResume(message)) {
+                      <button 
+                        class="action-btn btn-resume" 
+                        (click)="resumeScheduledMessage(message)"
+                        title="Reanudar">
+                        <i class="fas fa-play"></i>
+                      </button>
+                    }
+                    <button 
+                      class="action-btn btn-duplicate" 
+                      (click)="duplicateScheduledMessage(message)"
+                      title="Duplicar">
+                      <i class="fas fa-copy"></i>
+                    </button>
+                    @if (canEdit(message)) {
+                      <button 
+                        class="action-btn btn-edit" 
+                        (click)="editScheduledMessage(message)"
+                        title="Editar">
+                        <i class="fas fa-edit"></i>
+                      </button>
+                    }
+                    <button 
+                      class="action-btn btn-view" 
+                      (click)="viewScheduledMessage(message)"
+                      title="Ver Detalles">
+                      <i class="fas fa-eye"></i>
+                    </button>
+                    @if (canDelete(message)) {
+                      <button 
+                        class="action-btn btn-delete" 
+                        (click)="confirmDelete(message)"
+                        title="Eliminar">
+                        <i class="fas fa-trash"></i>
+                      </button>
+                    }
+                  </div>
+                </div>
+              </div>
+
+              <!-- Card Body -->
+              <div class="card-body">
+                @if (message.description) {
+                  <p class="message-description">{{ message.description }}</p>
+                }
+
+                <div class="message-info">
+                  <div class="info-grid">
+                    <!-- Scheduled Time -->
+                    <div class="info-item">
+                      <div class="info-label">
+                        <i class="fas fa-calendar-alt"></i>
+                        Programado para
+                      </div>
+                      <div class="info-value">
+                        {{ formatDate(message.scheduled_at) }}
+                      </div>
+                    </div>
+
+                    <!-- Next Execution -->
+                    <div class="info-item">
+                      <div class="info-label">
+                        <i class="fas fa-clock"></i>
+                        Próxima ejecución
+                      </div>
+                      <div class="info-value">
+                        {{ getNextExecutionText(message) }}
+                      </div>
+                    </div>
+
+                    <!-- Recipient -->
+                    <div class="info-item">
+                      <div class="info-label">
+                        <i [class]="SEND_TYPE_ICONS[message.send_type]"></i>
+                        Destinatario
+                      </div>
+                      <div class="info-value">
+                        {{ getRecipientName(message) }}
+                      </div>
+                    </div>
+
+                    <!-- Message Type -->
+                    <div class="info-item">
+                      <div class="info-label">
+                        <i [class]="MESSAGE_TYPE_ICONS[message.message_type]"></i>
+                        Tipo de mensaje
+                      </div>
+                      <div class="info-value">
+                        @if (message.message_type === 'template') {
+                          Template: {{ message.template_name }}
+                        } @else {
+                          Texto personalizado
+                        }
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Recurrence Info -->
+                  @if (message.is_recurring) {
+                    <div class="recurrence-info">
+                      <div class="recurrence-text">
+                        <i class="fas fa-sync-alt"></i>
+                        {{ getRecurrenceText(message.recurrence_type, message.recurrence_interval) }}
+                      </div>
+                      @if (message.max_executions) {
+                        <div class="execution-progress">
+                          <div class="progress-bar">
+                            <div 
+                              class="progress-fill" 
+                              [style.width.%]="calculateProgress(message.execution_count, message.max_executions)">
+                            </div>
+                          </div>
+                          <span class="progress-text">
+                            {{ message.execution_count }}/{{ message.max_executions }} ejecuciones
+                          </span>
+                        </div>
+                      }
+                    </div>
+                  }
+
+                  <!-- Message Preview -->
+                  <div class="message-preview">
+                    <div class="preview-label">Vista previa del mensaje:</div>
+                    <div class="preview-content">
+                      @if (message.message_type === 'template') {
+                        <span class="template-indicator">
+                          <i class="fas fa-file-alt"></i>
+                          Template: {{ message.template_name }}
+                        </span>
+                      } @else {
+                        {{ message.message_content | slice:0:100 }}
+                        @if (message.message_content && message.message_content.length > 100) {
+                          <span class="text-truncated">...</span>
+                        }
+                      }
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Card Footer -->
+              <div class="card-footer">
+                <div class="execution-stats">
+                  <div class="stat-item success">
+                    <i class="fas fa-check-circle"></i>
+                    <span>{{ message.success_count }} exitosos</span>
+                  </div>
+                  <div class="stat-item errors">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <span>{{ message.error_count }} errores</span>
+                  </div>
+                  <div class="stat-item total">
+                    <i class="fas fa-list"></i>
+                    <span>{{ message.execution_count }} total</span>
+                  </div>
+                </div>
+                <div class="card-meta">
+                  <span class="created-at">
+                    Creado {{ formatRelativeDate(message.created_at) }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- ============================================================================ -->
+      <!-- TABLE VIEW -->
+      <!-- ============================================================================ -->
+      @if (viewMode() === 'table') {
+        <div class="messages-table-container">
+          <div class="table-wrapper">
+            <table class="messages-table">
+              <thead>
+                <tr>
+                  <th class="col-name">Nombre</th>
+                  <th class="col-status">Estado</th>
+                  <th class="col-type">Tipo</th>
+                  <th class="col-recipient">Destinatario</th>
+                  <th class="col-scheduled">Programado</th>
+                  <th class="col-next">Próxima Ejecución</th>
+                  <th class="col-stats">Estadísticas</th>
+                  <th class="col-actions">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (message of scheduledMessages(); track trackByMessageId($index, message)) {
+                  <tr class="message-row">
+                    <!-- Name & Description -->
+                    <td class="col-name">
+                      <div class="name-cell">
+                        <div class="message-name">{{ message.name }}</div>
+                        @if (message.description) {
+                          <div class="message-description">{{ message.description }}</div>
+                        }
+                        @if (message.is_recurring) {
+                          <div class="recurring-indicator">
+                            <i class="fas fa-sync-alt"></i>
+                            {{ getRecurrenceText(message.recurrence_type, message.recurrence_interval) }}
+                          </div>
+                        }
+                      </div>
+                    </td>
+
+                    <!-- Status -->
+                    <td class="col-status">
+                      <span class="status-badge" [style.background-color]="getStatusColor(message.status)">
+                        {{ getStatusText(message.status) }}
+                      </span>
+                    </td>
+
+                    <!-- Type -->
+                    <td class="col-type">
+                      <div class="type-cell">
+                        <div class="send-type">
+                          <i [class]="SEND_TYPE_ICONS[message.send_type]"></i>
+                          {{ getSendTypeText(message.send_type) }}
+                        </div>
+                        <div class="message-type">
+                          <i [class]="MESSAGE_TYPE_ICONS[message.message_type]"></i>
+                          @if (message.message_type === 'template') {
+                            {{ message.template_name }}
+                          } @else {
+                            Texto
+                          }
+                        </div>
+                      </div>
+                    </td>
+
+                    <!-- Recipient -->
+                    <td class="col-recipient">
+                      {{ getRecipientName(message) }}
+                    </td>
+
+                    <!-- Scheduled -->
+                    <td class="col-scheduled">
+                      <div class="date-cell">
+                        {{ formatDate(message.scheduled_at) }}
+                      </div>
+                    </td>
+
+                    <!-- Next Execution -->
+                    <td class="col-next">
+                      <div class="next-execution">
+                        {{ getNextExecutionText(message) }}
+                      </div>
+                    </td>
+
+                    <!-- Statistics -->
+                    <td class="col-stats">
+                      <div class="stats-cell">
+                        <div class="stat-row">
+                          <span class="stat-success">✓ {{ message.success_count }}</span>
+                          <span class="stat-errors">✗ {{ message.error_count }}</span>
+                        </div>
+                        <div class="stat-total">Total: {{ message.execution_count }}</div>
+                        @if (message.max_executions) {
+                          <div class="progress-mini">
+                            <div 
+                              class="progress-fill-mini" 
+                              [style.width.%]="calculateProgress(message.execution_count, message.max_executions)">
+                            </div>
+                          </div>
+                        }
+                      </div>
+                    </td>
+
+                    <!-- Actions -->
+                    <td class="col-actions">
+                      <div class="action-buttons-table">
+                        @if (canPause(message)) {
+                          <button 
+                            class="action-btn-sm btn-pause" 
+                            (click)="pauseScheduledMessage(message)"
+                            title="Pausar">
+                            <i class="fas fa-pause"></i>
+                          </button>
+                        }
+                        @if (canResume(message)) {
+                          <button 
+                            class="action-btn-sm btn-resume" 
+                            (click)="resumeScheduledMessage(message)"
+                            title="Reanudar">
+                            <i class="fas fa-play"></i>
+                          </button>
+                        }
+                        <button 
+                          class="action-btn-sm btn-view" 
+                          (click)="viewScheduledMessage(message)"
+                          title="Ver Detalles">
+                          <i class="fas fa-eye"></i>
+                        </button>
+                        @if (canEdit(message)) {
+                          <button 
+                            class="action-btn-sm btn-edit" 
+                            (click)="editScheduledMessage(message)"
+                            title="Editar">
+                            <i class="fas fa-edit"></i>
+                          </button>
+                        }
+                        <button 
+                          class="action-btn-sm btn-duplicate" 
+                          (click)="duplicateScheduledMessage(message)"
+                          title="Duplicar">
+                          <i class="fas fa-copy"></i>
+                        </button>
+                        @if (canDelete(message)) {
+                          <button 
+                            class="action-btn-sm btn-delete" 
+                            (click)="confirmDelete(message)"
+                            title="Eliminar">
+                            <i class="fas fa-trash"></i>
+                          </button>
+                        }
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      }
+
+      <!-- Pagination -->
+      @if (getTotalPages().length > 1) {
+        <div class="pagination-section">
+          <div class="pagination">
+            <button 
+              class="page-btn page-nav"
+              [disabled]="currentPage() === 1"
+              (click)="goToPage(currentPage() - 1)">
+              <i class="fas fa-chevron-left"></i>
+            </button>
+
+            @for (page of getTotalPages(); track page) {
+              <button 
+                class="page-btn page-number"
+                [class.active]="page === currentPage()"
+                (click)="goToPage(page)">
+                {{ page }}
+              </button>
+            }
+
+            <button 
+              class="page-btn page-nav"
+              [disabled]="currentPage() === getTotalPages().length"
+              (click)="goToPage(currentPage() + 1)">
+              <i class="fas fa-chevron-right"></i>
+            </button>
+
+            <div class="pagination-info">
+              Página {{ currentPage() }} de {{ getTotalPages().length }}
+            </div>
+          </div>
+        </div>
+      }
+    }
+  </main>
+
+  <!-- ============================================================================ -->
+  <!-- DELETE CONFIRMATION MODAL -->
+  <!-- ============================================================================ -->
+  @if (showDeleteModal() && messageToDelete()) {
+    <div class="modal-overlay" (click)="closeDeleteModal()">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h2 class="modal-title">
+            <i class="fas fa-exclamation-triangle"></i>
+            Confirmar Eliminación
+          </h2>
+          <button class="close-btn" (click)="closeDeleteModal()">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        
+        <div class="modal-body">
+          <div class="warning-message">
+            <p>¿Estás seguro de que deseas eliminar el mensaje programado?</p>
+            <div class="message-details">
+              <strong>{{ messageToDelete()!.name }}</strong>
+              <br>
+              <span class="text-muted">
+                {{ getSendTypeText(messageToDelete()!.send_type) }} - 
+                {{ getStatusText(messageToDelete()!.status) }}
+              </span>
+            </div>
+            <p class="warning-note">
+              <i class="fas fa-exclamation-triangle"></i>
+              Esta acción no se puede deshacer. Se eliminará toda la configuración y el historial de ejecuciones.
+            </p>
+          </div>
+        </div>
+        
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="closeDeleteModal()">
+            Cancelar
+          </button>
+          <button
+            type="button"
+            class="btn btn-danger"
+            (click)="deleteScheduledMessage()"
+            [disabled]="loadingService.isLoadingByContext('delete-message')"
+          >
+            @if (loadingService.isLoadingByContext('delete-message')) {
+              <span class="spinner-border spinner-border-sm" role="status"></span>
+              Eliminando...
+            } @else {
+              <i class="fas fa-trash"></i>
+              Eliminar
+            }
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

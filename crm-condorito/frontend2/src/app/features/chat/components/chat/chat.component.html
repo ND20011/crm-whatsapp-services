@@ -1,0 +1,1439 @@
+<div class="chat-container">
+  <!-- Mobile hamburger button - fixed position -->
+  @if (isMobile()) {
+    <button 
+      class="hamburger-btn-fixed" 
+      (click)="toggleSidebar()"
+      title="Mostrar conversaciones"
+    >
+      <i class="fas fa-bars"></i>
+    </button>
+  }
+
+  <div class="chat-main">
+    <!-- Mobile overlay -->
+    @if (isMobile() && showSidebar()) {
+      <div class="sidebar-overlay" (click)="closeSidebar()"></div>
+    }
+    
+    <!-- Sidebar - Lista de Conversaciones -->
+    <aside class="chat-sidebar" [class.show-mobile]="showSidebar()" [class.mobile]="isMobile()">
+      <div class="sidebar-header">
+        @if (isMobile()) {
+          <div class="mobile-sidebar-header">
+            <h3 class="sidebar-title">Conversaciones</h3>
+            <button class="btn btn-sm btn-outline-secondary" (click)="closeSidebar()">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+        } @else {
+          <h3 class="sidebar-title">Conversaciones</h3>
+        }
+        <form [formGroup]="searchForm" class="search-form">
+          <div class="search-input-group">
+            <i class="fas fa-search search-icon"></i>
+            <input
+              type="text"
+              formControlName="search"
+              class="form-control search-input"
+              placeholder="Buscar conversaciones, nombres, números..."
+              [class.has-value]="searchQuery()"
+            />
+            @if (searchQuery()) {
+              <button 
+                type="button" 
+                class="search-clear-btn"
+                (click)="clearSearch()"
+                title="Limpiar búsqueda">
+                <i class="fas fa-times"></i>
+              </button>
+            }
+            @if (searchQuery()) {
+              <div class="search-indicator">
+                <span class="search-pulse"></span>
+              </div>
+            }
+          </div>
+          
+          @if (searchQuery()) {
+            <div class="search-results-info">
+              <span class="results-count">
+                <i class="fas fa-filter"></i>
+                {{ filteredConversations().length }} de {{ conversations().length }} conversaciones
+              </span>
+              @if (filteredConversations().length === 0) {
+                <span class="no-results-hint">
+                  <i class="fas fa-info-circle"></i>
+                  Intenta con otro término
+                </span>
+              }
+            </div>
+          }
+        </form>
+        
+        <!-- Filtro por Etiquetas (Colapsible) -->
+        <div class="tag-filter-section" [class.expanded]="isTagFilterExpanded()">
+          <div class="filter-header" (click)="toggleTagFilterSection()">
+            <div class="filter-title">
+              <i class="fas fa-filter"></i>
+              <span>Filtrar por etiqueta</span>
+              @if (selectedTagFilter()) {
+                <span class="active-filter-indicator">
+                  <span class="tag-color-mini" [style.background-color]="selectedTagFilter()!.color"></span>
+                  {{ selectedTagFilter()!.name }}
+                </span>
+              }
+            </div>
+            
+            <div class="filter-actions">
+              @if (selectedTagFilter()) {
+                <button 
+                  type="button" 
+                  class="btn-clear-filter"
+                  (click)="clearTagFilter(); $event.stopPropagation()"
+                  title="Limpiar filtro">
+                  <i class="fas fa-times"></i>
+                </button>
+              }
+              <button 
+                type="button" 
+                class="btn-toggle-section"
+                [class.expanded]="isTagFilterExpanded()"
+                title="Expandir/Colapsar filtros">
+                <i class="fas fa-chevron-down"></i>
+              </button>
+            </div>
+          </div>
+          
+          <div class="tags-filter-list" [class.collapsed]="!isTagFilterExpanded()">
+            @if (availableTags().length === 0) {
+              <div class="no-tags">
+                <small class="text-muted">No hay etiquetas disponibles</small>
+              </div>
+            } @else {
+              <div class="tag-filter-options">
+                @for (tag of availableTags(); track tag.id) {
+                  <button
+                    type="button"
+                    class="tag-filter-btn"
+                    [class.active]="selectedTagFilter()?.id === tag.id"
+                    [style.--tag-color]="tag.color"
+                    (click)="filterByTag(tag)"
+                    [title]="tag.description || tag.name">
+                    <span class="tag-color" [style.background-color]="tag.color"></span>
+                    <span class="tag-name">{{ tag.name }}</span>
+                  </button>
+                }
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+
+      <div class="conversations-list">
+        @if (isLoading()) {
+          <div class="loading-conversations">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Cargando...</span>
+            </div>
+            <p>Cargando conversaciones...</p>
+          </div>
+        } @else if (shouldShowCreateConversation()) {
+          <!-- Opción para crear nueva conversación -->
+          <div class="create-conversation-option">
+            <div class="create-conversation-card" (click)="createNewConversation()">
+              <div class="create-conversation-icon">
+                <i class="fas fa-plus-circle"></i>
+              </div>
+              <div class="create-conversation-content">
+                <h4 class="create-conversation-title">
+                  Iniciar nueva conversación
+                </h4>
+                <p class="create-conversation-phone">
+                  {{ getFormattedPhoneForDisplay() }}
+                </p>
+                <small class="create-conversation-hint">
+                  <i class="fas fa-info-circle"></i>
+                  Haz clic para comenzar a chatear
+                </small>
+              </div>
+              <div class="create-conversation-arrow">
+                <i class="fas fa-arrow-right"></i>
+              </div>
+            </div>
+          </div>
+        } @else if (filteredConversations().length === 0) {
+          <div class="no-conversations">
+            <i class="fas fa-inbox"></i>
+            @if (searchQuery() || selectedTagFilter()) {
+              <p>No se encontraron conversaciones</p>
+              <small>
+                @if (searchQuery()) {
+                  Intenta con otro término de búsqueda
+                }
+                @if (selectedTagFilter()) {
+                  o cambia el filtro de etiqueta
+                }
+              </small>
+            } @else {
+              <p>No hay conversaciones</p>
+            }
+          </div>
+        } @else {
+            @for (conversation of filteredConversations(); track trackByConversationId($index, conversation)) {
+            <div 
+              class="conversation-item"
+              [class.active]="activeConversation()?.id === conversation.id"
+              (click)="selectConversationMobile(conversation)"
+            >
+              <div class="conversation-avatar">
+                <span class="avatar-text">
+                  {{ getContactInitials(conversation) }}
+                </span>
+                @if (isBotEnabled(conversation)) {
+                  <div class="bot-indicator" title="Bot activado">
+                    <i class="fas fa-robot"></i>
+                  </div>
+                }
+              </div>
+              
+              <div class="conversation-content">
+                <div class="conversation-header">
+                  <h4 class="contact-name">
+                    {{ conversation.contact_name || conversation.contact_phone }}
+                  </h4>
+                  
+                  <div class="conversation-actions">
+                    <span class="last-message-time">
+                      {{ formatDate(conversation.last_message_at) }}
+                    </span>
+                    
+                    <!-- Menú de 3 puntos -->
+                    <div class="contact-menu-container">
+                      <button 
+                        type="button"
+                        class="contact-menu-btn"
+                        (click)="toggleContactMenu(conversation.contact_phone); $event.stopPropagation()"
+                        [class.active]="showContactMenu() === conversation.contact_phone"
+                        title="Opciones del contacto">
+                        <i class="fas fa-ellipsis-v"></i>
+                      </button>
+                      
+                      @if (showContactMenu() === conversation.contact_phone) {
+                        <div class="contact-menu-dropdown">
+                          <button 
+                            type="button"
+                            class="menu-item"
+                            (click)="openTagModal(conversation)">
+                            <i class="fas fa-tags"></i>
+                            <span>Asignar Etiquetas</span>
+                          </button>
+                          
+                          <button 
+                            type="button"
+                            class="menu-item"
+                            (click)="openDescriptionModal(conversation)">
+                            <i class="fas fa-sticky-note"></i>
+                            <span>Descripción/Observación</span>
+                          </button>
+                          
+                          <button 
+                            type="button"
+                            class="menu-item"
+                            (click)="openEditContactNameModal(conversation)">
+                            <i class="fas fa-user-edit"></i>
+                            <span>Cambiar Nombre</span>
+                          </button>
+                          
+                          <div class="menu-divider"></div>
+                          
+                          <button 
+                            type="button"
+                            class="menu-item"
+                            (click)="exportChatToPDF(conversation)">
+                            <i class="fas fa-file-pdf"></i>
+                            <span>Exportar Chat PDF</span>
+                          </button>
+                          
+                          <button 
+                            type="button"
+                            class="menu-item"
+                            (click)="openChatAnalysisModal(conversation)">
+                            <i class="fas fa-brain"></i>
+                            <span>Analizar Chat IA</span>
+                          </button>
+                          
+                          <div class="menu-divider"></div>
+                          
+                          <button 
+                            type="button"
+                            class="menu-item menu-item-danger"
+                            (click)="confirmDeleteConversation(conversation)">
+                            <i class="fas fa-trash-alt"></i>
+                            <span>Eliminar Conversación</span>
+                          </button>
+                        </div>
+                      }
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="conversation-footer">
+                  <!-- Solo etiquetas del contacto (sin número de teléfono) -->
+                  @if (getTagsForConversation(conversation.contact_phone).length > 0) {
+                    <div class="conversation-tags-compact">
+                      @for (tag of getTagsForConversation(conversation.contact_phone); track tag.id) {
+                        <span 
+                          class="conversation-tag-small"
+                          [style.background-color]="tag.color"
+                          [title]="tag.description || tag.name">
+                          {{ tag.name }}
+                        </span>
+                      }
+                    </div>
+                  }
+                  
+                  @if (conversation.unread_count > 0) {
+                    <span class="unread-badge">
+                      {{ conversation.unread_count }}
+                    </span>
+                  }
+                </div>
+              </div>
+            </div>
+          }
+        }
+      </div>
+    </aside>
+
+    <!-- Chat Area -->
+    <main class="chat-area">
+      @if (!activeConversation()) {
+        <div class="no-conversation-selected">
+          <i class="fas fa-comments"></i>
+          <h3>Selecciona una conversación</h3>
+          <p>Elige una conversación de la lista para comenzar a chatear</p>
+        </div>
+      } @else {
+        <!-- Chat Header -->
+        <div class="chat-area-header">
+          <div class="active-conversation-info">
+            <div class="conversation-avatar">
+              <span class="avatar-text">
+                {{ getContactInitials(activeConversation()!) }}
+              </span>
+            </div>
+            <div class="conversation-details">
+              <h3 class="contact-name">
+                {{ activeConversation()!.contact_name || activeConversation()!.contact_phone }}
+              </h3>
+              <p class="contact-phone">{{ activeConversation()!.contact_phone }}</p>
+            </div>
+          </div>
+          
+          <div class="chat-actions">
+            <button 
+              class="btn btn-sm"
+              [class.btn-success]="!isBotEnabled(activeConversation()!)"
+              [class.btn-warning]="isBotEnabled(activeConversation()!)"
+              (click)="toggleBotForActiveConversation()"
+              [title]="isBotEnabled(activeConversation()!) ? 'Desactivar Bot' : 'Activar Bot'"
+            >
+              <i class="fas fa-robot"></i>
+              {{ isBotEnabled(activeConversation()!) ? 'Bot ON' : 'Bot OFF' }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Messages Area -->
+        <div class="messages-area" #messagesContainer (scroll)="onMessagesScroll()">
+          @if (isLoadingMessages()) {
+            <div class="loading-messages">
+              <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Cargando mensajes...</span>
+              </div>
+            </div>
+          } @else if (messages().length === 0) {
+            <div class="no-messages">
+              <i class="fas fa-comment-slash"></i>
+              <p>No hay mensajes en esta conversación</p>
+            </div>
+          } @else {
+            @for (message of messages(); track trackByMessageId($index, message)) {
+              <div 
+                class="message"
+                [class.message-sent]="isMyMessage(message)"
+                [class.message-received]="!isMyMessage(message)"
+                [class.message-bot]="message.sender_type === 'bot'"
+              >
+                <div class="message-content">
+                  <!-- Contenido según el tipo de mensaje -->
+                  @if (message.message_type === 'image') {
+                    <!-- Mensaje de imagen -->
+                    <div class="message-image-container">
+                      @if (message.media_url) {
+                        <img 
+                          [src]="message.media_url | mediaUrl" 
+                          [alt]="message.file_name || 'Imagen'"
+                          class="message-image"
+                          (click)="openImageModal(message)"
+                          (error)="onImageError($event)"
+                          (load)="onImageLoad($event, message)"
+                          loading="lazy"
+                        />
+                        @if (message.content && message.content.trim()) {
+                          <p class="message-caption">{{ message.content }}</p>
+                        }
+                      } @else {
+                        <!-- Imagen sin URL (error o no disponible) -->
+                        <div class="message-media-error">
+                          <i class="fas fa-image"></i>
+                          <span>Imagen no disponible</span>
+                          @if (message.file_name) {
+                            <small>{{ message.file_name }}</small>
+                          }
+                          <!-- Debug info -->
+                          <small style="color: #666; font-size: 0.7rem; margin-top: 0.5rem;">
+                            Debug: type={{ message.message_type }}, url={{ message.media_url || 'null' }}
+                          </small>
+                        </div>
+                        @if (message.content && message.content.trim()) {
+                          <p class="message-caption">{{ message.content }}</p>
+                        }
+                      }
+                    </div>
+                  } @else if (message.message_type === 'audio') {
+                    <!-- Mensaje de audio -->
+                    <div class="message-audio-container">
+                      @if (message.media_url) {
+                        <div class="audio-player">
+                          <div class="audio-info">
+                            <i class="fas fa-volume-up audio-icon"></i>
+                            <span class="audio-title">{{ message.file_name || 'Audio' }}</span>
+                            @if (message.media_size) {
+                              <span class="audio-size">{{ formatFileSize(message.media_size) }}</span>
+                            }
+                          </div>
+                          <audio 
+                            controls 
+                            preload="metadata"
+                            class="audio-element">
+                            <source [src]="message.media_url | mediaUrl" type="audio/mpeg">
+                            <source [src]="message.media_url | mediaUrl" type="audio/ogg">
+                            <source [src]="message.media_url | mediaUrl" type="audio/wav">
+                            Tu navegador no soporta la reproducción de audio.
+                          </audio>
+                        </div>
+                        @if (message.content && message.content.trim()) {
+                          <p class="message-caption">{{ message.content }}</p>
+                        }
+                      } @else {
+                        <!-- Audio sin URL (error o no disponible) -->
+                        <div class="message-media-error">
+                          <i class="fas fa-volume-up"></i>
+                          <span>Audio no disponible</span>
+                          @if (message.file_name) {
+                            <small>{{ message.file_name }}</small>
+                          }
+                          <!-- Debug info -->
+                          <small style="color: #666; font-size: 0.7rem; margin-top: 0.5rem;">
+                            Debug: type={{ message.message_type }}, url={{ message.media_url || 'null' }}
+                          </small>
+                        </div>
+                        @if (message.content && message.content.trim()) {
+                          <p class="message-caption">{{ message.content }}</p>
+                        }
+                      }
+                    </div>
+                  } @else if (message.message_type === 'video') {
+                    <!-- Mensaje de video -->
+                    <div class="message-video-container">
+                      @if (message.media_url) {
+                        <div class="video-player">
+                          <video 
+                            controls 
+                            preload="metadata"
+                            class="message-video"
+                            [poster]="getVideoPoster(message)">
+                            <source [src]="message.media_url | mediaUrl" type="video/mp4">
+                            <source [src]="message.media_url | mediaUrl" type="video/webm">
+                            <source [src]="message.media_url | mediaUrl" type="video/ogg">
+                            Tu navegador no soporta la reproducción de video.
+                          </video>
+                          <div class="video-info">
+                            <span class="video-title">{{ message.file_name || 'Video' }}</span>
+                            @if (message.media_size) {
+                              <span class="video-size">{{ formatFileSize(message.media_size) }}</span>
+                            }
+                          </div>
+                        </div>
+                        @if (message.content && message.content.trim()) {
+                          <p class="message-caption">{{ message.content }}</p>
+                        }
+                      } @else {
+                        <!-- Video sin URL (error o no disponible) -->
+                        <div class="message-media-error">
+                          <i class="fas fa-video"></i>
+                          <span>Video no disponible</span>
+                          @if (message.file_name) {
+                            <small>{{ message.file_name }}</small>
+                          }
+                          <!-- Debug info -->
+                          <small style="color: #666; font-size: 0.7rem; margin-top: 0.5rem;">
+                            Debug: type={{ message.message_type }}, url={{ message.media_url || 'null' }}
+                          </small>
+                        </div>
+                        @if (message.content && message.content.trim()) {
+                          <p class="message-caption">{{ message.content }}</p>
+                        }
+                      }
+                    </div>
+                  } @else if (message.message_type === 'document') {
+                    <!-- Mensaje de documento -->
+                    <div class="message-document-container">
+                      @if (message.media_url) {
+                        <div class="document-preview">
+                          <div class="document-icon">
+                            <i [class]="getDocumentIcon(message.file_name || '')"></i>
+                          </div>
+                          <div class="document-info">
+                            <span class="document-title">{{ message.file_name || 'Documento' }}</span>
+                            @if (message.media_size) {
+                              <span class="document-size">{{ formatFileSize(message.media_size) }}</span>
+                            }
+                            @if (message.media_mimetype) {
+                              <span class="document-type">{{ getFileTypeLabel(message.media_mimetype) }}</span>
+                            }
+                          </div>
+                          <div class="document-actions">
+                            <a 
+                              [href]="message.media_url | mediaUrl" 
+                              target="_blank" 
+                              class="btn btn-sm btn-outline-primary document-download">
+                              <i class="fas fa-download"></i>
+                              Descargar
+                            </a>
+                          </div>
+                        </div>
+                        @if (message.content && message.content.trim()) {
+                          <p class="message-caption">{{ message.content }}</p>
+                        }
+                      } @else {
+                        <!-- Documento sin URL (error o no disponible) -->
+                        <div class="message-media-error">
+                          <i class="fas fa-file"></i>
+                          <span>Documento no disponible</span>
+                          @if (message.file_name) {
+                            <small>{{ message.file_name }}</small>
+                          }
+                          <!-- Debug info -->
+                          <small style="color: #666; font-size: 0.7rem; margin-top: 0.5rem;">
+                            Debug: type={{ message.message_type }}, url={{ message.media_url || 'null' }}
+                          </small>
+                        </div>
+                        @if (message.content && message.content.trim()) {
+                          <p class="message-caption">{{ message.content }}</p>
+                        }
+                      }
+                    </div>
+                  } @else {
+                    <!-- Mensaje de texto normal -->
+                    <p class="message-text">{{ message.content }}</p>
+                  }
+                  
+                  <div class="message-meta">
+                    <span class="message-time">
+                      {{ formatDate(message.sent_at) }}
+                    </span>
+                    @if (message.sender_type === 'bot') {
+                      <span class="message-sender">
+                        <i class="fas fa-robot"></i>
+                        Bot
+                      </span>
+                    }
+                    @if (message.message_type !== 'text') {
+                      <span class="message-type">
+                        <i class="fas" [class]="getMessageTypeIcon(message.message_type)"></i>
+                        {{ message.message_type }}
+                      </span>
+                    }
+                  </div>
+                </div>
+              </div>
+            }
+          }
+        </div>
+
+        <!-- Indicador de nuevos mensajes -->
+        @if (hasUnreadMessages() && !isAtBottom()) {
+          <div class="new-messages-indicator">
+            <button 
+              class="btn btn-primary btn-sm scroll-to-bottom"
+              (click)="scrollToBottomForced()"
+              title="Ir a mensajes nuevos">
+              <i class="fas fa-arrow-down"></i>
+              @if (unreadMessagesCount() > 0) {
+                <span class="unread-count">{{ unreadMessagesCount() }}</span>
+              }
+              nuevo(s)
+            </button>
+          </div>
+        }
+
+        <!-- Message Input -->
+        <div class="message-input-area">
+          @if (errorMessage()) {
+            <div class="alert alert-danger alert-sm" role="alert">
+              <i class="fas fa-exclamation-triangle"></i>
+              {{ errorMessage() }}
+            </div>
+          }
+          
+          @if (successMessage()) {
+            <div class="alert alert-success alert-sm" role="alert">
+              <i class="fas fa-check-circle"></i>
+              {{ successMessage() }}
+            </div>
+          }
+
+          <!-- File Upload Area -->
+          @if (showFileUpload()) {
+            <div class="file-upload-area">
+              <app-file-upload
+                [disabled]="isSendingFile()"
+                [multiple]="true"
+                [acceptImages]="true"
+                [acceptDocuments]="true"
+                (onFileSelected)="onFileSelected($event)"
+                (onFilesSelected)="onFilesSelected($event)"
+                (onError)="onFileError($event)">
+              </app-file-upload>
+            </div>
+          }
+
+          <!-- Selected Files Preview -->
+          @if (hasSelectedFiles()) {
+            <div class="selected-files-area">
+              <div class="selected-files-header">
+                <h5>Archivos seleccionados ({{ selectedFiles().length }})</h5>
+                <button 
+                  type="button" 
+                  class="btn btn-sm btn-outline-secondary"
+                  (click)="clearSelectedFiles()"
+                  [disabled]="isSendingFile()"
+                >
+                  <i class="fas fa-times"></i>
+                  Limpiar
+                </button>
+              </div>
+              <div class="selected-files-list">
+                @for (file of selectedFiles(); track trackByFileName($index, file)) {
+                  <app-file-preview
+                    [file]="file"
+                    [showCaption]="true"
+                    [showRemove]="true"
+                    [disabled]="isSendingFile()"
+                    (onRemove)="removeSelectedFile($event)"
+                    (onCaptionChange)="onCaptionChange($event)">
+                  </app-file-preview>
+                }
+              </div>
+            </div>
+          }
+
+          <form [formGroup]="messageForm" (ngSubmit)="sendMessageOrFiles()" class="message-form">
+            <div class="message-input-group">
+              <!-- Templates button -->
+              <button
+                type="button"
+                class="btn btn-outline-primary template-button"
+                (click)="openTemplateModal()"
+                [disabled]="isSendingMessage() || isSendingFile()"
+                title="Usar template"
+              >
+                <i class="fas fa-clipboard-list"></i>
+              </button>
+
+              <!-- AI Suggest Response button -->
+              <button
+                type="button"
+                class="btn btn-outline-success ai-suggest-button"
+                (click)="generateAISuggestion()"
+                [disabled]="isSendingMessage() || isSendingFile() || isGeneratingAI() || !canGenerateAISuggestion()"
+                title="Generar respuesta con IA"
+              >
+                @if (isGeneratingAI()) {
+                  <span class="spinner-border spinner-border-sm" role="status"></span>
+                } @else {
+                  <i class="fas fa-brain"></i>
+                }
+              </button>
+
+              <!-- File attachment button -->
+              <button
+                type="button"
+                class="btn btn-outline-secondary attachment-button"
+                (click)="toggleFileUpload()"
+                [disabled]="isSendingMessage() || isSendingFile()"
+                [class.active]="showFileUpload()"
+                title="Adjuntar archivos"
+              >
+                <i class="fas fa-paperclip"></i>
+              </button>
+
+              <textarea
+                formControlName="message"
+                class="form-control message-input"
+                placeholder="Escribe tu mensaje..."
+                rows="2"
+                [disabled]="isSendingMessage() || isSendingFile()"
+                (keydown)="onKeyDown($event)"
+              ></textarea>
+
+              <!-- Send button -->
+              <button
+                type="submit"
+                class="btn btn-primary send-button"
+                [disabled]="!canSend()"
+                [title]="hasSelectedFiles() ? 'Enviar archivos' : 'Enviar mensaje'"
+              >
+                @if (isSendingMessage() || isSendingFile()) {
+                  <span class="spinner-border spinner-border-sm" role="status"></span>
+                } @else if (hasSelectedFiles()) {
+                  <i class="fas fa-file-upload"></i>
+                } @else {
+                  <i class="fas fa-paper-plane"></i>
+                }
+              </button>
+            </div>
+            
+            <div class="input-help">
+              <small class="form-text text-muted">
+                @if (hasSelectedFiles()) {
+                  {{ selectedFiles().length }} archivo(s) seleccionado(s) • 
+                }
+                Presiona Ctrl + Enter para enviar
+              </small>
+            </div>
+          </form>
+        </div>
+      }
+    </main>
+  </div>
+
+  <!-- Template Selection Modal -->
+  @if (showTemplateModal()) {
+    <div class="modal-overlay" (click)="closeTemplateModal()">
+      <div class="modal-container template-modal" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3 class="modal-title">
+            <i class="fas fa-clipboard-list"></i>
+            Seleccionar Template
+          </h3>
+          <button class="modal-close" (click)="closeTemplateModal()">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        
+        <div class="modal-body">
+          @if (isLoadingTemplates()) {
+            <div class="loading-state">
+              <div class="loading-spinner">
+                <i class="fas fa-spinner fa-spin"></i>
+              </div>
+              <p>Cargando templates...</p>
+            </div>
+          } @else if (availableTemplates().length === 0) {
+            <div class="empty-state">
+              <i class="fas fa-clipboard-list"></i>
+              <h4>No hay templates disponibles</h4>
+              <p>Crea templates desde la sección de Templates para usarlos aquí.</p>
+              <button class="btn btn-primary" (click)="goToTemplates()">
+                <i class="fas fa-plus"></i>
+                Crear Template
+              </button>
+            </div>
+          } @else {
+            <!-- Search Templates -->
+            <div class="template-search">
+              <div class="search-wrapper">
+                <i class="fas fa-search search-icon"></i>
+                <input 
+                  type="text" 
+                  class="search-input"
+                  placeholder="Buscar templates..."
+                  [(ngModel)]="templateSearchQuery"
+                  (input)="filterTemplates()">
+              </div>
+            </div>
+
+            <!-- Templates List -->
+            <div class="templates-list">
+              @for (template of filteredTemplates(); track template.id) {
+                <div class="template-item" (click)="selectTemplate(template)">
+                  <div class="template-header">
+                    <h4 class="template-name">{{ template.name }}</h4>
+                    <span class="template-category">{{ template.category | titlecase }}</span>
+                  </div>
+                  <div class="template-content">
+                    <p class="template-preview">{{ template.content | slice:0:100 }}...</p>
+                    @if (getTemplateVariables(template.content).length > 0) {
+                      <div class="template-variables">
+                        <span class="variables-label">Variables:</span>
+                        @for (variable of getTemplateVariables(template.content); track variable) {
+                          <span class="variable-tag">{{ variable }}</span>
+                        }
+                      </div>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Template Variables Modal -->
+  @if (showVariablesModal()) {
+    <div class="modal-overlay" (click)="closeVariablesModal()">
+      <div class="modal-container variables-modal" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3 class="modal-title">
+            <i class="fas fa-cogs"></i>
+            Completar Variables - {{ selectedTemplate()?.name }}
+          </h3>
+          <button class="modal-close" (click)="closeVariablesModal()">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        
+        <div class="modal-body">
+          @if (templateVariables().length > 0) {
+            <form [formGroup]="templateVariablesForm" class="variables-form">
+              @for (variable of templateVariables(); track variable) {
+                <div class="form-group">
+                  <label class="form-label">
+                    <i class="fas fa-tag"></i>
+                    {{ variable }}
+                  </label>
+                  <input 
+                    type="text" 
+                    class="form-input"
+                    [formControlName]="variable"
+                    [placeholder]="'Ingresa el valor para ' + variable">
+                </div>
+              }
+            </form>
+          } @else {
+            <div class="no-variables-message">
+              <i class="fas fa-info-circle"></i>
+              <p>Este template no requiere variables. Puedes enviarlo directamente.</p>
+            </div>
+          }
+
+          <!-- Preview -->
+          @if (templatePreview()) {
+            <div class="template-preview-section">
+              <h4 class="preview-title">
+                <i class="fas fa-eye"></i>
+                Vista Previa
+              </h4>
+              <div class="message-preview">
+                <div class="message-bubble preview">
+                  {{ templatePreview() }}
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+        
+        <div class="modal-footer">
+          <button class="btn btn-secondary" (click)="closeVariablesModal()">
+            <i class="fas fa-times"></i>
+            Cancelar
+          </button>
+          <button 
+            class="btn btn-primary" 
+            (click)="sendTemplateMessage()"
+            [disabled]="!canSendTemplate()">
+            <i class="fas fa-paper-plane"></i>
+            Enviar Mensaje
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>
+
+<!-- ============================================================================ -->
+<!-- MODAL PARA ASIGNAR ETIQUETAS -->
+<!-- ============================================================================ -->
+@if (showTagModal()) {
+  <div class="modal-overlay" (click)="closeTagModal()">
+    <div class="modal-content tag-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div class="header-content">
+          <div class="header-icon">
+            <i class="fas fa-tags"></i>
+          </div>
+          <div class="header-text">
+            <h3 class="modal-title">Gestionar Etiquetas -- {{ currentContactForAction()!.contact_name || 'Sin nombre' }}
+            </h3>
+            <p class="modal-subtitle">{{ currentContactForAction()!.contact_phone }}</p>
+          </div>
+        </div>
+        <div class="header-actions">
+          <button 
+            type="button" 
+            class="action-btn help-btn"
+            title="Ayuda sobre etiquetas">
+            <i class="fas fa-question-circle"></i>
+          </button>
+          <button 
+            type="button" 
+            class="modal-close-btn"
+            (click)="closeTagModal()">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+      </div>
+      
+      <div class="modal-body">
+        @if (currentContactForAction()) {
+          <!-- INFORMACIÓN DEL CONTACTO -->
+          
+
+          <!-- SECCIÓN DE ETIQUETAS ACTUALES -->
+          @if (currentContact()?.tags && currentContact()!.tags.length > 0) {
+            <div class="current-tags-section">
+              <div class="section-header">
+                <h5 class="section-title">
+                  <i class="fas fa-bookmark"></i>
+                  Etiquetas Actuales
+                  <span class="tag-count">({{ currentContact()!.tags.length }})</span>
+                </h5>
+                <button 
+                  type="button" 
+                  class="clear-all-btn"
+                  (click)="saveContactTags([])">
+                  <i class="fas fa-trash-alt"></i>
+                  Limpiar todas
+                </button>
+              </div>
+              <div class="current-tags-list">
+                @for (tag of currentContact()!.tags; track tag.id) {
+                  <span class="current-tag" [style.background-color]="tag.color">
+                    {{ tag.name }}
+                    <button 
+                      type="button" 
+                      class="remove-tag-btn"
+                      (click)="removeTag(tag)">
+                      <i class="fas fa-times"></i>
+                    </button>
+                  </span>
+                }
+              </div>
+            </div>
+          }
+          
+          <!-- SELECTOR DE ETIQUETAS -->
+          <div class="tag-selector-wrapper">
+            <div class="selector-header">
+              <h5 class="selector-title">
+                <i class="fas fa-plus-circle"></i>
+                Agregar Etiquetas
+              </h5>
+              <p class="selector-description">
+                Busca y selecciona las etiquetas que mejor describan a este contacto
+              </p>
+            </div>
+            <app-tag-selector
+              [selectedTags]="currentContact()?.tags || []"
+              [multiple]="true"
+              [disabled]="false"
+              placeholder="Buscar etiquetas por nombre..."
+              (tagsChanged)="saveContactTags($event)">
+            </app-tag-selector>
+          </div>
+        }
+      </div>
+      
+      <div class="modal-footer">
+        <div class="footer-info">
+          <i class="fas fa-info-circle"></i>
+          <span>Los cambios se guardan automáticamente</span>
+        </div>
+        <div class="footer-actions">
+          <button 
+            type="button" 
+            class="btn btn-secondary"
+            (click)="closeTagModal()">
+            <i class="fas fa-check"></i>
+            Finalizar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ============================================================================ -->
+<!-- MODAL PARA DESCRIPCIÓN/OBSERVACIÓN -->
+<!-- ============================================================================ -->
+@if (showDescriptionModal()) {
+  <div class="modal-overlay" (click)="closeDescriptionModal()">
+    <div class="modal-content description-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3 class="modal-title">
+          <i class="fas fa-sticky-note"></i>
+          Descripción/Observación
+        </h3>
+        <button 
+          type="button" 
+          class="modal-close-btn"
+          (click)="closeDescriptionModal()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      
+      <div class="modal-body">
+        @if (currentContactForAction()) {
+          <div class="contact-info">
+            <div class="contact-avatar">
+              <span class="avatar-text">
+                {{ getContactInitials(currentContactForAction()!) }}
+              </span>
+            </div>
+            <div class="contact-details">
+              <h4 class="contact-name">
+                {{ currentContactForAction()!.contact_name || 'Sin nombre' }}
+              </h4>
+              <p class="contact-phone">{{ currentContactForAction()!.contact_phone }}</p>
+            </div>
+          </div>
+          
+          <form [formGroup]="descriptionForm" (ngSubmit)="saveContactDescription()">
+            <div class="form-group">
+              <label for="contact-description" class="form-label">
+                <i class="fas fa-align-left"></i>
+                Descripción o comentarios sobre este contacto
+              </label>
+              <textarea
+                id="contact-description"
+                formControlName="description"
+                class="form-control"
+                rows="4"
+                placeholder="Agrega notas, comentarios o información relevante sobre este contacto..."
+                maxlength="500">
+              </textarea>
+              <small class="form-text text-muted">
+                Máximo 500 caracteres
+              </small>
+            </div>
+          </form>
+        }
+      </div>
+      
+      <div class="modal-footer">
+        <button 
+          type="button" 
+          class="btn btn-secondary"
+          (click)="closeDescriptionModal()">
+          <i class="fas fa-times"></i>
+          Cancelar
+        </button>
+        
+        <button 
+          type="button" 
+          class="btn btn-primary"
+          (click)="saveContactDescription()"
+          [disabled]="descriptionForm.invalid">
+          <i class="fas fa-save"></i>
+          Guardar Descripción
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ============================================================================ -->
+<!-- MODAL PARA VER IMÁGENES EN TAMAÑO COMPLETO -->
+<!-- ============================================================================ -->
+@if (showImageModal()) {
+  <div class="image-modal-overlay" (click)="closeImageModal()">
+    <div class="image-modal-content" (click)="$event.stopPropagation()">
+      <div class="image-modal-header">
+        <h3 class="image-modal-title">
+          <i class="fas fa-image"></i>
+          {{ selectedImageMessage()?.file_name || 'Imagen' }}
+        </h3>
+        <button 
+          type="button" 
+          class="image-modal-close-btn"
+          (click)="closeImageModal()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      
+      <div class="image-modal-body">
+        @if (selectedImageMessage()?.media_url) {
+          <img 
+            [src]="selectedImageMessage()!.media_url | mediaUrl" 
+            [alt]="selectedImageMessage()?.file_name || 'Imagen'"
+            class="image-modal-img"
+          />
+          @if (selectedImageMessage()?.content && selectedImageMessage()!.content.trim()) {
+            <div class="image-modal-caption">
+              <p>{{ selectedImageMessage()!.content }}</p>
+            </div>
+          }
+        }
+      </div>
+      
+      <div class="image-modal-footer">
+        <div class="image-info">
+          @if (selectedImageMessage()?.file_name) {
+            <span class="image-filename">
+              <i class="fas fa-file"></i>
+              {{ selectedImageMessage()!.file_name }}
+            </span>
+          }
+          @if (selectedImageMessage()?.media_size) {
+            <span class="image-size">
+              <i class="fas fa-weight-hanging"></i>
+              {{ formatFileSize(selectedImageMessage()!.media_size!) }}
+            </span>
+          }
+          <span class="image-date">
+            <i class="fas fa-clock"></i>
+            {{ formatDate(selectedImageMessage()!.sent_at) }}
+          </span>
+        </div>
+        
+        @if (selectedImageMessage()?.media_url) {
+          <a 
+            [href]="selectedImageMessage()!.media_url | mediaUrl" 
+            target="_blank" 
+            class="btn btn-primary btn-download">
+            <i class="fas fa-download"></i>
+            Descargar
+          </a>
+        }
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ============================================================================ -->
+<!-- MODAL PARA ANÁLISIS DE CHAT CON IA -->
+<!-- ============================================================================ -->
+@if (showChatAnalysisModal()) {
+  <div class="modal-overlay" (click)="closeChatAnalysisModal()">
+    <div class="modal-content chat-analysis-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3 class="modal-title">
+          <i class="fas fa-brain"></i>
+          Análisis de Chat con IA
+        </h3>
+        <button 
+          type="button" 
+          class="modal-close-btn"
+          (click)="closeChatAnalysisModal()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      
+      <div class="modal-body">
+        @if (currentConversationForAnalysis()) {
+          <div class="contact-info">
+            <div class="contact-avatar">
+              <span class="avatar-text">
+                {{ getContactInitials(currentConversationForAnalysis()!) }}
+              </span>
+            </div>
+            <div class="contact-details">
+              <h4 class="contact-name">
+                {{ currentConversationForAnalysis()!.contact_name || 'Sin nombre' }}
+              </h4>
+              <p class="contact-phone">{{ currentConversationForAnalysis()!.contact_phone }}</p>
+            </div>
+          </div>
+          
+          <div class="analysis-section">
+            <!-- Análisis predefinidos -->
+            <div class="predefined-analysis">
+              <h5>
+                <i class="fas fa-chart-bar"></i>
+                Análisis Predefinidos
+              </h5>
+              <div class="analysis-buttons">
+                <button 
+                  class="btn btn-outline-primary analysis-btn"
+                  (click)="runAnalysis('sentiment')"
+                  [disabled]="isAnalyzing()">
+                  <i class="fas fa-smile"></i>
+                  Análisis de Sentimiento
+                </button>
+                <button 
+                  class="btn btn-outline-success analysis-btn"
+                  (click)="runAnalysis('summary')"
+                  [disabled]="isAnalyzing()">
+                  <i class="fas fa-compress-alt"></i>
+                  Resumen de Conversación
+                </button>
+                <button 
+                  class="btn btn-outline-info analysis-btn"
+                  (click)="runAnalysis('topics')"
+                  [disabled]="isAnalyzing()">
+                  <i class="fas fa-hashtag"></i>
+                  Temas Principales
+                </button>
+                <button 
+                  class="btn btn-outline-warning analysis-btn"
+                  (click)="runAnalysis('intent')"
+                  [disabled]="isAnalyzing()">
+                  <i class="fas fa-bullseye"></i>
+                  Intención del Cliente
+                </button>
+              </div>
+            </div>
+            
+            <!-- Pregunta personalizada -->
+            <div class="custom-question">
+              <h5>
+                <i class="fas fa-question-circle"></i>
+                Pregunta Personalizada
+              </h5>
+              <form [formGroup]="analysisForm" (ngSubmit)="askCustomQuestion()">
+                <div class="form-group">
+                  <textarea
+                    formControlName="customQuestion"
+                    class="form-control"
+                    rows="3"
+                    placeholder="Haz una pregunta específica sobre esta conversación..."
+                    [disabled]="isAnalyzing()">
+                  </textarea>
+                </div>
+                <button 
+                  type="submit" 
+                  class="btn btn-primary"
+                  [disabled]="!analysisForm.valid || isAnalyzing()">
+                  <i class="fas fa-paper-plane"></i>
+                  Analizar
+                </button>
+              </form>
+            </div>
+            
+            <!-- Resultado del análisis -->
+            @if (isAnalyzing()) {
+              <div class="analysis-loading">
+                <div class="spinner-border text-primary" role="status">
+                  <span class="visually-hidden">Analizando...</span>
+                </div>
+                <p>Analizando conversación con IA...</p>
+              </div>
+            }
+            
+            @if (analysisResult()) {
+              <div class="analysis-result">
+                <h5>
+                  <i class="fas fa-lightbulb"></i>
+                  Resultado del Análisis
+                </h5>
+                <div class="result-content">
+                  <div class="result-text">{{ analysisResult() }}</div>
+                  <div class="result-meta">
+                    <small class="text-muted">
+                      <i class="fas fa-clock"></i>
+                      {{ analysisTimestamp() | date:'dd/MM/yyyy HH:mm' }}
+                    </small>
+                  </div>
+                </div>
+              </div>
+            }
+            
+            <!-- Información de cuota -->
+            <div class="quota-info">
+              <small class="text-muted">
+                <i class="fas fa-info-circle"></i>
+                Cada análisis consume 8 uso de tu cuota de IA
+              </small>
+            </div>
+          </div>
+        }
+      </div>
+      
+      <div class="modal-footer">
+        <button 
+          type="button" 
+          class="btn btn-secondary"
+          (click)="closeChatAnalysisModal()">
+          <i class="fas fa-times"></i>
+          Cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ============================================================================ -->
+<!-- MODAL PARA EDITAR NOMBRE DEL CONTACTO -->
+<!-- ============================================================================ -->
+@if (showEditContactNameModal()) {
+  <div class="modal-overlay" (click)="closeEditContactNameModal()">
+    <div class="modal-content edit-name-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3 class="modal-title">
+          <i class="fas fa-user-edit"></i>
+          Cambiar Nombre del Contacto
+        </h3>
+        <button 
+          type="button" 
+          class="modal-close-btn"
+          (click)="closeEditContactNameModal()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      
+      <div class="modal-body">
+        @if (currentContactForAction()) {
+          <div class="contact-info">
+            <div class="contact-avatar">
+              <span class="avatar-text">
+                {{ getContactInitials(currentContactForAction()!) }}
+              </span>
+            </div>
+            <div class="contact-details">
+              <h4 class="contact-name">
+                {{ currentContactForAction()!.contact_name || 'Sin nombre' }}
+              </h4>
+              <p class="contact-phone">{{ currentContactForAction()!.contact_phone }}</p>
+            </div>
+          </div>
+          
+          <form [formGroup]="editContactNameForm" (ngSubmit)="saveContactName()">
+            <div class="form-group">
+              <label for="contact-name" class="form-label">
+                <i class="fas fa-user"></i>
+                Nombre del contacto
+              </label>
+              <input
+                id="contact-name"
+                type="text"
+                formControlName="contactName"
+                class="form-control"
+                placeholder="Ingresa el nombre del contacto..."
+                maxlength="50">
+              @if (editContactNameForm.get('contactName')?.invalid && editContactNameForm.get('contactName')?.touched) {
+                <small class="form-text text-danger">
+                  @if (editContactNameForm.get('contactName')?.errors?.['required']) {
+                    El nombre es requerido
+                  }
+                  @if (editContactNameForm.get('contactName')?.errors?.['minlength']) {
+                    El nombre debe tener al menos 2 caracteres
+                  }
+                  @if (editContactNameForm.get('contactName')?.errors?.['maxlength']) {
+                    El nombre no puede exceder 50 caracteres
+                  }
+                </small>
+              }
+            </div>
+          </form>
+        }
+      </div>
+      
+      <div class="modal-footer">
+        <button 
+          type="button" 
+          class="btn btn-secondary"
+          (click)="closeEditContactNameModal()">
+          <i class="fas fa-times"></i>
+          Cancelar
+        </button>
+        
+        <button 
+          type="button" 
+          class="btn btn-primary"
+          (click)="saveContactName()"
+          [disabled]="editContactNameForm.invalid">
+          <i class="fas fa-save"></i>
+          Guardar Nombre
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ============================================================================ -->
+<!-- MODAL PARA CONFIRMAR ELIMINACIÓN DE CONVERSACIÓN -->
+<!-- ============================================================================ -->
+@if (showDeleteConfirmModal()) {
+  <div class="modal-overlay" (click)="closeDeleteConfirmModal()">
+    <div class="modal-content delete-confirm-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3 class="modal-title">
+          <i class="fas fa-exclamation-triangle"></i>
+          Confirmar Eliminación
+        </h3>
+        <button 
+          type="button" 
+          class="modal-close-btn"
+          (click)="closeDeleteConfirmModal()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      
+      <div class="modal-body">
+        @if (currentContactForAction()) {
+          <div class="warning-content">
+            <div class="warning-icon">
+              <i class="fas fa-trash-alt"></i>
+            </div>
+            <div class="warning-text">
+              <h4>¿Estás seguro que deseas eliminar esta conversación?</h4>
+              <div class="conversation-details">
+                <div class="contact-info">
+                  <div class="contact-avatar">
+                    <span class="avatar-text">
+                      {{ getContactInitials(currentContactForAction()!) }}
+                    </span>
+                  </div>
+                  <div class="contact-details">
+                    <h5 class="contact-name">
+                      {{ currentContactForAction()!.contact_name || 'Sin nombre' }}
+                    </h5>
+                    <p class="contact-phone">{{ currentContactForAction()!.contact_phone }}</p>
+                  </div>
+                </div>
+              </div>
+              <div class="warning-message">
+                <p><strong>⚠️ Esta acción no se puede deshacer.</strong></p>
+                <p>Se eliminarán todos los mensajes y el historial de esta conversación.</p>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+      
+      <div class="modal-footer">
+        <button 
+          type="button" 
+          class="btn btn-secondary"
+          (click)="closeDeleteConfirmModal()">
+          <i class="fas fa-times"></i>
+          Cancelar
+        </button>
+        
+        <button 
+          type="button" 
+          class="btn btn-danger"
+          (click)="deleteConversation()">
+          <i class="fas fa-trash-alt"></i>
+          Eliminar Conversación
+        </button>
+      </div>
+    </div>
+  </div>
+}

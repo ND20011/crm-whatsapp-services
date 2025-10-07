@@ -1,0 +1,229 @@
+// Los colores están disponibles globalmente desde styles.scss
+
+.file-upload-container {
+  width: 100%;
+}
+
+.file-input-hidden {
+  display: none;
+}
+
+.file-drop-area {
+  border: 2px dashed var(--color-border-medium);
+  border-radius: 12px;
+  padding: 40px 20px;
+  text-align: center;
+  background: var(--color-bg-primary);
+  transition: all 0.3s ease;
+  cursor: pointer;
+  position: relative;
+  min-height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover:not(.disabled):not(.processing) {
+    border-color: var(--color-primary);
+    background: var(--color-primary-lighter);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px var(--color-shadow-light);
+  }
+
+  &.drag-over {
+    border-color: var(--color-success);
+    background: var(--color-success-lighter);
+    box-shadow: 0 0 20px rgba(40, 167, 69, 0.2);
+
+    .drop-icon i {
+      color: var(--color-success);
+      transform: scale(1.1);
+    }
+
+    .drop-title {
+      color: var(--color-success-dark);
+    }
+  }
+
+  &.disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    background: var(--color-bg-tertiary);
+
+    &:hover {
+      transform: none;
+      box-shadow: none;
+      border-color: var(--color-border-medium);
+      background: var(--color-bg-tertiary);
+    }
+  }
+
+  &.processing {
+    cursor: wait;
+    
+    &:hover {
+      transform: none;
+      box-shadow: none;
+    }
+  }
+}
+
+.drop-content {
+  width: 100%;
+  max-width: 400px;
+}
+
+.drop-icon {
+  margin-bottom: 20px;
+
+  i {
+    font-size: 3rem;
+    color: var(--color-secondary);
+    transition: all 0.3s ease;
+  }
+}
+
+.drop-title {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0 0 12px 0;
+  transition: color 0.3s ease;
+}
+
+.drop-description {
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+  margin: 0 0 20px 0;
+  line-height: 1.4;
+}
+
+.supported-formats {
+  margin: 20px 0;
+  padding: 16px;
+  background: var(--color-bg-secondary);
+  border-radius: 8px;
+  font-size: 0.85rem;
+}
+
+.format-group {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.format-label {
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-right: 8px;
+  min-width: 80px;
+}
+
+.format-list {
+  color: var(--color-text-secondary);
+  font-size: 0.8rem;
+}
+
+.btn-upload {
+  margin-top: 20px;
+  padding: 12px 24px;
+  font-weight: 500;
+  border-radius: 8px;
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-text-white);
+  transition: all 0.3s ease;
+
+  &:hover:not(:disabled) {
+    background: var(--color-primary-dark);
+    border-color: var(--color-primary-dark);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px var(--color-shadow-light);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+
+  i {
+    margin-right: 8px;
+  }
+}
+
+.processing-indicator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+
+.processing-text {
+  font-size: 1rem;
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+// Responsive
+@media (max-width: 768px) {
+  .file-drop-area {
+    padding: 30px 15px;
+    min-height: 160px;
+  }
+
+  .drop-icon i {
+    font-size: 2.5rem;
+  }
+
+  .drop-title {
+    font-size: 1.1rem;
+  }
+
+  .drop-description {
+    font-size: 0.85rem;
+  }
+
+  .supported-formats {
+    padding: 12px;
+    margin: 16px 0;
+  }
+
+  .format-group {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .format-label {
+    min-width: auto;
+    margin-right: 0;
+  }
+
+  .btn-upload {
+    padding: 10px 20px;
+    font-size: 0.9rem;
+  }
+}
+
+// Animaciones
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.drag-over .drop-icon i {
+  animation: pulse 1s infinite;
+}

@@ -1,0 +1,177 @@
+@if (isVisible()) {
+  <div class="modal-overlay" (click)="close()">
+    <div class="modal-content contact-form-modal" (click)="$event.stopPropagation()">
+      <!-- Modal Header -->
+      <div class="modal-header">
+        <h2 class="modal-title">
+          <i class="fas fa-user-plus"></i>
+          {{ getModalTitle() }}
+        </h2>
+        <button class="close-btn" (click)="close()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="modal-body">
+        <!-- Success/Error Messages -->
+        @if (successMessage()) {
+          <div class="alert alert-success">
+            <i class="fas fa-check-circle"></i>
+            {{ successMessage() }}
+          </div>
+        }
+
+        @if (errorMessage()) {
+          <div class="alert alert-error">
+            <i class="fas fa-exclamation-triangle"></i>
+            {{ errorMessage() }}
+          </div>
+        }
+
+        <!-- Contact Form -->
+        <form [formGroup]="contactForm" class="contact-form">
+          <!-- Phone Number (Required) -->
+          <div class="form-group">
+            <label for="phone_number" class="form-label required">
+              <i class="fas fa-phone"></i>
+              Número de Teléfono
+            </label>
+            <input
+              id="phone_number"
+              type="tel"
+              formControlName="phone_number"
+              class="form-input"
+              [class.error]="contactForm.get('phone_number')?.invalid && contactForm.get('phone_number')?.touched"
+              placeholder="+5491150239962"
+            />
+            @if (contactForm.get('phone_number')?.invalid && contactForm.get('phone_number')?.touched) {
+              <div class="form-error">
+                <i class="fas fa-exclamation-circle"></i>
+                {{ getPhoneError() }}
+              </div>
+            }
+            <div class="form-help">
+              Formato internacional recomendado: +[código país][número]
+            </div>
+          </div>
+
+          <!-- Name -->
+          <div class="form-group">
+            <label for="name" class="form-label">
+              <i class="fas fa-user"></i>
+              Nombre (WhatsApp)
+            </label>
+            <input
+              id="name"
+              type="text"
+              formControlName="name"
+              class="form-input"
+              placeholder="Nombre como aparece en WhatsApp"
+            />
+            <div class="form-help">
+              Nombre del contacto tal como aparece en WhatsApp
+            </div>
+          </div>
+
+          <!-- Custom Name -->
+          <div class="form-group">
+            <label for="custom_name" class="form-label">
+              <i class="fas fa-id-card"></i>
+              Nombre Personalizado
+            </label>
+            <input
+              id="custom_name"
+              type="text"
+              formControlName="custom_name"
+              class="form-input"
+              placeholder="Nombre personalizado para el CRM"
+            />
+            <div class="form-help">
+              Nombre personalizado que solo verás en el CRM
+            </div>
+          </div>
+
+          <!-- Comments -->
+          <div class="form-group">
+            <label for="comments" class="form-label">
+              <i class="fas fa-comment-alt"></i>
+              Comentarios
+            </label>
+            <textarea
+              id="comments"
+              formControlName="comments"
+              class="form-textarea"
+              rows="3"
+              placeholder="Notas adicionales sobre este contacto..."
+            ></textarea>
+            <div class="form-help">
+              Información adicional o notas sobre el contacto
+            </div>
+          </div>
+
+          <!-- Status -->
+          <div class="form-group">
+            <div class="form-checkbox-group">
+              <label class="checkbox-label">
+                <input
+                  type="checkbox"
+                  formControlName="is_blocked"
+                  class="form-checkbox"
+                />
+                <span class="checkbox-custom"></span>
+                <span class="checkbox-text">
+                  <i class="fas fa-ban"></i>
+                  Contacto Bloqueado
+                </span>
+              </label>
+              <div class="form-help">
+                Los contactos bloqueados no recibirán mensajes automáticos
+              </div>
+            </div>
+          </div>
+
+          <!-- Tags Section -->
+          <div class="form-group">
+            <label class="form-label">
+              <i class="fas fa-tags"></i>
+              Etiquetas
+            </label>
+            <div class="tags-selector-wrapper">
+              <app-tag-selector
+                [selectedTags]="selectedTags()"
+                (tagsChanged)="onTagsChanged($event)"
+                placeholder="Seleccionar etiquetas para este contacto..."
+              ></app-tag-selector>
+            </div>
+            <div class="form-help">
+              Asigna etiquetas para organizar y categorizar el contacto
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="close()">
+          <i class="fas fa-times"></i>
+          Cancelar
+        </button>
+        <button
+          type="button"
+          class="btn btn-primary"
+          (click)="saveContact()"
+          [disabled]="contactForm.invalid || loadingService.isLoadingByContext('save-contact')"
+        >
+          @if (loadingService.isLoadingByContext('save-contact')) {
+            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+            {{ getSaveButtonText() }}
+          } @else {
+            <i class="fas fa-save"></i>
+            {{ getSaveButtonText() }}
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+}

@@ -1,0 +1,375 @@
+<div class="scheduled-message-detail-container">
+  @if (message()) {
+    <!-- ============================================================================ -->
+    <!-- HEADER -->
+    <!-- ============================================================================ -->
+    <header class="detail-header">
+      <div class="header-content">
+        <div class="header-title">
+          <button class="back-btn" (click)="goBack()">
+            <i class="fas fa-arrow-left"></i>
+          </button>
+          <div class="title-text">
+            <h1>{{ message()!.name }}</h1>
+            <div class="title-badges">
+              <span class="badge badge-status" [style.background-color]="getStatusColor(message()!.status)">
+                {{ getStatusText(message()!.status) }}
+              </span>
+              <span class="badge badge-type">
+                <i [class]="SEND_TYPE_ICONS[message()!.send_type]"></i>
+                {{ getSendTypeText(message()!.send_type) }}
+              </span>
+              @if (message()!.is_recurring) {
+                <span class="badge badge-recurring">
+                  <i class="fas fa-sync-alt"></i>
+                  Recurrente
+                </span>
+              }
+            </div>
+          </div>
+        </div>
+        <div class="header-actions">
+          @if (canEdit()) {
+            <button class="btn btn-outline-primary" (click)="editMessage()">
+              <i class="fas fa-edit"></i>
+              Editar
+            </button>
+          }
+          @if (canPause()) {
+            <button class="btn btn-warning" (click)="pauseMessage()">
+              <i class="fas fa-pause"></i>
+              Pausar
+            </button>
+          }
+          @if (canResume()) {
+            <button class="btn btn-success" (click)="resumeMessage()">
+              <i class="fas fa-play"></i>
+              Reanudar
+            </button>
+          }
+        </div>
+      </div>
+    </header>
+
+    <!-- ============================================================================ -->
+    <!-- MAIN CONTENT -->
+    <!-- ============================================================================ -->
+    <main class="detail-main">
+      
+      <!-- ============================================================================ -->
+      <!-- MESSAGE OVERVIEW -->
+      <!-- ============================================================================ -->
+      <div class="overview-section">
+        <div class="overview-grid">
+          
+          <!-- Basic Info Card -->
+          <div class="info-card">
+            <div class="card-header">
+              <h3>
+                <i class="fas fa-info-circle"></i>
+                Información General
+              </h3>
+            </div>
+            <div class="card-content">
+              @if (message()!.description) {
+                <div class="info-item">
+                  <label>Descripción:</label>
+                  <span>{{ message()!.description }}</span>
+                </div>
+              }
+              <div class="info-item">
+                <label>Destinatario:</label>
+                <span>{{ getRecipientName() }}</span>
+              </div>
+              <div class="info-item">
+                <label>Tipo de mensaje:</label>
+                <span>
+                  <i [class]="MESSAGE_TYPE_ICONS[message()!.message_type]"></i>
+                  {{ getMessageTypeText(message()!.message_type) }}
+                  @if (message()!.template_name) {
+                    - {{ message()!.template_name }}
+                  }
+                </span>
+              </div>
+              <div class="info-item">
+                <label>Creado:</label>
+                <span>{{ formatDate(message()!.created_at) }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Scheduling Info Card -->
+          <div class="info-card">
+            <div class="card-header">
+              <h3>
+                <i class="fas fa-calendar-alt"></i>
+                Programación
+              </h3>
+            </div>
+            <div class="card-content">
+              <div class="info-item">
+                <label>Programado para:</label>
+                <span>{{ formatDate(message()!.scheduled_at) }}</span>
+              </div>
+              <div class="info-item">
+                <label>Zona horaria:</label>
+                <span>{{ message()!.timezone }}</span>
+              </div>
+              <div class="info-item">
+                <label>Próxima ejecución:</label>
+                <span class="next-execution">{{ getNextExecutionText() }}</span>
+              </div>
+              @if (message()!.is_recurring) {
+                <div class="info-item">
+                  <label>Recurrencia:</label>
+                  <span>{{ getRecurrenceText(message()!.recurrence_type, message()!.recurrence_interval) }}</span>
+                </div>
+                @if (message()!.recurrence_end_date) {
+                  <div class="info-item">
+                    <label>Termina:</label>
+                    <span>{{ formatDate(message()!.recurrence_end_date!) }}</span>
+                  </div>
+                }
+                @if (message()!.max_executions) {
+                  <div class="info-item">
+                    <label>Máximo ejecuciones:</label>
+                    <span>{{ message()!.max_executions }}</span>
+                  </div>
+                }
+              }
+            </div>
+          </div>
+
+          <!-- Statistics Card -->
+          <div class="info-card statistics-card">
+            <div class="card-header">
+              <h3>
+                <i class="fas fa-chart-bar"></i>
+                Estadísticas
+              </h3>
+            </div>
+            <div class="card-content">
+              <div class="stats-grid">
+                <div class="stat-item">
+                  <div class="stat-value">{{ message()!.execution_count }}</div>
+                  <div class="stat-label">Ejecuciones</div>
+                </div>
+                <div class="stat-item success">
+                  <div class="stat-value">{{ message()!.success_count }}</div>
+                  <div class="stat-label">Exitosas</div>
+                </div>
+                <div class="stat-item error">
+                  <div class="stat-value">{{ message()!.error_count }}</div>
+                  <div class="stat-label">Errores</div>
+                </div>
+                <div class="stat-item">
+                  <div class="stat-value">{{ getSuccessRate() }}%</div>
+                  <div class="stat-label">Tasa de Éxito</div>
+                </div>
+              </div>
+              @if (message()!.max_executions) {
+                <div class="progress-section">
+                  <div class="progress-bar">
+                    <div 
+                      class="progress-fill" 
+                      [style.width.%]="calculateProgress(message()!.execution_count, message()!.max_executions)">
+                    </div>
+                  </div>
+                  <div class="progress-text">
+                    {{ message()!.execution_count }}/{{ message()!.max_executions }} ejecuciones completadas
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+
+        <!-- Message Content Preview -->
+        <div class="content-preview">
+          <div class="preview-header">
+            <h3>
+              <i class="fas fa-comment"></i>
+              Vista Previa del Mensaje
+            </h3>
+          </div>
+          <div class="preview-content">
+            @if (message()!.message_type === 'template') {
+              <div class="template-info">
+                <div class="template-badge">
+                  <i class="fas fa-file-alt"></i>
+                  Template: {{ message()!.template_name }}
+                </div>
+                @if (message()!.template_variables) {
+                  <div class="template-variables">
+                    <label>Variables configuradas:</label>
+                    <div class="variables-list">
+                      @for (variable of message()!.template_variables | keyvalue; track variable.key) {
+                        <span class="variable-item">
+                          {{ variable.key }}: {{ variable.value }}
+                        </span>
+                      }
+                    </div>
+                  </div>
+                }
+              </div>
+            } @else {
+              <div class="message-text">{{ message()!.message_content }}</div>
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================================================ -->
+      <!-- EXECUTION HISTORY -->
+      <!-- ============================================================================ -->
+      <div class="history-section">
+        <div class="section-header">
+          <h2>
+            <i class="fas fa-history"></i>
+            Historial de Ejecuciones
+          </h2>
+        </div>
+
+        @if (executions().length === 0) {
+          <div class="empty-executions">
+            <div class="empty-icon">
+              <i class="fas fa-clock"></i>
+            </div>
+            <h4>Sin Ejecuciones</h4>
+            <p>Este mensaje aún no se ha ejecutado</p>
+          </div>
+        } @else {
+          <div class="executions-list">
+            @for (execution of executions(); track trackByExecutionId($index, execution)) {
+              <div class="execution-item" (click)="viewExecutionDetails(execution)">
+                <div class="execution-info">
+                  <div class="execution-header">
+                    <div class="execution-date">
+                      {{ formatDate(execution.execution_date) }}
+                    </div>
+                    <div class="execution-status" [style.color]="getStatusColor(execution.status)">
+                      <i class="fas" 
+                         [class.fa-check-circle]="execution.status === 'success'"
+                         [class.fa-exclamation-triangle]="execution.status === 'error'"
+                         [class.fa-minus-circle]="execution.status === 'skipped'">
+                      </i>
+                      {{ execution.status.toUpperCase() }}
+                    </div>
+                  </div>
+                  <div class="execution-stats">
+                    <span class="stat">
+                      <i class="fas fa-paper-plane"></i>
+                      {{ execution.messages_sent }} enviados
+                    </span>
+                    @if (execution.messages_failed > 0) {
+                      <span class="stat error">
+                        <i class="fas fa-exclamation-circle"></i>
+                        {{ execution.messages_failed }} fallidos
+                      </span>
+                    }
+                    <span class="stat">
+                      <i class="fas fa-users"></i>
+                      {{ execution.recipients_processed }} destinatarios
+                    </span>
+                    @if (execution.execution_time_ms) {
+                      <span class="stat">
+                        <i class="fas fa-stopwatch"></i>
+                        {{ formatExecutionTime(execution.execution_time_ms) }}
+                      </span>
+                    }
+                  </div>
+                  @if (execution.error_message) {
+                    <div class="execution-error">
+                      <i class="fas fa-exclamation-triangle"></i>
+                      {{ execution.error_message }}
+                    </div>
+                  }
+                </div>
+                <div class="execution-action">
+                  <i class="fas fa-chevron-right"></i>
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- ============================================================================ -->
+      <!-- EXECUTION DETAILS MODAL -->
+      <!-- ============================================================================ -->
+      @if (selectedExecution()) {
+        <div class="modal-overlay" (click)="closeExecutionDetails()">
+          <div class="modal-content execution-modal" (click)="$event.stopPropagation()">
+            <div class="modal-header">
+              <h2>
+                <i class="fas fa-list"></i>
+                Detalles de Ejecución
+              </h2>
+              <button class="close-btn" (click)="closeExecutionDetails()">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+            
+            <div class="modal-body">
+              <div class="execution-summary">
+                <h4>{{ formatDate(selectedExecution()!.execution_date) }}</h4>
+                <div class="summary-stats">
+                  <div class="summary-stat">
+                    <i class="fas fa-paper-plane"></i>
+                    <span>{{ selectedExecution()!.messages_sent }} Enviados</span>
+                  </div>
+                  <div class="summary-stat">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <span>{{ selectedExecution()!.messages_failed }} Fallidos</span>
+                  </div>
+                  <div class="summary-stat">
+                    <i class="fas fa-users"></i>
+                    <span>{{ selectedExecution()!.recipients_processed }} Procesados</span>
+                  </div>
+                </div>
+              </div>
+
+              @if (executionRecipients().length > 0) {
+                <div class="recipients-section">
+                  <h4>Destinatarios</h4>
+                  <div class="recipients-list">
+                    @for (recipient of executionRecipients(); track trackByRecipientId($index, recipient)) {
+                      <div class="recipient-item">
+                        <div class="recipient-info">
+                          <div class="recipient-name">
+                            {{ recipient.contact_name || recipient.phone_number }}
+                          </div>
+                          <div class="recipient-phone">{{ recipient.phone_number }}</div>
+                        </div>
+                        <div class="recipient-status" [style.color]="getStatusColor(recipient.status)">
+                          <i class="fas" 
+                             [class.fa-check-circle]="recipient.status === 'sent'"
+                             [class.fa-exclamation-triangle]="recipient.status === 'failed'"
+                             [class.fa-clock]="recipient.status === 'pending'"
+                             [class.fa-minus-circle]="recipient.status === 'skipped'">
+                          </i>
+                          {{ recipient.status.toUpperCase() }}
+                          @if (recipient.sent_at) {
+                            <small>{{ formatDate(recipient.sent_at) }}</small>
+                          }
+                        </div>
+                      </div>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+      }
+    </main>
+  } @else {
+    <!-- Loading State -->
+    <div class="loading-container">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Cargando mensaje programado...</span>
+      </div>
+      <p>Cargando detalles del mensaje...</p>
+    </div>
+  }
+</div>

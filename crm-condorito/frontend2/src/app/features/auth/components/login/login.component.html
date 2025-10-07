@@ -1,0 +1,98 @@
+<div class="login-container">
+  <div class="login-card">
+    <div class="login-header">
+      <h1 class="login-title">{{ appConfig.app.name }}</h1>
+      <p class="login-subtitle">{{ appConfig.app.description }}</p>
+    </div>
+
+    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form">
+      <!-- Client Code Field -->
+      <div class="form-group">
+        <label for="client_code" class="form-label">Código de Cliente</label>
+        <input
+          type="text"
+          id="client_code"
+          formControlName="client_code"
+          class="form-control"
+          [class.is-invalid]="isFieldInvalid('client_code')"
+          placeholder="Ingresa tu código de cliente"
+          autocomplete="username"
+        />
+        @if (isFieldInvalid('client_code')) {
+          <div class="invalid-feedback">
+            @if (loginForm.get('client_code')?.errors?.['required']) {
+              El código de cliente es requerido
+            }
+            @if (loginForm.get('client_code')?.errors?.['minlength']) {
+              El código debe tener al menos 3 caracteres
+            }
+          </div>
+        }
+      </div>
+
+      <!-- Password Field -->
+      <div class="form-group">
+        <label for="password" class="form-label">Contraseña</label>
+        <div class="password-input-group">
+          <input
+            [type]="showPassword() ? 'text' : 'password'"
+            id="password"
+            formControlName="password"
+            class="form-control"
+            [class.is-invalid]="isFieldInvalid('password')"
+            placeholder="Ingresa tu contraseña"
+            autocomplete="current-password"
+          />
+          <button
+            type="button"
+            class="password-toggle"
+            (click)="togglePasswordVisibility()"
+            [attr.aria-label]="showPassword() ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+          >
+            <i [class]="showPassword() ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+          </button>
+        </div>
+        @if (isFieldInvalid('password')) {
+          <div class="invalid-feedback">
+            @if (loginForm.get('password')?.errors?.['required']) {
+              La contraseña es requerida
+            }
+            @if (loginForm.get('password')?.errors?.['minlength']) {
+              La contraseña debe tener al menos 6 caracteres
+            }
+          </div>
+        }
+      </div>
+
+      <!-- Error Message -->
+      @if (errorMessage()) {
+        <div class="alert alert-danger" role="alert">
+          <i class="fas fa-exclamation-triangle"></i>
+          {{ errorMessage() }}
+        </div>
+      }
+
+      <!-- Submit Button -->
+      <button
+        type="submit"
+        class="btn btn-primary btn-login"
+        [disabled]="loginForm.invalid || isLoading()"
+      >
+        @if (isLoading()) {
+          <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+          Iniciando sesión...
+        } @else {
+          <i class="fas fa-sign-in-alt me-2"></i>
+          Iniciar Sesión
+        }
+      </button>
+    </form>
+
+    <div class="login-footer">
+      <p class="text-muted">
+        <i class="fas fa-shield-alt"></i>
+        Conexión segura
+      </p>
+    </div>
+  </div>
+</div>

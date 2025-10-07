@@ -1,0 +1,324 @@
+/* =============================================================================
+   SISTEMA DE COLORES - CRM CONDORITO
+   ============================================================================= */
+
+/* Variables CSS globales */
+:root {
+  // Colores de marca
+  --color-primary: #17a2b8;
+  --color-primary-dark: #117a8b;
+  --color-primary-light: #5dbecc;
+  --color-primary-lighter: #d1ecf1;
+
+  --color-secondary: #6c757d;
+  --color-secondary-dark: #495057;
+  --color-secondary-light: #adb5bd;
+  --color-secondary-lighter: #f8f9fa;
+
+  // -----------------------------------------------------------------------------
+  // COLORES WHATSAPP
+  // -----------------------------------------------------------------------------
+  --color-whatsapp: #25d366;
+  --color-whatsapp-dark: #128c7e;
+  --color-whatsapp-darker: #075e54;
+  --color-whatsapp-light: #dcf8c6;
+  --color-whatsapp-lighter: #e8f5e8;
+
+  // -----------------------------------------------------------------------------
+  // COLORES DE ESTADO
+  // -----------------------------------------------------------------------------
+  --color-success: #28a745;
+  --color-success-dark: #1e7e34;
+  --color-success-light: #d4edda;
+  --color-success-lighter: #f0f9f0;
+
+  --color-warning: #ffc107;
+  --color-warning-dark: #d39e00;
+  --color-warning-light: #fff3cd;
+  --color-warning-lighter: #fffbf0;
+
+  --color-danger: #dc3545;
+  --color-danger-dark: #c82333;
+  --color-danger-light: #f8d7da;
+  --color-danger-lighter: #fdf2f2;
+
+  --color-info: #17a2b8;
+  --color-info-dark: #117a8b;
+  --color-info-light: #d1ecf1;
+  --color-info-lighter: #f0f9fa;
+
+  // -----------------------------------------------------------------------------
+  // COLORES DE TEXTO
+  // -----------------------------------------------------------------------------
+  --color-text-primary: #333333;
+  --color-text-secondary: #666666;
+  --color-text-muted: #999999;
+  --color-text-light: #cccccc;
+  --color-text-white: #ffffff;
+
+  // -----------------------------------------------------------------------------
+  // COLORES DE FONDO
+  // -----------------------------------------------------------------------------
+  --color-bg-primary: #ffffff;
+  --color-bg-secondary: #f8f9fa;
+  --color-bg-tertiary: #e9ecef;
+  --color-bg-dark: #343a40;
+  --color-bg-darker: #212529;
+
+  // -----------------------------------------------------------------------------
+  // COLORES DE BORDE
+  // -----------------------------------------------------------------------------
+  --color-border-light: #e9ecef;
+  --color-border-medium: #dee2e6;
+  --color-border-dark: #adb5bd;
+
+  // -----------------------------------------------------------------------------
+  // COLORES DE SOMBRA
+  // -----------------------------------------------------------------------------
+  --color-shadow-light: rgba(0, 0, 0, 0.1);
+  --color-shadow-medium: rgba(0, 0, 0, 0.15);
+  --color-shadow-dark: rgba(0, 0, 0, 0.25);
+  --color-shadow-darker: rgba(0, 0, 0, 0.5);
+
+  // -----------------------------------------------------------------------------
+  // COLORES DE NAVEGACIÓN
+  // -----------------------------------------------------------------------------
+  --color-surface: #ffffff;
+  --color-background: #f8f9fa;
+  --color-border: #dee2e6;
+  
+  // -----------------------------------------------------------------------------
+  // COLORES ESPECÍFICOS DE COMPONENTES
+  // -----------------------------------------------------------------------------
+  
+  // Dashboard
+  --color-dashboard-conversations: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --color-dashboard-messages: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  --color-dashboard-bot: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  --color-dashboard-bot-active: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+  --color-dashboard-responses: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+
+  // Errores por severidad
+  --color-error-low: var(--color-info);
+  --color-error-medium: var(--color-warning);
+  --color-error-high: var(--color-danger);
+  --color-error-critical: #721c24;
+
+  // Loading states
+  --color-loading-primary: var(--color-primary);
+  --color-loading-secondary: var(--color-secondary-light);
+
+  // Modal y overlays
+  --color-overlay: rgba(0, 0, 0, 0.6);
+  --color-modal-bg: var(--color-bg-primary);
+
+  // -----------------------------------------------------------------------------
+  // COLORES ADICIONALES
+  // -----------------------------------------------------------------------------
+  --color-phone: #1565c0;
+  --color-phone-light: #e3f2fd;
+  
+  --color-activity: #7b1fa2;
+  --color-activity-light: #f3e5f5;
+
+  --color-online: #44c767;
+  --color-offline: #999999;
+  --color-away: #ffc107;
+  --color-busy: #dc3545;
+
+  // -----------------------------------------------------------------------------
+  // COLORES ESPECÍFICOS PARA CONTACTOS
+  // -----------------------------------------------------------------------------
+  --color-contact-card-bg: #ffffff;
+  --color-contact-card-border: #e8eaed;
+  --color-contact-card-shadow: rgba(60, 64, 67, 0.15);
+  --color-contact-card-hover: #f8f9fa;
+  
+  --color-contact-avatar-bg: #f1f3f4;
+  --color-contact-avatar-text: #5f6368;
+  --color-contact-name: #202124;
+  --color-contact-phone: #5f6368;
+  --color-contact-meta: #9aa0a6;
+  
+  --color-contact-tag-bg: #e8f0fe;
+  --color-contact-tag-text: #1a73e8;
+  --color-contact-tag-border: #dadce0;
+  
+  --color-contact-status-active: #34a853;
+  --color-contact-status-blocked: #ea4335;
+  --color-contact-status-inactive: #9aa0a6;
+  
+  --color-contact-filter-bg: #f8f9fa;
+  --color-contact-filter-border: #dadce0;
+  --color-contact-filter-active: #1a73e8;
+  
+  --color-contact-header-bg: #ffffff;
+  --color-contact-header-border: #e8eaed;
+  --color-contact-header-shadow: rgba(0, 0, 0, 0.05);
+  
+  --color-contact-search-bg: #f1f3f4;
+  --color-contact-search-focus: #ffffff;
+  --color-contact-search-border: #dadce0;
+  --color-contact-search-focus-border: #1a73e8;
+}
+
+// -----------------------------------------------------------------------------
+// VARIABLES SCSS (para compatibilidad)
+// -----------------------------------------------------------------------------
+
+// Colores primarios
+$color-primary: var(--color-primary);
+$color-primary-dark: var(--color-primary-dark);
+$color-primary-light: var(--color-primary-light);
+$color-primary-lighter: var(--color-primary-lighter);
+
+$color-secondary: var(--color-secondary);
+$color-secondary-dark: var(--color-secondary-dark);
+$color-secondary-light: var(--color-secondary-light);
+$color-secondary-lighter: var(--color-secondary-lighter);
+
+// WhatsApp
+$color-whatsapp: var(--color-whatsapp);
+$color-whatsapp-dark: var(--color-whatsapp-dark);
+$color-whatsapp-darker: var(--color-whatsapp-darker);
+$color-whatsapp-light: var(--color-whatsapp-light);
+$color-whatsapp-lighter: var(--color-whatsapp-lighter);
+
+// Estados
+$color-success: var(--color-success);
+$color-success-dark: var(--color-success-dark);
+$color-success-light: var(--color-success-light);
+$color-success-lighter: var(--color-success-lighter);
+
+$color-warning: var(--color-warning);
+$color-warning-dark: var(--color-warning-dark);
+$color-warning-light: var(--color-warning-light);
+$color-warning-lighter: var(--color-warning-lighter);
+
+$color-danger: var(--color-danger);
+$color-danger-dark: var(--color-danger-dark);
+$color-danger-light: var(--color-danger-light);
+$color-danger-lighter: var(--color-danger-lighter);
+
+$color-info: var(--color-info);
+$color-info-dark: var(--color-info-dark);
+$color-info-light: var(--color-info-light);
+$color-info-lighter: var(--color-info-lighter);
+
+// Texto
+$color-text-primary: var(--color-text-primary);
+$color-text-secondary: var(--color-text-secondary);
+$color-text-muted: var(--color-text-muted);
+$color-text-light: var(--color-text-light);
+$color-text-white: var(--color-text-white);
+
+// Fondos
+$color-bg-primary: var(--color-bg-primary);
+$color-bg-secondary: var(--color-bg-secondary);
+$color-bg-tertiary: var(--color-bg-tertiary);
+$color-bg-dark: var(--color-bg-dark);
+$color-bg-darker: var(--color-bg-darker);
+
+// Bordes
+$color-border-light: var(--color-border-light);
+$color-border-medium: var(--color-border-medium);
+$color-border-dark: var(--color-border-dark);
+
+// Sombras
+$color-shadow-light: var(--color-shadow-light);
+$color-shadow-medium: var(--color-shadow-medium);
+$color-shadow-dark: var(--color-shadow-dark);
+$color-shadow-darker: var(--color-shadow-darker);
+
+// -----------------------------------------------------------------------------
+// MIXINS PARA COLORES
+// -----------------------------------------------------------------------------
+
+// Mixin para aplicar colores de estado
+@mixin status-color($status) {
+  @if $status == 'success' {
+    color: var(--color-success);
+    background-color: var(--color-success-light);
+    border-color: var(--color-success);
+  } @else if $status == 'warning' {
+    color: var(--color-warning-dark);
+    background-color: var(--color-warning-light);
+    border-color: var(--color-warning);
+  } @else if $status == 'danger' {
+    color: var(--color-danger);
+    background-color: var(--color-danger-light);
+    border-color: var(--color-danger);
+  } @else if $status == 'info' {
+    color: var(--color-info-dark);
+    background-color: var(--color-info-light);
+    border-color: var(--color-info);
+  }
+}
+
+// Mixin para botones con colores
+@mixin button-variant($bg-color, $text-color: white, $hover-bg: null) {
+  background-color: $bg-color;
+  color: $text-color;
+  border-color: $bg-color;
+
+  &:hover:not(:disabled) {
+    background-color: $hover-bg or darken($bg-color, 10%);
+    border-color: $hover-bg or darken($bg-color, 10%);
+  }
+}
+
+// Mixin para sombras
+@mixin box-shadow($level: 'light') {
+  @if $level == 'light' {
+    box-shadow: 0 2px 4px var(--color-shadow-light);
+  } @else if $level == 'medium' {
+    box-shadow: 0 4px 12px var(--color-shadow-medium);
+  } @else if $level == 'dark' {
+    box-shadow: 0 8px 32px var(--color-shadow-dark);
+  } @else if $level == 'darker' {
+    box-shadow: 0 20px 60px var(--color-shadow-darker);
+  }
+}
+
+// Mixin para gradientes de WhatsApp
+@mixin whatsapp-gradient($direction: 135deg) {
+  background: linear-gradient($direction, var(--color-whatsapp) 0%, var(--color-whatsapp-dark) 100%);
+}
+
+// Mixin para gradientes de estado
+@mixin success-gradient($direction: 135deg) {
+  background: linear-gradient($direction, var(--color-success) 0%, var(--color-success-dark) 100%);
+}
+
+@mixin danger-gradient($direction: 135deg) {
+  background: linear-gradient($direction, var(--color-danger) 0%, var(--color-danger-dark) 100%);
+}
+
+@mixin warning-gradient($direction: 135deg) {
+  background: linear-gradient($direction, var(--color-warning) 0%, var(--color-warning-dark) 100%);
+}
+
+@mixin info-gradient($direction: 135deg) {
+  background: linear-gradient($direction, var(--color-info) 0%, var(--color-info-dark) 100%);
+}
+
+// -----------------------------------------------------------------------------
+// FUNCIONES UTILITARIAS
+// -----------------------------------------------------------------------------
+
+// Función para obtener color con opacidad
+@function color-with-opacity($color, $opacity) {
+  @return rgba($color, $opacity);
+}
+
+// Función para obtener variante de color
+@function get-color-variant($base-color, $variant: 'base') {
+  @if $variant == 'dark' {
+    @return darken($base-color, 15%);
+  } @else if $variant == 'light' {
+    @return lighten($base-color, 40%);
+  } @else if $variant == 'lighter' {
+    @return lighten($base-color, 50%);
+  }
+  @return $base-color;
+}
