@@ -1,0 +1,87 @@
+<div class="file-upload-container">
+  <!-- Input oculto para archivos -->
+  <input
+    #fileInput
+    type="file"
+    class="file-input-hidden"
+    [accept]="acceptedTypes"
+    [multiple]="multiple()"
+    [disabled]="disabled()"
+    (change)="onFileInputChange($event)"
+  />
+
+  <!-- Área de drop -->
+  <div
+    class="file-drop-area"
+    [class.drag-over]="isDragOver()"
+    [class.disabled]="disabled()"
+    [class.processing]="isProcessing()"
+    (click)="openFileSelector()"
+    (dragover)="onDragOver($event)"
+    (dragleave)="onDragLeave($event)"
+    (drop)="onDrop($event)"
+  >
+    @if (isProcessing()) {
+      <div class="processing-indicator">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Procesando...</span>
+        </div>
+        <p class="processing-text">Procesando archivos...</p>
+      </div>
+    } @else {
+      <div class="drop-content">
+        <div class="drop-icon">
+          @if (acceptImages() && acceptDocuments()) {
+            <i class="fas fa-cloud-upload-alt"></i>
+          } @else if (acceptImages()) {
+            <i class="fas fa-images"></i>
+          } @else {
+            <i class="fas fa-file-upload"></i>
+          }
+        </div>
+        
+        <h4 class="drop-title">
+          @if (isDragOver()) {
+            Suelta los archivos aquí
+          } @else {
+            Seleccionar archivos
+          }
+        </h4>
+        
+        <p class="drop-description">
+          {{ getHelpText() }}
+        </p>
+
+        @if (acceptImages() && acceptDocuments()) {
+          <div class="supported-formats">
+            <div class="format-group">
+              <span class="format-label">Imágenes:</span>
+              <span class="format-list">JPG, PNG, GIF, WebP</span>
+            </div>
+            <div class="format-group">
+              <span class="format-label">Documentos:</span>
+              <span class="format-list">PDF, DOC, XLS, PPT, TXT, ZIP</span>
+            </div>
+          </div>
+        } @else if (acceptImages()) {
+          <div class="supported-formats">
+            <span class="format-list">JPG, PNG, GIF, WebP</span>
+          </div>
+        } @else {
+          <div class="supported-formats">
+            <span class="format-list">PDF, DOC, XLS, PPT, TXT, ZIP</span>
+          </div>
+        }
+
+        <button 
+          type="button" 
+          class="btn btn-primary btn-upload"
+          [disabled]="disabled()"
+        >
+          <i class="fas fa-folder-open"></i>
+          Examinar archivos
+        </button>
+      </div>
+    }
+  </div>
+</div>

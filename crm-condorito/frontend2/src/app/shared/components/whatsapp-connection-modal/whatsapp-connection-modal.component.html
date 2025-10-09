@@ -1,0 +1,143 @@
+@if (isVisible()) {
+  <div class="modal-backdrop" (click)="onBackdropClick($event)">
+    <div class="modal-container">
+      <!-- Modal Header -->
+      <div class="modal-header">
+        <div class="modal-title">
+          <i class="fab fa-whatsapp"></i>
+          Conectar WhatsApp
+        </div>
+        @if (!isConnecting()) {
+          <button class="modal-close" (click)="closeModal()">
+            <i class="fas fa-times"></i>
+          </button>
+        }
+      </div>
+
+      <!-- Modal Body -->
+      <div class="modal-body">
+        <!-- Connection Steps -->
+        <div class="connection-steps">
+          <!-- Step Indicator -->
+          <div class="step-indicator">
+            <div class="step-icon" [class]="getStepColor()">
+              <i [class]="getStepIcon()"></i>
+            </div>
+            <div class="step-content">
+              <h4 class="step-title">{{ statusMessage() }}</h4>
+              @if (errorMessage()) {
+                <p class="step-error">{{ errorMessage() }}</p>
+              }
+            </div>
+          </div>
+
+          <!-- QR Code Section -->
+          @if (connectionStep() === 'qr') {
+            <div class="qr-section">
+              <app-qr-code
+                [autoRefresh]="true"
+                [refreshInterval]="30000"
+                [showRefreshButton]="true"
+                [showInstructions]="true"
+                [size]="'medium'"
+                (onQrLoaded)="onQrLoaded($event)"
+                (onQrError)="onQrError($event)"
+                (onQrRefresh)="onQrRefresh()">
+              </app-qr-code>
+            </div>
+          }
+
+          <!-- Connecting Animation -->
+          @if (connectionStep() === 'connecting') {
+            <div class="connecting-animation">
+              <div class="connection-dots">
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+              </div>
+              <p class="connecting-text">
+                Estableciendo conexión con WhatsApp...
+              </p>
+            </div>
+          }
+
+          <!-- Success Message -->
+          @if (connectionStep() === 'connected') {
+            <div class="success-section">
+              <div class="success-icon">
+                <i class="fas fa-check-circle"></i>
+              </div>
+              <h4>¡Conexión Exitosa!</h4>
+              <p>WhatsApp se ha conectado correctamente. El modal se cerrará automáticamente.</p>
+              @if (whatsappState()?.phoneNumber) {
+                <div class="connected-info">
+                  <i class="fas fa-phone"></i>
+                  Conectado como: {{ whatsappState()?.phoneNumber }}
+                </div>
+              }
+            </div>
+          }
+
+          <!-- Error Section -->
+          @if (connectionStep() === 'error') {
+            <div class="error-section">
+              <div class="error-icon">
+                <i class="fas fa-exclamation-triangle"></i>
+              </div>
+              <h4>Error de Conexión</h4>
+              <p>{{ errorMessage() }}</p>
+              <div class="error-suggestions">
+                <h6>Posibles soluciones:</h6>
+                <ul>
+                  <li>Verifica tu conexión a internet</li>
+                  <li>Asegúrate de que WhatsApp esté actualizado</li>
+                  <li>Intenta cerrar y abrir WhatsApp</li>
+                  <li>Reinicia la conexión</li>
+                </ul>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="modal-footer">
+        @if (connectionStep() === 'qr' || connectionStep() === 'initializing') {
+          <button class="btn btn-secondary" (click)="cancelConnection()">
+            <i class="fas fa-times"></i>
+            Cancelar
+          </button>
+          <button class="btn btn-primary" (click)="refreshQRCode()" [disabled]="isConnecting()">
+            <i class="fas fa-sync-alt" [class.fa-spin]="isConnecting()"></i>
+            Actualizar QR
+          </button>
+        }
+
+        @if (connectionStep() === 'connecting') {
+          <button class="btn btn-warning" (click)="cancelConnection()">
+            <i class="fas fa-stop"></i>
+            Cancelar Conexión
+          </button>
+        }
+
+        @if (connectionStep() === 'error') {
+          <button class="btn btn-secondary" (click)="closeModal()">
+            <i class="fas fa-times"></i>
+            Cerrar
+          </button>
+          <button class="btn btn-primary" (click)="retryConnection()">
+            <i class="fas fa-redo"></i>
+            Reintentar
+          </button>
+        }
+
+        @if (connectionStep() === 'connected') {
+          <button class="btn btn-success" (click)="closeModal()">
+            <i class="fas fa-check"></i>
+            Continuar
+          </button>
+        }
+      </div>
+    </div>
+  </div>
+}

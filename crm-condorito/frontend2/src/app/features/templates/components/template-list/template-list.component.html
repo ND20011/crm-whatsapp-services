@@ -1,0 +1,638 @@
+<!-- Modern Templates Management Interface -->
+<div class="templates-workspace">
+  
+  <!-- Professional Header -->
+  <header class="workspace-header">
+    <div class="header-container">
+      <div class="header-main">
+        <div class="page-identity">
+          <div class="page-icon">
+            <i class="fas fa-clipboard-list"></i>
+          </div>
+          <div class="page-info">
+            <h1 class="page-title">Templates de Mensajes</h1>
+            <p class="page-description">Automatiza tus comunicaciones con plantillas inteligentes</p>
+          </div>
+        </div>
+        
+        <div class="header-actions">
+          <button 
+            class="action-btn secondary" 
+            (click)="loadTemplates()" 
+            [disabled]="isLoading()"
+            title="Actualizar lista">
+            <i class="fas fa-sync-alt" [class.fa-spin]="isLoading()"></i>
+          </button>
+          
+          <button 
+            class="action-btn primary" 
+            [routerLink]="['/templates/create']">
+            <i class="fas fa-plus"></i>
+            <span>Crear Template</span>
+          </button>
+        </div>
+      </div>
+      
+      <!-- Quick Stats -->
+      @if (templateStats()) {
+        <div class="quick-stats">
+          <div class="stat-item">
+            <div class="stat-value">{{ templateStats()!.total_templates }}</div>
+            <div class="stat-label">Total</div>
+          </div>
+          <div class="stat-item success">
+            <div class="stat-value">{{ templateStats()!.active_templates }}</div>
+            <div class="stat-label">Activos</div>
+          </div>
+          <div class="stat-item warning">
+            <div class="stat-value">{{ templateStats()!.total_usage }}</div>
+            <div class="stat-label">Usos</div>
+          </div>
+        </div>
+      }
+    </div>
+  </header>
+
+  <!-- Smart Filters Panel -->
+  <section class="filters-panel">
+    <div class="panel-container">
+      <form [formGroup]="filterForm" class="filters-grid">
+        
+        <!-- Smart Search -->
+        <div class="filter-group search-group">
+          <div class="search-wrapper">
+            <i class="fas fa-search search-icon"></i>
+            <input 
+              type="text" 
+              class="search-input"
+              formControlName="search"
+              placeholder="Buscar templates..."
+              (input)="onSearchChange($event)">
+            @if (filterForm.get('search')?.value) {
+              <button 
+                type="button" 
+                class="clear-search"
+                (click)="clearSearch()">
+                <i class="fas fa-times"></i>
+              </button>
+            }
+          </div>
+        </div>
+
+        <!-- View Mode Toggle -->
+        <div class="filter-group view-mode-group">
+          <label class="filter-label">Vista</label>
+          <div class="view-mode-toggle">
+            <button 
+              type="button"
+              class="view-mode-btn"
+              [class.active]="viewMode() === 'grid'"
+              (click)="setViewMode('grid')"
+              title="Vista en tarjetas">
+              <i class="fas fa-th"></i>
+            </button>
+            <button 
+              type="button"
+              class="view-mode-btn"
+              [class.active]="viewMode() === 'table'"
+              (click)="setViewMode('table')"
+              title="Vista en tabla">
+              <i class="fas fa-list"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Category Filter -->
+        <div class="filter-group">
+          <label class="filter-label">Categoría</label>
+          <div class="select-wrapper">
+            <select class="filter-select" formControlName="category">
+              <option value="">Todas las categorías</option>
+              @for (category of categories(); track category.category) {
+                <option [value]="category.category">
+                  {{ category.category | titlecase }} ({{ category.count }})
+                </option>
+              }
+            </select>
+            <i class="fas fa-chevron-down select-icon"></i>
+          </div>
+        </div>
+
+        <!-- Status Filter -->
+        <div class="filter-group">
+          <label class="filter-label">Estado</label>
+          <div class="select-wrapper">
+            <select class="filter-select" formControlName="is_active">
+              <option value="">Todos los estados</option>
+              <option value="true">Activos</option>
+              <option value="false">Inactivos</option>
+            </select>
+            <i class="fas fa-chevron-down select-icon"></i>
+          </div>
+        </div>
+
+        <!-- Sort Options -->
+        <div class="filter-group">
+          <label class="filter-label">Ordenar por</label>
+          <div class="sort-controls">
+            <div class="select-wrapper">
+              <select class="filter-select" formControlName="sort_by">
+                <option value="created_at">Fecha de creación</option>
+                <option value="updated_at">Última actualización</option>
+                <option value="name">Nombre</option>
+                <option value="usage_count">Más usados</option>
+              </select>
+              <i class="fas fa-chevron-down select-icon"></i>
+            </div>
+            <button 
+              type="button" 
+              class="sort-direction"
+              (click)="toggleSortDirection()"
+              [title]="filterForm.get('sort_order')?.value === 'ASC' ? 'Ascendente' : 'Descendente'">
+              <i class="fas" [class.fa-sort-up]="filterForm.get('sort_order')?.value === 'ASC'" [class.fa-sort-down]="filterForm.get('sort_order')?.value === 'DESC'"></i>
+            </button>
+          </div>
+        </div>
+
+      </form>
+    </div>
+  </section>
+
+  <!-- Messages -->
+  @if (errorMessage()) {
+    <div class="alert alert-error">
+      <i class="fas fa-exclamation-triangle"></i>
+      <span>{{ errorMessage() }}</span>
+    </div>
+  }
+  
+  @if (successMessage()) {
+    <div class="alert alert-success">
+      <i class="fas fa-check-circle"></i>
+      <span>{{ successMessage() }}</span>
+    </div>
+  }
+
+  <!-- Templates Grid -->
+  <main class="templates-main">
+    
+    @if (isLoading()) {
+      <!-- Loading State -->
+      <div class="loading-state">
+        <div class="loading-spinner">
+          <i class="fas fa-spinner fa-spin"></i>
+        </div>
+        <p class="loading-text">Cargando templates...</p>
+      </div>
+    } @else if (templates().length === 0) {
+      <!-- Empty State -->
+      <div class="empty-state">
+        <div class="empty-icon">
+          <i class="fas fa-clipboard-list"></i>
+        </div>
+        <h3 class="empty-title">No hay templates disponibles</h3>
+        <p class="empty-description">
+          @if (hasActiveFilters()) {
+            No se encontraron templates que coincidan con los filtros aplicados.
+          } @else {
+            Comienza creando tu primer template de mensaje.
+          }
+        </p>
+        <div class="empty-actions">
+          @if (hasActiveFilters()) {
+            <button class="btn-secondary" (click)="clearAllFilters()">
+              <i class="fas fa-times"></i>
+              Limpiar filtros
+            </button>
+          }
+          <button class="btn-primary" [routerLink]="['/templates/create']">
+            <i class="fas fa-plus"></i>
+            Crear primer template
+          </button>
+        </div>
+      </div>
+    } @else {
+      <!-- ============================================================================ -->
+      <!-- GRID VIEW -->
+      <!-- ============================================================================ -->
+      @if (viewMode() === 'grid') {
+        <div class="templates-grid">
+          @for (template of templates(); track template.id) {
+            <article class="template-card" [class.inactive]="!template.is_active">
+              
+              <!-- Card Header -->
+              <header class="card-header">
+                <div class="template-status">
+                  <div class="status-indicator" [class.active]="template.is_active">
+                    <i class="fas" [class.fa-toggle-on]="template.is_active" [class.fa-toggle-off]="!template.is_active"></i>
+                  </div>
+                  <span class="status-text">
+                    {{ template.is_active ? 'Activo' : 'Inactivo' }}
+                  </span>
+                </div>
+                
+                <div class="card-actions">
+                  <button 
+                    class="action-icon" 
+                    (click)="openPreviewModal(template)"
+                    title="Vista previa">
+                    <i class="fas fa-eye"></i>
+                  </button>
+                  
+                  <div class="dropdown">
+                    <button class="action-icon dropdown-toggle" (click)="toggleDropdown(template.id)">
+                      <i class="fas fa-ellipsis-v"></i>
+                    </button>
+                    
+                    @if (activeDropdown() === template.id) {
+                      <div class="dropdown-menu">
+                        <button class="dropdown-item" (click)="editTemplate(template)">
+                          <i class="fas fa-edit"></i>
+                          Editar
+                        </button>
+                        <button class="dropdown-item" (click)="openDuplicateModal(template)">
+                          <i class="fas fa-copy"></i>
+                          Duplicar
+                        </button>
+                        <button class="dropdown-item" (click)="toggleTemplateStatus(template)">
+                          <i class="fas" [class.fa-toggle-off]="template.is_active" [class.fa-toggle-on]="!template.is_active"></i>
+                          {{ template.is_active ? 'Desactivar' : 'Activar' }}
+                        </button>
+                        <div class="dropdown-divider"></div>
+                        <button class="dropdown-item danger" (click)="openDeleteModal(template)">
+                          <i class="fas fa-trash"></i>
+                          Eliminar
+                        </button>
+                      </div>
+                    }
+                  </div>
+                </div>
+              </header>
+
+              <!-- Card Body -->
+              <div class="card-body">
+                <h3 class="template-name">{{ template.name }}</h3>
+                
+                <div class="template-meta">
+                  <span class="category-badge" [attr.data-category]="template.category">
+                    <i class="fas fa-tag"></i>
+                    {{ template.category | titlecase }}
+                  </span>
+                  
+                  <span class="usage-count">
+                    <i class="fas fa-chart-line"></i>
+                    {{ template.usage_count }} usos
+                  </span>
+                </div>
+
+                <div class="template-preview">
+                  <p class="content-preview">{{ template.content | slice:0:120 }}...</p>
+                  
+                  @if (getExtractedVariables(template.content).length > 0) {
+                    <div class="variables-preview">
+                      <span class="variables-label">Variables:</span>
+                      <div class="variables-tags">
+                        @for (variable of getExtractedVariables(template.content) | slice:0:3; track variable) {
+                          <span class="variable-tag">{{ variable }}</span>
+                        }
+                        @if (getExtractedVariables(template.content).length > 3) {
+                          <span class="variable-tag more">+{{ getExtractedVariables(template.content).length - 3 }}</span>
+                        }
+                      </div>
+                    </div>
+                  }
+                </div>
+              </div>
+
+              <!-- Card Footer -->
+              <footer class="card-footer">
+                <div class="template-dates">
+                  <small class="date-info">
+                    <i class="fas fa-clock"></i>
+                    Actualizado {{ formatRelativeDate(template.updated_at) }}
+                  </small>
+                </div>
+                
+                <div class="quick-actions">
+                  <button 
+                    class="btn-quick edit" 
+                    (click)="editTemplate(template)"
+                    title="Editar">
+                    <i class="fas fa-edit"></i>
+                  </button>
+                  <button 
+                    class="btn-quick use" 
+                    (click)="useTemplate(template)"
+                    title="Usar template">
+                    <i class="fas fa-paper-plane"></i>
+                  </button>
+                </div>
+              </footer>
+            </article>
+          }
+        </div>
+      }
+
+      <!-- ============================================================================ -->
+      <!-- TABLE VIEW -->
+      <!-- ============================================================================ -->
+      @if (viewMode() === 'table') {
+        <div class="templates-table-container">
+          <div class="table-wrapper">
+            <table class="templates-table">
+              <thead>
+                <tr>
+                  <th class="col-status">Estado</th>
+                  <th class="col-name">Nombre</th>
+                  <th class="col-category">Categoría</th>
+                  <th class="col-content">Contenido</th>
+                  <th class="col-variables">Variables</th>
+                  <th class="col-usage">Usos</th>
+                  <th class="col-updated">Actualizado</th>
+                  <th class="col-actions">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (template of templates(); track template.id) {
+                  <tr class="template-row" [class.inactive]="!template.is_active">
+                    <!-- Status -->
+                    <td class="col-status">
+                      <div class="status-cell">
+                        <span class="status-badge" [class.active]="template.is_active">
+                          <i class="fas" [class.fa-toggle-on]="template.is_active" [class.fa-toggle-off]="!template.is_active"></i>
+                          {{ template.is_active ? 'Activo' : 'Inactivo' }}
+                        </span>
+                      </div>
+                    </td>
+
+                    <!-- Name -->
+                    <td class="col-name">
+                      <div class="name-cell">
+                        <div class="template-name">{{ template.name }}</div>
+                      </div>
+                    </td>
+
+                    <!-- Category -->
+                    <td class="col-category">
+                      <div class="category-cell">
+                        <span class="category-badge" [attr.data-category]="template.category">
+                          <i class="fas fa-tag"></i>
+                          {{ template.category | titlecase }}
+                        </span>
+                      </div>
+                    </td>
+
+                    <!-- Content -->
+                    <td class="col-content">
+                      <div class="content-cell">
+                        <span class="content-preview" [title]="template.content">
+                          {{ template.content | slice:0:80 }}
+                          @if (template.content.length > 80) {
+                            <span class="text-truncated">...</span>
+                          }
+                        </span>
+                      </div>
+                    </td>
+
+                    <!-- Variables -->
+                    <td class="col-variables">
+                      <div class="variables-cell">
+                        @if (getExtractedVariables(template.content).length > 0) {
+                          <div class="variables-list">
+                            @for (variable of getExtractedVariables(template.content) | slice:0:2; track variable) {
+                              <span class="variable-tag-mini">{{ variable }}</span>
+                            }
+                            @if (getExtractedVariables(template.content).length > 2) {
+                              <span class="variable-tag-mini more">+{{ getExtractedVariables(template.content).length - 2 }}</span>
+                            }
+                          </div>
+                        } @else {
+                          <span class="no-variables">Sin variables</span>
+                        }
+                      </div>
+                    </td>
+
+                    <!-- Usage -->
+                    <td class="col-usage">
+                      <div class="usage-cell">
+                        <span class="usage-count">{{ template.usage_count }}</span>
+                        <span class="usage-label">usos</span>
+                      </div>
+                    </td>
+
+                    <!-- Updated -->
+                    <td class="col-updated">
+                      <div class="updated-cell">
+                        <div class="updated-date">{{ template.updated_at | date:'dd/MM/yyyy' }}</div>
+                        <div class="updated-time">{{ template.updated_at | date:'HH:mm' }}</div>
+                      </div>
+                    </td>
+
+                    <!-- Actions -->
+                    <td class="col-actions">
+                      <div class="action-buttons-table">
+                        <button 
+                          class="action-btn-sm btn-preview"
+                          (click)="openPreviewModal(template)"
+                          title="Vista previa">
+                          <i class="fas fa-eye"></i>
+                        </button>
+                        <button 
+                          class="action-btn-sm btn-edit"
+                          (click)="editTemplate(template)"
+                          title="Editar">
+                          <i class="fas fa-edit"></i>
+                        </button>
+                        <button 
+                          class="action-btn-sm btn-use"
+                          (click)="useTemplate(template)"
+                          title="Usar template">
+                          <i class="fas fa-paper-plane"></i>
+                        </button>
+                        <button 
+                          class="action-btn-sm btn-delete"
+                          (click)="openDeleteModal(template)"
+                          title="Eliminar">
+                          <i class="fas fa-trash"></i>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      }
+
+      <!-- Pagination -->
+      @if (totalPages() > 1) {
+        <nav class="pagination-nav">
+          <div class="pagination-info">
+            Mostrando {{ (currentPage() - 1) * limit() + 1 }} - {{ Math.min(currentPage() * limit(), totalTemplates()) }} 
+            de {{ totalTemplates() }} templates
+          </div>
+          
+          <div class="pagination-controls">
+            <button 
+              class="page-btn" 
+              [disabled]="currentPage() === 1"
+              (click)="onPageChange(currentPage() - 1)">
+              <i class="fas fa-chevron-left"></i>
+            </button>
+            
+            @for (pageNum of getVisiblePages(); track pageNum) {
+              @if (pageNum === '...') {
+                <span class="page-ellipsis">...</span>
+              } @else {
+                <button 
+                  class="page-btn" 
+                  [class.active]="pageNum === currentPage()"
+                  (click)="onPageChange(+pageNum)">
+                  {{ pageNum }}
+                </button>
+              }
+            }
+            
+            <button 
+              class="page-btn" 
+              [disabled]="currentPage() === totalPages()"
+              (click)="onPageChange(currentPage() + 1)">
+              <i class="fas fa-chevron-right"></i>
+            </button>
+          </div>
+        </nav>
+      }
+    }
+  </main>
+
+  <!-- Modals -->
+  @if (showDeleteModal()) {
+    <div class="modal-overlay" (click)="closeDeleteModal()">
+      <div class="modal-container delete-modal" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3 class="modal-title">
+            <i class="fas fa-trash"></i>
+            Confirmar eliminación
+          </h3>
+          <button class="modal-close" (click)="closeDeleteModal()">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        
+        <div class="modal-body">
+          <div class="warning-content">
+            <div class="warning-icon">
+              <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <div class="warning-text">
+              <p>¿Estás seguro de que quieres eliminar el template <strong>"{{ selectedTemplate()?.name }}"</strong>?</p>
+              <p class="warning-note">Esta acción no se puede deshacer.</p>
+            </div>
+          </div>
+        </div>
+        
+        <div class="modal-footer">
+          <button class="btn-secondary" (click)="closeDeleteModal()">Cancelar</button>
+          <button class="btn-danger" (click)="confirmDelete()">
+            <i class="fas fa-trash"></i>
+            Eliminar template
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (showDuplicateModal()) {
+    <div class="modal-overlay" (click)="closeDuplicateModal()">
+      <div class="modal-container" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3 class="modal-title">
+            <i class="fas fa-copy"></i>
+            Duplicar template
+          </h3>
+          <button class="modal-close" (click)="closeDuplicateModal()">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="duplicateName" class="form-label">Nombre del nuevo template</label>
+            <input 
+              type="text" 
+              id="duplicateName"
+              class="form-input"
+              #duplicateNameInput 
+              [value]="selectedTemplate()?.name + ' (Copia)'"
+              (keyup.enter)="confirmDuplicate(duplicateNameInput.value)">
+          </div>
+        </div>
+        
+        <div class="modal-footer">
+          <button class="btn-secondary" (click)="closeDuplicateModal()">Cancelar</button>
+          <button class="btn-primary" (click)="confirmDuplicate(duplicateNameInput.value)">
+            <i class="fas fa-copy"></i>
+            Duplicar template
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (showPreviewModal()) {
+    <div class="modal-overlay" (click)="closePreviewModal()">
+      <div class="modal-container preview-modal" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3 class="modal-title">
+            <i class="fas fa-eye"></i>
+            Vista previa: {{ selectedTemplate()?.name }}
+          </h3>
+          <button class="modal-close" (click)="closePreviewModal()">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        
+        <div class="modal-body preview-body">
+          <div class="preview-section">
+            <h4 class="section-title">Contenido original</h4>
+            <div class="content-display original">
+              {{ selectedTemplate()?.content }}
+            </div>
+          </div>
+          
+          @if (getExtractedVariables(selectedTemplate()?.content || '').length > 0) {
+            <div class="preview-section">
+              <h4 class="section-title">Variables detectadas</h4>
+              <div class="variables-list">
+                @for (variable of getExtractedVariables(selectedTemplate()?.content || ''); track variable) {
+                  <span class="variable-chip">{{ variable }}</span>
+                }
+              </div>
+            </div>
+            
+            <div class="preview-section">
+              <h4 class="section-title">Vista previa con valores de ejemplo</h4>
+              <div class="content-display preview">
+                {{ getPreviewWithSampleData(selectedTemplate()?.content || '') }}
+              </div>
+              <small class="preview-note">
+                <i class="fas fa-info-circle"></i>
+                Los valores mostrados son solo ejemplos para la vista previa.
+              </small>
+            </div>
+          }
+        </div>
+        
+        <div class="modal-footer">
+          <button class="btn-secondary" (click)="closePreviewModal()">Cerrar</button>
+          <button class="btn-primary" (click)="editTemplate(selectedTemplate()!)">
+            <i class="fas fa-edit"></i>
+            Editar template
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+</div>

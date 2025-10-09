@@ -1,0 +1,113 @@
+<!-- ============================================================================ -->
+<!-- TAG SELECTOR COMPONENT - CRM CONDORITO FRONTEND -->
+<!-- ============================================================================ -->
+
+<div class="tag-selector-container" 
+     [class.disabled]="disabled">
+
+  <!-- Selected Tags Display -->
+  <div class="selected-tags-display" 
+       [class.dropdown-open]="showDropdown()"
+       (click)="toggleDropdown()"
+       tabindex="0"
+       role="combobox"
+       [attr.aria-expanded]="showDropdown()"
+       [attr.aria-disabled]="disabled">
+
+    <!-- Selected Tags -->
+    @if (selectedTags.length > 0) {
+      @for (tag of selectedTags; track trackBySelectedTag($index, tag)) {
+        <span class="selected-tag-chip" 
+              [style.background-color]="tag.color"
+              [title]="tag.description || tag.name">
+          {{ tag.name }}
+          @if (!disabled) {
+            <i class="fas fa-times-circle remove-icon"
+               (click)="removeTag(tag); $event.stopPropagation()"
+               [title]="'Remover ' + tag.name"></i>
+          }
+        </span>
+      }
+    } @else {
+      <!-- Placeholder -->
+      <span class="placeholder">{{ placeholder }}</span>
+    }
+
+    <!-- Dropdown Arrow -->
+    <i class="fas fa-chevron-down dropdown-icon" 
+       [class.open]="showDropdown()"></i>
+  </div>
+
+  <!-- Dropdown Panel -->
+  @if (showDropdown()) {
+    <div class="dropdown-panel">
+      <!-- Search Input -->
+      <div class="search-input-wrapper">
+        <input
+          type="text"
+          [formControl]="searchControl"
+          placeholder="Buscar etiquetas..."
+          class="form-control"
+        />
+        <i class="fas fa-search search-icon"></i>
+      </div>
+
+      <!-- Loading State -->
+      @if (isLoading()) {
+        <div class="loading-state">
+          <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+          Cargando etiquetas...
+        </div>
+      } @else if (filteredTags().length === 0 && searchControl.value) {
+        <div class="empty-state">
+          No se encontraron etiquetas que coincidan con "{{ searchControl.value }}".
+          @if (allowCreate) {
+            <div class="create-new-tag">
+              <input
+                type="text"
+                [formControl]="newTagNameControl"
+                placeholder="Nombre de nueva etiqueta"
+                class="form-control"
+              />
+              <div class="color-picker">
+                @for (color of TAG_COLORS; track trackByColor($index, color)) {
+                  <div
+                    class="color-box"
+                    [style.background-color]="color"
+                    [class.selected]="newTagColor() === color"
+                    (click)="selectNewTagColor(color)"
+                  >
+                    @if (newTagColor() === color) {
+                      <i class="fas fa-check"></i>
+                    }
+                  </div>
+                }
+              </div>
+              <button class="btn btn-sm btn-primary" (click)="onCreateNewTag()"
+                [disabled]="newTagNameControl.invalid || isLoading()">
+                @if (isLoading()) {
+                  <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                }
+                Crear "{{ newTagNameControl.value }}"
+              </button>
+            </div>
+          }
+        </div>
+      } @else {
+        <ul class="tag-list">
+          @for (tag of filteredTags(); track trackByFilteredTag($index, tag)) {
+            <li class="tag-item" 
+                [class.selected]="isTagSelected(tag)" 
+                (click)="toggleTag(tag)">
+              <span class="tag-color-dot" [style.background-color]="tag.color"></span>
+              <span class="tag-name">{{ tag.name }}</span>
+              @if (isTagSelected(tag)) {
+                <i class="fas fa-check selected-icon"></i>
+              }
+            </li>
+          }
+        </ul>
+      }
+    </div>
+  }
+</div>

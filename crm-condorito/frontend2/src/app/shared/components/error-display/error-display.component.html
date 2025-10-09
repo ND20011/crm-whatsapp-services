@@ -1,0 +1,131 @@
+<!-- Error Toast Container -->
+@if (hasErrors()) {
+  <div class="error-container">
+    
+    <!-- Resumen cuando hay muchos errores -->
+    @if (hasTooManyErrors()) {
+      <div class="error-summary">
+        <div class="summary-content">
+          <div class="summary-icon">
+            <i class="fas fa-exclamation-triangle"></i>
+          </div>
+          <div class="summary-text">
+            <h6 class="summary-title">Múltiples errores detectados</h6>
+            <p class="summary-message">{{ getErrorSummary() }}</p>
+          </div>
+          <div class="summary-actions">
+            <button class="btn btn-sm btn-outline-light" (click)="dismissAllErrors()">
+              <i class="fas fa-times"></i>
+              Cerrar todos
+            </button>
+          </div>
+        </div>
+      </div>
+    } @else {
+      
+      <!-- Lista de errores individuales -->
+      @for (error of getVisibleErrors(); track error.id) {
+        <div class="error-toast" 
+             [class]="getSeverityClass(error.severity) + ' ' + getAnimationClass(error)"
+             (click)="onErrorClick(error)">
+          
+          <!-- Contenido del error -->
+          <div class="error-content">
+            <div class="error-icon">
+              <i [class]="getErrorIcon(error)"></i>
+            </div>
+            
+            <div class="error-text">
+              <h6 class="error-title">{{ error.title }}</h6>
+              <p class="error-message">{{ error.message }}</p>
+              
+              @if (error.context) {
+                <span class="error-context">{{ error.context }}</span>
+              }
+            </div>
+            
+            <div class="error-meta">
+              <span class="error-time">{{ getTimeAgo(error.timestamp) }}</span>
+              @if (error.retryable) {
+                <span class="error-retry">
+                  <i class="fas fa-redo"></i>
+                </span>
+              }
+            </div>
+          </div>
+          
+          <!-- Botón de cerrar -->
+          <button class="error-close" 
+                  (click)="dismissError(error.id); $event.stopPropagation()">
+            <i class="fas fa-times"></i>
+          </button>
+          
+          <!-- Barra de progreso para auto-hide -->
+          @if (error.autoHide && error.duration) {
+            <div class="error-progress">
+              <div class="progress-bar" 
+                   [style.animation-duration]="error.duration + 'ms'">
+              </div>
+            </div>
+          }
+          
+          <!-- Detalles expandibles -->
+          @if (error.details) {
+            <div class="error-details">
+              <details>
+                <summary>Ver detalles técnicos</summary>
+                <pre class="error-stack">{{ error.details }}</pre>
+              </details>
+            </div>
+          }
+        </div>
+      }
+    }
+    
+    <!-- Errores críticos siempre visibles -->
+    @for (criticalError of criticalErrors(); track criticalError.id) {
+      <div class="error-critical-overlay">
+        <div class="critical-modal">
+          <div class="critical-header">
+            <div class="critical-icon">
+              <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <h4 class="critical-title">{{ criticalError.title }}</h4>
+          </div>
+          
+          <div class="critical-body">
+            <p class="critical-message">{{ criticalError.message }}</p>
+            
+            @if (criticalError.context) {
+              <div class="critical-context">
+                <strong>Contexto:</strong> {{ criticalError.context }}
+              </div>
+            }
+            
+            @if (criticalError.details) {
+              <div class="critical-details">
+                <details>
+                  <summary>Información técnica</summary>
+                  <pre>{{ criticalError.details }}</pre>
+                </details>
+              </div>
+            }
+          </div>
+          
+          <div class="critical-footer">
+            @if (criticalError.retryable) {
+              <button class="btn btn-primary" (click)="onErrorClick(criticalError)">
+                <i class="fas fa-redo"></i>
+                Reintentar
+              </button>
+            }
+            <button class="btn btn-outline-secondary" (click)="dismissError(criticalError.id)">
+              <i class="fas fa-times"></i>
+              Cerrar
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+}

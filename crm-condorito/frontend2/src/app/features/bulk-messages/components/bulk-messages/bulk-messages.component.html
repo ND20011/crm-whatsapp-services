@@ -1,0 +1,476 @@
+<div class="bulk-messages-container">
+  <!-- Header -->
+  <div class="header-section">
+    <div class="header-content">
+      <div class="header-left">
+        <button class="btn btn-outline-secondary" (click)="goToDashboard()">
+          <i class="icon-arrow-left"></i>
+          Dashboard
+        </button>
+        <div class="header-title">
+          <h1><i class="icon-broadcast"></i> Mensajes Masivos</h1>
+          <p>Envía mensajes personalizados a múltiples contactos usando templates</p>
+        </div>
+      </div>
+      <div class="header-right">
+        <button class="btn btn-primary" (click)="goToChat()">
+          <i class="icon-chat"></i>
+          Chat
+        </button>
+        <button class="btn btn-outline-danger" (click)="logout()">
+          <i class="icon-logout"></i>
+          Salir
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="main-content">
+    <!-- Filters Section -->
+    <div class="filters-section">
+      <form [formGroup]="filterForm" class="filters-form">
+        <div class="filter-row">
+          <!-- Search Input -->
+          <div class="filter-group">
+            <label class="filter-label">Buscar contactos</label>
+            <div class="search-input">
+              <i class="icon-search"></i>
+              <input 
+                type="text" 
+                formControlName="search" 
+                placeholder="Nombre o teléfono..."
+                class="form-control">
+            </div>
+          </div>
+
+          <!-- Tag Filter -->
+          <div class="filter-group">
+            <label class="filter-label">Filtrar por etiquetas</label>
+            <app-tag-selector
+              [selectedTags]="selectedTags()"
+              (tagsChanged)="onTagsChanged($event)"
+              placeholder="Seleccionar etiquetas...">
+            </app-tag-selector>
+          </div>
+
+          <!-- Actions -->
+          <div class="filter-actions">
+            <button 
+              type="button" 
+              class="btn btn-outline-primary"
+              (click)="selectAllContacts()"
+              [disabled]="filteredContacts().length === 0">
+              <i class="icon-check-all"></i>
+              Seleccionar Todos
+            </button>
+            <button 
+              type="button" 
+              class="btn btn-outline-secondary"
+              (click)="deselectAllContacts()"
+              [disabled]="selectedContacts().size === 0">
+              <i class="icon-uncheck-all"></i>
+              Deseleccionar
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <div class="content-grid">
+      <!-- Contacts Panel -->
+      <div class="contacts-panel">
+        <div class="panel-header">
+          <h3>
+            <i class="icon-contacts"></i>
+            Contactos 
+            <span class="count">({{ filteredContacts().length }})</span>
+          </h3>
+          <div class="selection-info">
+            <span class="selected-count">{{ selectedContacts().size }} seleccionados</span>
+          </div>
+        </div>
+
+        <div class="contacts-list" [class.loading]="isLoading()">
+          @if (isLoading()) {
+            <div class="loading-state">
+              <div class="spinner"></div>
+              <p>Cargando contactos...</p>
+            </div>
+          } @else if (filteredContacts().length === 0) {
+            <div class="empty-state">
+              <i class="icon-contacts-empty"></i>
+              <h4>No hay contactos</h4>
+              <p>No se encontraron contactos con los filtros aplicados</p>
+            </div>
+          } @else {
+            @for (contact of filteredContacts(); track contact.phone_number) {
+              <div 
+                class="contact-item"
+                [class.selected]="isContactSelected(contact)"
+                (click)="toggleContactSelection(contact)">
+                
+                <div class="contact-checkbox">
+                  <input 
+                    type="checkbox" 
+                    [checked]="isContactSelected(contact)"
+                    (click)="$event.stopPropagation()">
+                </div>
+
+                <div class="contact-info">
+                  <div class="contact-name">
+                    {{ contact.name || 'Sin nombre' }}
+                  </div>
+                  <div class="contact-phone">
+                    {{ contact.phone_number }}
+                  </div>
+                  @if (contact.tags && contact.tags.length > 0) {
+                    <div class="contact-tags">
+                      @for (tag of contact.tags; track tag.id) {
+                        <span class="tag" [style.background-color]="tag.color">
+                          {{ tag.name }}
+                        </span>
+                      }
+                    </div>
+                  }
+                </div>
+
+                <div class="contact-actions">
+                  @if (isContactSelected(contact)) {
+                    <i class="icon-check"></i>
+                  }
+                </div>
+              </div>
+            }
+          }
+        </div>
+      </div>
+
+      <!-- Message Panel -->
+      <div class="message-panel">
+        <div class="panel-header">
+          <h3>
+            <i class="icon-message"></i>
+            Mensaje
+          </h3>
+        </div>
+
+        <form [formGroup]="messageForm" class="message-form">
+          <!-- Message Type Selection -->
+          <div class="message-type-section">
+            <label class="form-label">Tipo de mensaje</label>
+            <div class="message-type-options">
+              <label class="radio-option">
+                <input 
+                  type="radio" 
+                  formControlName="messageType" 
+                  value="text">
+                <span class="radio-label">
+                  <i class="icon-text"></i>
+                  Texto libre
+                </span>
+              </label>
+              <label class="radio-option">
+                <input 
+                  type="radio" 
+                  formControlName="messageType" 
+                  value="template">
+                <span class="radio-label">
+                  <i class="icon-template"></i>
+                  Usar template
+                </span>
+              </label>
+              <label class="radio-option">
+                <input 
+                  type="radio" 
+                  formControlName="messageType" 
+                  value="files">
+                <span class="radio-label">
+                  <i class="icon-files"></i>
+                  Archivos/Fotos
+                </span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Template Selection -->
+          @if (messageForm.value.messageType === 'template') {
+            <div class="template-section">
+              <div class="template-selector">
+                <button 
+                  type="button" 
+                  class="btn btn-outline-primary template-btn"
+                  (click)="openTemplateModal()">
+                  <i class="icon-template"></i>
+                  @if (selectedTemplate()) {
+                    {{ selectedTemplate()?.name }}
+                  } @else {
+                    Seleccionar Template
+                  }
+                </button>
+                @if (selectedTemplate()) {
+                  <button 
+                    type="button" 
+                    class="btn btn-outline-secondary"
+                    (click)="selectedTemplate.set(null); messageForm.patchValue({selectedTemplateId: null, message: ''})">
+                    <i class="icon-close"></i>
+                  </button>
+                }
+              </div>
+            </div>
+          }
+
+          <!-- Files Section -->
+          @if (messageForm.value.messageType === 'files') {
+            <div class="files-section">
+              <div class="files-header">
+                <label class="form-label">Archivos y fotos</label>
+                <button 
+                  type="button" 
+                  class="btn btn-outline-primary"
+                  (click)="toggleFileUpload()">
+                  <i class="icon-upload"></i>
+                  @if (selectedFiles().length > 0) {
+                    Cambiar archivos ({{ selectedFiles().length }})
+                  } @else {
+                    Seleccionar archivos
+                  }
+                </button>
+              </div>
+
+              @if (showFileUpload()) {
+                <div class="file-upload-container">
+                  <app-file-upload
+                    [multiple]="true"
+                    [acceptImages]="true"
+                    [acceptDocuments]="true"
+                    (onFilesSelected)="onFilesSelected($event)">
+                  </app-file-upload>
+                </div>
+              }
+
+              @if (selectedFiles().length > 0) {
+                <div class="selected-files">
+                  <div class="files-header-actions">
+                    <span class="files-count">{{ selectedFiles().length }} archivo(s) seleccionado(s)</span>
+                    <button 
+                      type="button" 
+                      class="btn btn-outline-danger btn-sm"
+                      (click)="clearSelectedFiles()">
+                      <i class="icon-trash"></i>
+                      Limpiar todo
+                    </button>
+                  </div>
+                  
+                  <div class="files-preview-grid">
+                    @for (file of selectedFiles(); track $index) {
+                      <div class="file-preview-item">
+                        <app-file-preview
+                          [file]="file"
+                          [showCaption]="true"
+                          (onCaptionChange)="onCaptionChange($event)"
+                          (onRemove)="removeFile($index)">
+                        </app-file-preview>
+                      </div>
+                    }
+                  </div>
+                </div>
+              }
+
+              @if (selectedFiles().length === 0 && !showFileUpload()) {
+                <div class="no-files-state">
+                  <i class="icon-files-empty"></i>
+                  <p>No hay archivos seleccionados</p>
+                  <small>Haz clic en "Seleccionar archivos" para agregar fotos, documentos o videos</small>
+                </div>
+              }
+            </div>
+          }
+
+          <!-- Message Input -->
+          @if (messageForm.value.messageType !== 'files') {
+            <div class="message-input-section">
+              <label class="form-label">Mensaje</label>
+              <textarea 
+                formControlName="message"
+                class="form-control message-textarea"
+                [placeholder]="messageForm.value.messageType === 'template' ? 'El mensaje se generará automáticamente desde el template...' : 'Escribe tu mensaje aquí...'"
+                [readonly]="messageForm.value.messageType === 'template' && selectedTemplate()"
+                rows="6">
+              </textarea>
+            
+            @if (messageForm.value.messageType === 'template' && templatePreview()) {
+              <div class="template-preview">
+                <label class="preview-label">Vista previa:</label>
+                <div class="preview-content">{{ templatePreview() }}</div>
+                <div class="preview-note">
+                  <i class="icon-info"></i>
+                  Las variables como {{ '{' }}NOMBRE_CONTACTO{{ '}' }} se reemplazarán automáticamente para cada contacto
+                </div>
+              </div>
+            }
+            </div>
+          }
+
+          <!-- Send Section -->
+          <div class="send-section">
+            @if (isSending()) {
+              <div class="sending-progress">
+                <div class="progress-info">
+                  <span>Enviando {{ sendProgress().current }} de {{ sendProgress().total }}</span>
+                  @if (sendProgress().conversation) {
+                    <span class="current-contact">{{ sendProgress().conversation }}</span>
+                  }
+                </div>
+                <div class="progress-bar">
+                  <div 
+                    class="progress-fill"
+                    [style.width.%]="(sendProgress().current / sendProgress().total) * 100">
+                  </div>
+                </div>
+              </div>
+            } @else {
+              <button 
+                type="button"
+                class="btn btn-primary send-btn"
+                [disabled]="!canSendEnhanced()"
+                (click)="sendBulkMessagesEnhanced()">
+                <i class="icon-send"></i>
+                @if (messageForm.value.messageType === 'files') {
+                  Enviar {{ selectedFiles().length }} archivo(s) a {{ selectedContacts().size }} contactos
+                } @else {
+                  Enviar mensaje a {{ selectedContacts().size }} contactos
+                }
+              </button>
+            }
+          </div>
+        </form>
+
+        <!-- Messages -->
+        @if (successMessage()) {
+          <div class="alert alert-success">
+            <i class="icon-check-circle"></i>
+            {{ successMessage() }}
+          </div>
+        }
+        @if (errorMessage()) {
+          <div class="alert alert-danger">
+            <i class="icon-error-circle"></i>
+            {{ errorMessage() }}
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Template Selection Modal -->
+@if (showTemplateModal()) {
+  <div class="modal-overlay" (click)="closeTemplateModal()">
+    <div class="modal-container template-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Seleccionar Template</h3>
+        <button class="modal-close" (click)="closeTemplateModal()">
+          <i class="icon-close"></i>
+        </button>
+      </div>
+      
+      <div class="modal-body">
+        @if (availableTemplates().length === 0) {
+          <div class="empty-state">
+            <i class="icon-template"></i>
+            <p>No hay templates disponibles</p>
+          </div>
+        } @else {
+          <div class="templates-grid">
+            @for (template of availableTemplates(); track template.id) {
+              <div 
+                class="template-card"
+                (click)="selectTemplate(template)">
+                <div class="template-header">
+                  <h4>{{ template.name }}</h4>
+                  <span class="template-category">{{ template.category }}</span>
+                </div>
+                <div class="template-content">
+                  {{ template.content }}
+                </div>
+                @if (template.variables && template.variables.length > 0) {
+                  <div class="template-variables">
+                    <span class="variables-label">Variables:</span>
+                    @for (variable of template.variables; track variable) {
+                      <span class="variable-tag">{{ variable }}</span>
+                    }
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Template Variables Modal -->
+@if (showVariablesModal()) {
+  <div class="modal-overlay" (click)="closeVariablesModal()">
+    <div class="modal-container variables-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Completar Variables - {{ selectedTemplate()?.name }}</h3>
+        <button class="modal-close" (click)="closeVariablesModal()">
+          <i class="icon-close"></i>
+        </button>
+      </div>
+      
+      <div class="modal-body">
+        @if (templateVariables().length > 0) {
+          <form [formGroup]="templateVariablesForm" class="variables-form">
+            @for (variable of templateVariables(); track variable) {
+              <div class="form-group">
+                <label class="form-label">{{ variable }}</label>
+                <input 
+                  type="text" 
+                  class="form-control"
+                  [formControlName]="variable"
+                  [placeholder]="variable === 'nombre' ? 'Se usará automáticamente el nombre del contacto' : 'Ingresa el valor para ' + variable">
+                @if (variable === 'nombre') {
+                  <div class="field-hint">
+                    <i class="icon-info"></i>
+                    Deja vacío para usar automáticamente el nombre de cada contacto
+                  </div>
+                }
+              </div>
+            }
+          </form>
+        } @else {
+          <div class="no-variables">
+            <i class="icon-info"></i>
+            <p>Este template no tiene variables que completar</p>
+          </div>
+        }
+
+        @if (templatePreview()) {
+          <div class="template-preview-section">
+            <h4>Vista previa del mensaje:</h4>
+            <div class="message-preview">
+              <div class="message-bubble preview">
+                {{ templatePreview() }}
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+      
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeVariablesModal()">
+          Cancelar
+        </button>
+        <button 
+          class="btn btn-primary"
+          (click)="confirmTemplate()">
+          <i class="icon-check"></i>
+          Usar Template
+        </button>
+      </div>
+    </div>
+  </div>
+}

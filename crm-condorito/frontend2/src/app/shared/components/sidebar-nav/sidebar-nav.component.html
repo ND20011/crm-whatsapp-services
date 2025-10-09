@@ -1,0 +1,117 @@
+<!-- Overlay para móvil -->
+@if (isMobile() && isOpen()) {
+  <div class="sidebar-overlay" (click)="onOverlayClick()"></div>
+}
+
+<!-- Sidebar Container -->
+<aside class="sidebar" [class.open]="isOpen()" [class.mobile]="isMobile()">
+  <!-- Header del Sidebar -->
+  <div class="sidebar-header">
+    <div class="logo-section">
+      <div class="logo-icon">
+        <span class="logo-letter">C</span>
+      </div>
+      <div class="logo-text" [class.hidden]="!isOpen()">
+        <h3>CRM Condorito</h3>
+        <span class="client-code">{{ getClientCode() }}</span>
+      </div>
+    </div>
+    
+    <!-- Toggle Button -->
+    <button class="toggle-btn" (click)="toggle()" [class.hidden]="isMobile()">
+      <i class="icon-menu"></i>
+    </button>
+  </div>
+
+  <!-- Navigation Menu -->
+  <nav class="sidebar-nav">
+    <ul class="nav-list">
+      @for (item of navItems(); track item.id) {
+        @if (item.separator) {
+          <li class="nav-separator"></li>
+        } @else {
+          <li class="nav-item" [class.has-children]="item.children">
+            
+            <!-- Item sin hijos -->
+            @if (!item.children) {
+              <a 
+                class="nav-link" 
+                [class.active]="isRouteActive(item.route || '')"
+                (click)="navigateTo(item.route || '')">
+                <i class="nav-icon icon-{{ item.icon }}"></i>
+                <span class="nav-label" [class.hidden]="!isOpen()">{{ item.label }}</span>
+                @if (item.badge && item.badge !== '') {
+                  <span class="nav-badge" [class]="'badge-' + (item.badgeColor || 'primary')">
+                    {{ item.badge }}
+                  </span>
+                }
+              </a>
+            }
+
+            <!-- Item con hijos -->
+            @if (item.children) {
+              <button 
+                class="nav-link nav-group" 
+                [class.active]="isGroupActive(item)"
+                [class.expanded]="isGroupExpanded(item.id)"
+                (click)="toggleGroup(item.id)">
+                <i class="nav-icon icon-{{ item.icon }}"></i>
+                <span class="nav-label" [class.hidden]="!isOpen()">{{ item.label }}</span>
+                <i class="nav-arrow icon-chevron-down" [class.hidden]="!isOpen()"></i>
+              </button>
+
+              <!-- Submenu -->
+              @if (isGroupExpanded(item.id) && isOpen()) {
+                <ul class="nav-submenu">
+                  @for (child of item.children; track child.id) {
+                    <li class="nav-subitem">
+                      <a 
+                        class="nav-sublink" 
+                        [class.active]="isRouteActive(child.route || '')"
+                        (click)="navigateTo(child.route || '')">
+                        <i class="nav-subicon icon-{{ child.icon }}"></i>
+                        <span class="nav-sublabel">{{ child.label }}</span>
+                        @if (child.badge && child.badge !== '') {
+                          <span class="nav-badge" [class]="'badge-' + (child.badgeColor || 'primary')">
+                            {{ child.badge }}
+                          </span>
+                        }
+                      </a>
+                    </li>
+                  }
+                </ul>
+              }
+            }
+          </li>
+        }
+      }
+    </ul>
+  </nav>
+
+  <!-- Footer del Sidebar -->
+  <div class="sidebar-footer">
+    <!-- User Info -->
+    <div class="user-section">
+      <div class="user-avatar">
+        <span class="avatar-text">{{ getUserInitials() }}</span>
+      </div>
+      <div class="user-info" [class.hidden]="!isOpen()">
+        <div class="user-name">{{ getCompanyName() }}</div>
+        <div class="user-role">Cliente: {{ getClientCode() }}</div>
+      </div>
+    </div>
+
+    <!-- Logout Button -->
+    <button class="logout-btn" (click)="logout()" [title]="'Cerrar Sesión'">
+      <i class="icon-logout"></i>
+      <span [class.hidden]="!isOpen()">Salir</span>
+    </button>
+  </div>
+</aside>
+
+<!-- Toggle Button para móvil -->
+@if (isMobile()) {
+  <button class="mobile-toggle" (click)="toggle()" [class.sidebar-open]="isOpen()">
+    <i class="icon-menu"></i>
+  </button>
+}

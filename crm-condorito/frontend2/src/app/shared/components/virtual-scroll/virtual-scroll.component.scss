@@ -1,0 +1,155 @@
+// Los colores están disponibles globalmente desde styles.scss
+
+.virtual-scroll-container {
+  overflow-y: auto;
+  overflow-x: hidden;
+  position: relative;
+  width: 100%;
+  
+  // Optimizar scroll performance
+  will-change: scroll-position;
+  transform: translateZ(0); // Forzar aceleración por hardware
+  
+  // Scrollbar personalizado
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: var(--color-bg-tertiary);
+    border-radius: 4px;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: var(--color-border-dark);
+    border-radius: 4px;
+    
+    &:hover {
+      background: var(--color-secondary);
+    }
+  }
+}
+
+.virtual-scroll-spacer {
+  width: 100%;
+  flex-shrink: 0;
+  pointer-events: none;
+}
+
+.virtual-scroll-content {
+  width: 100%;
+}
+
+.virtual-scroll-item {
+  width: 100%;
+  display: flex;
+  align-items: stretch;
+  
+  // Optimizar rendering
+  contain: layout style paint;
+  will-change: transform;
+  
+  // Asegurar que el contenido ocupe toda la altura
+  > * {
+    width: 100%;
+    min-height: 100%;
+    display: flex;
+    align-items: center;
+  }
+}
+
+.virtual-scroll-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background-color: var(--color-bg-secondary);
+  border-top: 1px solid var(--color-border-light);
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
+  
+  .spinner-border-sm {
+    width: 1rem;
+    height: 1rem;
+    border-width: 0.1em;
+  }
+}
+
+// Estados de performance
+.virtual-scroll-container {
+  // Smooth scrolling cuando no hay muchos elementos
+  &.smooth-scroll {
+    scroll-behavior: smooth;
+  }
+  
+  // Modo de alta performance para listas muy grandes
+  &.high-performance {
+    scroll-behavior: auto;
+    
+    .virtual-scroll-item {
+      // Reducir efectos visuales para mejor performance
+      transition: none;
+      animation: none;
+    }
+  }
+}
+
+// Responsive
+@media (max-width: 768px) {
+  .virtual-scroll-container {
+    // Scrollbar más grueso en móviles
+    &::-webkit-scrollbar {
+      width: 12px;
+    }
+  }
+  
+  .virtual-scroll-loading {
+    padding: 15px;
+    font-size: 0.85rem;
+  }
+}
+
+// Modo oscuro (si se implementa)
+@media (prefers-color-scheme: dark) {
+  .virtual-scroll-container {
+    &::-webkit-scrollbar-track {
+      background: var(--color-bg-dark);
+    }
+    
+    &::-webkit-scrollbar-thumb {
+      background: var(--color-border-medium);
+      
+      &:hover {
+        background: var(--color-primary);
+      }
+    }
+  }
+}
+
+// Animaciones sutiles para mejor UX
+.virtual-scroll-item {
+  // Fade in suave para nuevos elementos
+  animation: fadeInItem 0.2s ease-out;
+}
+
+@keyframes fadeInItem {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// Desactivar animaciones si el usuario prefiere reduced motion
+@media (prefers-reduced-motion: reduce) {
+  .virtual-scroll-item {
+    animation: none;
+  }
+  
+  .virtual-scroll-container {
+    scroll-behavior: auto;
+  }
+}

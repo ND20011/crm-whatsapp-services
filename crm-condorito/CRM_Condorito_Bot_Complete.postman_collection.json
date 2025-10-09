@@ -1,0 +1,983 @@
+{
+	"info": {
+		"_postman_id": "crm-condorito-bot-complete-2024",
+		"name": "🤖 CRM Condorito - Bot Control & Configuration (COMPLETO)",
+		"description": "Colección COMPLETA de endpoints para controlar y configurar el bot de WhatsApp del CRM Condorito\n\n🎯 **FUNCIONALIDADES INCLUIDAS:**\n- ✅ Activar/desactivar bot globalmente\n- ✅ Control por conversación individual\n- ✅ Configuración de horarios de trabajo (24/7 por defecto)\n- ✅ Configuración de días laborables\n- ✅ Configuración de mensajes personalizados\n- ✅ Reset a configuración por defecto\n- ✅ Estadísticas del bot en tiempo real\n- ✅ Verificación de estado de horarios\n\n📋 **INSTRUCCIONES:**\n1. Configurar variables de entorno (base_url, access_token)\n2. Ejecutar Login en la colección principal para obtener token\n3. Usar estos endpoints para controlar y configurar el bot\n\n🔧 **VARIABLES REQUERIDAS:**\n- base_url: http://localhost:3000\n- access_token: (se obtiene del login)\n\n⚠️ **NOTA:** Todos los endpoints requieren autenticación JWT\n\n🕐 **CONFIGURACIÓN POR DEFECTO (24/7):**\n- Horario: 00:00 - 23:59\n- Días: Todos los días de la semana\n- Bot siempre activo para responder",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "crm-condorito-bot-complete"
+	},
+	"item": [
+		{
+			"name": "🌐 CONTROL GLOBAL DEL BOT",
+			"item": [
+				{
+					"name": "Activar Bot para Todas las Conversaciones",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response has success true', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"});",
+									"",
+									"pm.test('Response contains affected conversations', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('affected_conversations');",
+									"    console.log('✅ Bot activado para', jsonData.affected_conversations, 'conversaciones');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{base_url}}/api/messages/bot/enable-all",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"messages",
+								"bot",
+								"enable-all"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Desactivar Bot para Todas las Conversaciones",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response has success true', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"});",
+									"",
+									"pm.test('Response contains affected conversations', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('affected_conversations');",
+									"    console.log('🚫 Bot desactivado para', jsonData.affected_conversations, 'conversaciones');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{base_url}}/api/messages/bot/disable-all",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"messages",
+								"bot",
+								"disable-all"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Obtener Estado Global del Bot",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response has bot_status', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('bot_status');",
+									"});",
+									"",
+									"pm.test('Bot status contains statistics', function () {",
+									"    const jsonData = pm.response.json();",
+									"    const botStatus = jsonData.bot_status;",
+									"    pm.expect(botStatus).to.have.property('total_conversations');",
+									"    pm.expect(botStatus).to.have.property('bot_enabled_conversations');",
+									"    pm.expect(botStatus).to.have.property('bot_disabled_conversations');",
+									"    pm.expect(botStatus).to.have.property('bot_enabled_percentage');",
+									"    ",
+									"    console.log('📊 Estadísticas del Bot:');",
+									"    console.log('   Total conversaciones:', botStatus.total_conversations);",
+									"    console.log('   Bot activado:', botStatus.bot_enabled_conversations);",
+									"    console.log('   Bot desactivado:', botStatus.bot_disabled_conversations);",
+									"    console.log('   Porcentaje activado:', botStatus.bot_enabled_percentage + '%');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/messages/bot/status",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"messages",
+								"bot",
+								"status"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "🎯 CONTROL POR CONVERSACIÓN",
+			"item": [
+				{
+					"name": "Activar Bot para Conversación Específica",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response has success true', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"});",
+									"",
+									"pm.test('Response contains conversation info', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('conversation');",
+									"    pm.expect(jsonData.conversation.bot_enabled).to.be.true;",
+									"    console.log('✅ Bot activado para conversación:', jsonData.conversation.contact_phone);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{base_url}}/api/messages/conversation/{{conversation_id}}/bot/enable",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"messages",
+								"conversation",
+								"{{conversation_id}}",
+								"bot",
+								"enable"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Desactivar Bot para Conversación Específica",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response has success true', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"});",
+									"",
+									"pm.test('Response contains conversation info', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('conversation');",
+									"    pm.expect(jsonData.conversation.bot_enabled).to.be.false;",
+									"    console.log('🚫 Bot desactivado para conversación:', jsonData.conversation.contact_phone);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{base_url}}/api/messages/conversation/{{conversation_id}}/bot/disable",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"messages",
+								"conversation",
+								"{{conversation_id}}",
+								"bot",
+								"disable"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Obtener Estado del Bot para Conversación",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response has conversation info', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('conversation');",
+									"    pm.expect(jsonData.conversation).to.have.property('bot_enabled');",
+									"});",
+									"",
+									"pm.test('Display conversation bot status', function () {",
+									"    const jsonData = pm.response.json();",
+									"    const conv = jsonData.conversation;",
+									"    console.log('📱 Conversación:', conv.contact_phone);",
+									"    console.log('   Nombre:', conv.contact_name || 'Sin nombre');",
+									"    console.log('   Bot:', conv.bot_enabled ? '✅ Activado' : '🚫 Desactivado');",
+									"    console.log('   Último mensaje:', conv.last_message_at);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/messages/conversation/{{conversation_id}}/bot/status",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"messages",
+								"conversation",
+								"{{conversation_id}}",
+								"bot",
+								"status"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "⚙️ CONFIGURACIÓN DEL BOT",
+			"item": [
+				{
+					"name": "Obtener Configuración Actual del Bot",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response has bot_config', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('bot_config');",
+									"});",
+									"",
+									"pm.test('Display current configuration', function () {",
+									"    const jsonData = pm.response.json();",
+									"    const config = jsonData.bot_config;",
+									"    console.log('⚙️ Configuración Actual del Bot:');",
+									"    console.log('   Estado:', config.is_enabled ? '✅ Activado' : '🚫 Desactivado');",
+									"    console.log('   Horario:', config.working_hours.start + ' - ' + config.working_hours.end);",
+									"    console.log('   Días activos:', config.working_hours.days);",
+									"    console.log('   Delay respuesta:', config.settings.auto_response_delay + 'ms');",
+									"    console.log('   Máx respuestas:', config.settings.max_auto_responses_per_conversation);",
+									"    if (config.settings.welcome_message) {",
+									"        console.log('   Mensaje bienvenida:', config.settings.welcome_message);",
+									"    }",
+									"    console.log('   Mensaje fallback:', config.settings.fallback_message);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/messages/bot/config",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"messages",
+								"bot",
+								"config"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Actualizar Configuración del Bot (24/7)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Configuration updated successfully', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"    pm.expect(jsonData.message).to.include('actualizada correctamente');",
+									"});",
+									"",
+									"pm.test('Verify 24/7 configuration', function () {",
+									"    const jsonData = pm.response.json();",
+									"    const config = jsonData.bot_config;",
+									"    pm.expect(config.working_hours.start).to.eql('00:00:00');",
+									"    pm.expect(config.working_hours.end).to.eql('23:59:00');",
+									"    pm.expect(config.working_hours.days).to.eql([0, 1, 2, 3, 4, 5, 6]);",
+									"    console.log('✅ Bot configurado para funcionar 24/7');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"is_enabled\": true,\n  \"working_hours_start\": \"00:00\",\n  \"working_hours_end\": \"23:59\",\n  \"working_days\": [0, 1, 2, 3, 4, 5, 6],\n  \"auto_response_delay\": 2000,\n  \"max_auto_responses_per_conversation\": 5,\n  \"welcome_message\": \"¡Hola! Soy el asistente virtual. ¿En qué puedo ayudarte?\",\n  \"fallback_message\": \"Lo siento, no pude entender tu consulta. Un agente te contactará pronto.\",\n  \"custom_instructions\": \"Responde de manera amigable y profesional. Siempre ofrece ayuda adicional.\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/messages/bot/config",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"messages",
+								"bot",
+								"config"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Actualizar Solo Horarios (Horario Comercial)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Working hours updated', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"    const config = jsonData.bot_config;",
+									"    pm.expect(config.working_hours.start).to.eql('09:00:00');",
+									"    pm.expect(config.working_hours.end).to.eql('18:00:00');",
+									"    pm.expect(config.working_hours.days).to.eql([1, 2, 3, 4, 5]);",
+									"    console.log('✅ Bot configurado para horario comercial (9-18, L-V)');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"working_hours_start\": \"09:00\",\n  \"working_hours_end\": \"18:00\",\n  \"working_days\": [1, 2, 3, 4, 5]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/messages/bot/config",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"messages",
+								"bot",
+								"config"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Reset Configuración a Valores por Defecto (24/7)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Configuration reset successfully', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"    pm.expect(jsonData.message).to.include('restablecida');",
+									"});",
+									"",
+									"pm.test('Verify default 24/7 configuration', function () {",
+									"    const jsonData = pm.response.json();",
+									"    const config = jsonData.bot_config;",
+									"    pm.expect(config.working_hours.start).to.eql('00:00:00');",
+									"    pm.expect(config.working_hours.end).to.eql('23:59:00');",
+									"    pm.expect(config.working_hours.days).to.eql([0, 1, 2, 3, 4, 5, 6]);",
+									"    pm.expect(config.is_enabled).to.be.true;",
+									"    console.log('✅ Configuración restablecida a valores por defecto (24/7)');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{base_url}}/api/messages/bot/config/reset",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"messages",
+								"bot",
+								"config",
+								"reset"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Verificar Estado de Horarios de Trabajo",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Working hours status available', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('working_hours_status');",
+									"});",
+									"",
+									"pm.test('Display working hours status', function () {",
+									"    const jsonData = pm.response.json();",
+									"    const status = jsonData.working_hours_status;",
+									"    console.log('🕐 Estado de Horarios de Trabajo:');",
+									"    console.log('   En horario:', status.is_working_hours ? '✅ SÍ' : '🚫 NO');",
+									"    console.log('   Bot habilitado:', status.is_bot_enabled ? '✅ SÍ' : '🚫 NO');",
+									"    console.log('   Horario configurado:', status.configured_hours.start + ' - ' + status.configured_hours.end);",
+									"    console.log('   Días activos:', status.configured_hours.working_days_names.join(', '));",
+									"    console.log('   Estado:', status.status_message);",
+									"    ",
+									"    // Verificar si es configuración 24/7",
+									"    if (status.configured_hours.start === '00:00:00' && status.configured_hours.end === '23:59:00' && status.configured_hours.working_days.length === 7) {",
+									"        console.log('🌟 CONFIGURACIÓN 24/7 DETECTADA');",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/messages/bot/config/working-hours/status",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"messages",
+								"bot",
+								"config",
+								"working-hours",
+								"status"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "📋 ENDPOINTS AUXILIARES",
+			"item": [
+				{
+					"name": "Obtener Lista de Conversaciones",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response has conversations', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('conversations');",
+									"});",
+									"",
+									"pm.test('Save first conversation ID', function () {",
+									"    const jsonData = pm.response.json();",
+									"    if (jsonData.conversations && jsonData.conversations.length > 0) {",
+									"        const firstConversation = jsonData.conversations[0];",
+									"        pm.environment.set('conversation_id', firstConversation.id);",
+									"        console.log('💾 ID de conversación guardado:', firstConversation.id);",
+									"        console.log('📱 Teléfono:', firstConversation.contact_phone);",
+									"        console.log('🤖 Bot:', firstConversation.bot_enabled ? 'Activado' : 'Desactivado');",
+									"    } else {",
+									"        console.log('⚠️ No hay conversaciones disponibles');",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/messages/conversations?limit=10",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"messages",
+								"conversations"
+							],
+							"query": [
+								{
+									"key": "limit",
+									"value": "10"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Health Check - Messages Module",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Module is active', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.status).to.eql('ACTIVE');",
+									"});",
+									"",
+									"pm.test('Bot endpoints are listed', function () {",
+									"    const jsonData = pm.response.json();",
+									"    const activeEndpoints = jsonData.endpoints.active;",
+									"    pm.expect(activeEndpoints).to.include('POST /api/messages/bot/enable-all');",
+									"    pm.expect(activeEndpoints).to.include('POST /api/messages/bot/disable-all');",
+									"    pm.expect(activeEndpoints).to.include('GET /api/messages/bot/status');",
+									"    pm.expect(activeEndpoints).to.include('GET /api/messages/bot/config');",
+									"    pm.expect(activeEndpoints).to.include('PUT /api/messages/bot/config');",
+									"    console.log('✅ Todos los endpoints del bot están disponibles');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/messages/health",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"messages",
+								"health"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "🧪 EJEMPLOS DE CONFIGURACIÓN",
+			"item": [
+				{
+					"name": "Ejemplo: Configurar Bot Solo Fines de Semana",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Weekend configuration applied', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"    const config = jsonData.bot_config;",
+									"    pm.expect(config.working_hours.days).to.eql([0, 6]);",
+									"    console.log('✅ Bot configurado solo para fines de semana');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"working_hours_start\": \"10:00\",\n  \"working_hours_end\": \"22:00\",\n  \"working_days\": [0, 6],\n  \"welcome_message\": \"¡Hola! Estoy disponible los fines de semana. ¿En qué puedo ayudarte?\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/messages/bot/config",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"messages",
+								"bot",
+								"config"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Ejemplo: Configurar Bot Horario Nocturno",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Night shift configuration applied', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"    const config = jsonData.bot_config;",
+									"    pm.expect(config.working_hours.start).to.eql('20:00:00');",
+									"    pm.expect(config.working_hours.end).to.eql('06:00:00');",
+									"    console.log('✅ Bot configurado para horario nocturno');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"working_hours_start\": \"20:00\",\n  \"working_hours_end\": \"06:00\",\n  \"working_days\": [0, 1, 2, 3, 4, 5, 6],\n  \"welcome_message\": \"¡Hola! Soy el asistente nocturno. ¿En qué puedo ayudarte?\",\n  \"auto_response_delay\": 1000\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/messages/bot/config",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"messages",
+								"bot",
+								"config"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Verificar que el token esté disponible",
+					"const token = pm.environment.get('access_token');",
+					"if (!token) {",
+					"    console.log('⚠️ Token no encontrado. Ejecuta el Login primero.');",
+					"    console.log('💡 Tip: Usa la colección principal del CRM para hacer login y obtener el token.');",
+					"}",
+					"",
+					"// Mostrar información de configuración por defecto",
+					"console.log('🤖 CRM Condorito Bot - Configuración por defecto:');",
+					"console.log('   📅 Horario: 00:00 - 23:59 (24 horas)');",
+					"console.log('   📆 Días: Todos los días de la semana');",
+					"console.log('   🌟 Bot siempre activo para responder');",
+					"console.log('   🔧 Base URL:', pm.environment.get('base_url') || 'http://localhost:3000');"
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Log global para todas las respuestas",
+					"console.log('📡 Request:', pm.request.method, pm.request.url.toString());",
+					"console.log('📊 Response:', pm.response.status, pm.response.statusText);",
+					"",
+					"// Verificar si hay errores de autenticación",
+					"if (pm.response.status === 401) {",
+					"    console.log('🚫 Error de autenticación. Verifica tu token.');",
+					"} else if (pm.response.status === 403) {",
+					"    console.log('🚫 Sin permisos. Verifica que tu usuario tenga acceso.');",
+					"}"
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:3000",
+			"type": "string"
+		},
+		{
+			"key": "conversation_id",
+			"value": "1",
+			"type": "string",
+			"description": "ID de conversación para pruebas. Se actualiza automáticamente al obtener la lista de conversaciones."
+		}
+	]
+}

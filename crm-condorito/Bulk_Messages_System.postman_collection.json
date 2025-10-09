@@ -1,0 +1,833 @@
+{
+	"info": {
+		"_postman_id": "bulk-messages-crm-condorito",
+		"name": "📤 Bulk Messages System - CRM Condorito",
+		"description": "Colección completa para probar el sistema de mensajes masivos (campañas) implementado en ETAPA 4.\n\n## 🎯 **FUNCIONALIDADES INCLUIDAS:**\n- ✅ CRUD completo de campañas\n- ✅ Selección inteligente de contactos\n- ✅ Integración con templates\n- ✅ Preview de campañas\n- ✅ Envío con rate limiting\n- ✅ Programación de envíos\n- ✅ Tracking en tiempo real\n- ✅ Estadísticas detalladas\n\n## 🔑 **CONFIGURACIÓN:**\n1. Configurar variable `base_url` = `http://localhost:3000`\n2. Ejecutar **Login** para obtener JWT token\n3. Tener contactos y templates creados previamente\n4. El token se configurará automáticamente\n\n## 📋 **ORDEN RECOMENDADO DE TESTING:**\n1. **Authentication** → Login\n2. **Campaign Management** → Ver estadísticas y estados\n3. **Contact Selection** → Preview de selección\n4. **Campaign CRUD** → Crear, listar, actualizar\n5. **Campaign Execution** → Enviar y cancelar\n6. **Advanced Features** → Programación y tracking",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "🔐 Authentication",
+			"item": [
+				{
+					"name": "Login - Get JWT Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    if (response.success && response.tokens && response.tokens.accessToken) {",
+									"        pm.environment.set('jwt_token', response.tokens.accessToken);",
+									"        console.log('✅ JWT Token saved:', response.tokens.accessToken.substring(0, 50) + '...');",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"clientCode\": \"CLI001\",\n    \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/login",
+							"host": ["{{base_url}}"],
+							"path": ["api", "auth", "login"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "📊 Campaign Management",
+			"item": [
+				{
+					"name": "Get Campaign Statistics",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/messages/campaigns/stats",
+							"host": ["{{base_url}}"],
+							"path": ["api", "messages", "campaigns", "stats"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Campaign Statuses",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/messages/campaigns/statuses",
+							"host": ["{{base_url}}"],
+							"path": ["api", "messages", "campaigns", "statuses"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Campaigns",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/messages/campaigns?page=1&limit=20&search=&status=&sortBy=created_at&sortOrder=DESC",
+							"host": ["{{base_url}}"],
+							"path": ["api", "messages", "campaigns"],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "20"
+								},
+								{
+									"key": "search",
+									"value": ""
+								},
+								{
+									"key": "status",
+									"value": ""
+								},
+								{
+									"key": "sortBy",
+									"value": "created_at"
+								},
+								{
+									"key": "sortOrder",
+									"value": "DESC"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "👥 Contact Selection & Preview",
+			"item": [
+				{
+					"name": "Preview - All Active Contacts",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"contact_filter\": {\n        \"is_active\": true,\n        \"search\": \"\",\n        \"limit\": 50\n    }\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/messages/campaigns/preview",
+							"host": ["{{base_url}}"],
+							"path": ["api", "messages", "campaigns", "preview"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Preview - Contacts by Search",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"contact_filter\": {\n        \"search\": \"Juan\",\n        \"limit\": 20\n    }\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/messages/campaigns/preview",
+							"host": ["{{base_url}}"],
+							"path": ["api", "messages", "campaigns", "preview"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Preview - Contacts by Tag",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"contact_filter\": {\n        \"tagId\": 1,\n        \"limit\": 30\n    },\n    \"template_id\": 1\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/messages/campaigns/preview",
+							"host": ["{{base_url}}"],
+							"path": ["api", "messages", "campaigns", "preview"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Preview - Specific Contact IDs",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"selected_contact_ids\": [1, 2, 3, 4, 5],\n    \"template_id\": 1\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/messages/campaigns/preview",
+							"host": ["{{base_url}}"],
+							"path": ["api", "messages", "campaigns", "preview"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "📝 Campaign CRUD",
+			"item": [
+				{
+					"name": "Create Campaign - Immediate Send",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const response = pm.response.json();",
+									"    if (response.success && response.data && response.data.id) {",
+									"        pm.environment.set('immediate_campaign_id', response.data.id);",
+									"        console.log('✅ Immediate Campaign ID saved:', response.data.id);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"campaign_name\": \"Promoción Flash - Envío Inmediato\",\n    \"template_id\": 1,\n    \"content\": \"🎉 ¡Oferta especial! {nombre}, aprovechá 50% de descuento en todos nuestros productos. ¡Solo por hoy!\",\n    \"contact_filter\": {\n        \"is_active\": true,\n        \"limit\": 5\n    }\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/messages/campaigns",
+							"host": ["{{base_url}}"],
+							"path": ["api", "messages", "campaigns"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Campaign - Scheduled",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const response = pm.response.json();",
+									"    if (response.success && response.data && response.data.id) {",
+									"        pm.environment.set('scheduled_campaign_id', response.data.id);",
+									"        console.log('✅ Scheduled Campaign ID saved:', response.data.id);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"campaign_name\": \"Newsletter Semanal\",\n    \"template_id\": 2,\n    \"content\": \"📰 Hola {nombre}, aquí tienes las novedades de esta semana. ¡No te las pierdas!\",\n    \"scheduled_at\": \"2025-01-10T09:00:00.000Z\",\n    \"selected_contact_ids\": [1, 2, 3]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/messages/campaigns",
+							"host": ["{{base_url}}"],
+							"path": ["api", "messages", "campaigns"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Campaign - Draft",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const response = pm.response.json();",
+									"    if (response.success && response.data && response.data.id) {",
+									"        pm.environment.set('draft_campaign_id', response.data.id);",
+									"        console.log('✅ Draft Campaign ID saved:', response.data.id);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"campaign_name\": \"Campaña en Borrador\",\n    \"content\": \"Este es un mensaje en borrador que será enviado más tarde a {nombre}.\",\n    \"contact_filter\": {\n        \"search\": \"test\",\n        \"limit\": 10\n    }\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/messages/campaigns",
+							"host": ["{{base_url}}"],
+							"path": ["api", "messages", "campaigns"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Campaign by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/messages/campaigns/{{immediate_campaign_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "messages", "campaigns", "{{immediate_campaign_id}}"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Campaign",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"campaign_name\": \"Campaña Actualizada\",\n    \"content\": \"Mensaje actualizado para {nombre}. ¡Nuevas ofertas disponibles!\",\n    \"scheduled_at\": \"2025-01-11T10:00:00.000Z\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/messages/campaigns/{{draft_campaign_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "messages", "campaigns", "{{draft_campaign_id}}"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Campaign",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/messages/campaigns/{{draft_campaign_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "messages", "campaigns", "{{draft_campaign_id}}"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "🚀 Campaign Execution",
+			"item": [
+				{
+					"name": "Send Campaign Immediately",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/messages/campaigns/{{scheduled_campaign_id}}/send",
+							"host": ["{{base_url}}"],
+							"path": ["api", "messages", "campaigns", "{{scheduled_campaign_id}}", "send"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Cancel Campaign",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/messages/campaigns/{{scheduled_campaign_id}}/cancel",
+							"host": ["{{base_url}}"],
+							"path": ["api", "messages", "campaigns", "{{scheduled_campaign_id}}", "cancel"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "🔍 Campaign Filters & Search",
+			"item": [
+				{
+					"name": "Filter by Status - Completed",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/messages/campaigns?status=completed&page=1&limit=10",
+							"host": ["{{base_url}}"],
+							"path": ["api", "messages", "campaigns"],
+							"query": [
+								{
+									"key": "status",
+									"value": "completed"
+								},
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Filter by Status - Sending",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/messages/campaigns?status=sending&page=1&limit=10",
+							"host": ["{{base_url}}"],
+							"path": ["api", "messages", "campaigns"],
+							"query": [
+								{
+									"key": "status",
+									"value": "sending"
+								},
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Search Campaigns by Name",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/messages/campaigns?search=Promoción&page=1&limit=10",
+							"host": ["{{base_url}}"],
+							"path": ["api", "messages", "campaigns"],
+							"query": [
+								{
+									"key": "search",
+									"value": "Promoción"
+								},
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Sort by Success Rate DESC",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/messages/campaigns?sortBy=success_rate&sortOrder=DESC&page=1&limit=10",
+							"host": ["{{base_url}}"],
+							"path": ["api", "messages", "campaigns"],
+							"query": [
+								{
+									"key": "sortBy",
+									"value": "success_rate"
+								},
+								{
+									"key": "sortOrder",
+									"value": "DESC"
+								},
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "⚡ Advanced Features",
+			"item": [
+				{
+					"name": "Create Large Campaign - 100 Contacts",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"campaign_name\": \"Campaña Masiva - Test de Rendimiento\",\n    \"content\": \"🚀 Hola {nombre}, este es un mensaje de prueba para una campaña masiva. ¡Gracias por estar con nosotros!\",\n    \"contact_filter\": {\n        \"limit\": 100\n    }\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/messages/campaigns",
+							"host": ["{{base_url}}"],
+							"path": ["api", "messages", "campaigns"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Campaign with Template Variables",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"campaign_name\": \"Campaña con Variables\",\n    \"template_id\": 1,\n    \"content\": \"Hola {nombre}, hoy {fecha} a las {hora} queremos informarte sobre nuestras novedades. Tu teléfono {telefono} está registrado en nuestro sistema.\",\n    \"contact_filter\": {\n        \"limit\": 3\n    }\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/messages/campaigns",
+							"host": ["{{base_url}}"],
+							"path": ["api", "messages", "campaigns"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Legacy Endpoint - Send Bulk (Redirect)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"message\": \"Este endpoint redirige a las nuevas funcionalidades\",\n    \"contacts\": [1, 2, 3]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/messages/send-bulk",
+							"host": ["{{base_url}}"],
+							"path": ["api", "messages", "send-bulk"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "🧪 Error Testing",
+			"item": [
+				{
+					"name": "Test Error - Create Campaign Without Contacts",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"campaign_name\": \"Campaña Sin Contactos\",\n    \"content\": \"Este mensaje no debería enviarse porque no hay contactos\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/messages/campaigns",
+							"host": ["{{base_url}}"],
+							"path": ["api", "messages", "campaigns"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Test Error - Create Campaign Without Name",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"campaign_name\": \"\",\n    \"content\": \"Mensaje sin nombre de campaña\",\n    \"selected_contact_ids\": [1]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/messages/campaigns",
+							"host": ["{{base_url}}"],
+							"path": ["api", "messages", "campaigns"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Test Error - Invalid Template ID",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"campaign_name\": \"Campaña con Template Inválido\",\n    \"template_id\": 99999,\n    \"content\": \"Este template no existe\",\n    \"selected_contact_ids\": [1]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/messages/campaigns",
+							"host": ["{{base_url}}"],
+							"path": ["api", "messages", "campaigns"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Test Error - Send Campaign Already Completed",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/messages/campaigns/{{immediate_campaign_id}}/send",
+							"host": ["{{base_url}}"],
+							"path": ["api", "messages", "campaigns", "{{immediate_campaign_id}}", "send"]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:3000",
+			"type": "string"
+		}
+	]
+}

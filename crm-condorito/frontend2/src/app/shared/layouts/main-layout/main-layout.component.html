@@ -1,0 +1,17 @@
+<!-- Layout Principal con Sidebar y Header -->
+<div class="app-layout">
+  <!-- Sidebar Navigation -->
+  <app-sidebar-nav></app-sidebar-nav>
+
+  <!-- Main Content Area -->
+  <main class="main-content" [style.margin-left]="mainContentMargin()">
+    <!-- Header Navigation -->
+    <app-header-nav></app-header-nav>
+    
+    <!-- Content Wrapper -->
+    <div class="content-wrapper">
+      <!-- Router Outlet - Aquí se cargan los componentes -->
+      <router-outlet></router-outlet>
+    </div>
+  </main>
+</div>

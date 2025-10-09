@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test de Imágenes - CRM Condorito</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .image-test {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .image-test img {
+            max-width: 300px;
+            height: auto;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .status {
+            margin-top: 10px;
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        .info { background-color: #d1ecf1; color: #0c5460; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🖼️ Test de Imágenes - CRM Condorito</h1>
+        <p>Esta página prueba si las imágenes se están sirviendo correctamente desde el backend.</p>
+        
+        <div class="image-test">
+            <h3>Imagen 1: 1759102344793_29t798.jpg</h3>
+            <img 
+                id="img1" 
+                src="http://localhost:3000/uploads/images/1759102344793_29t798.jpg" 
+                alt="Test Image 1"
+                onload="showStatus('img1-status', 'success', '✅ Imagen cargada correctamente')"
+                onerror="showStatus('img1-status', 'error', '❌ Error cargando imagen')"
+            />
+            <div id="img1-status" class="status info">⏳ Cargando...</div>
+        </div>
+        
+        <div class="image-test">
+            <h3>Imagen 2: 1759102367558_b3gxq3.jpg</h3>
+            <img 
+                id="img2" 
+                src="http://localhost:3000/uploads/images/1759102367558_b3gxq3.jpg" 
+                alt="Test Image 2"
+                onload="showStatus('img2-status', 'success', '✅ Imagen cargada correctamente')"
+                onerror="showStatus('img2-status', 'error', '❌ Error cargando imagen')"
+            />
+            <div id="img2-status" class="status info">⏳ Cargando...</div>
+        </div>
+        
+        <div class="image-test">
+            <h3>Test de CORS</h3>
+            <button onclick="testCORS()">🔍 Probar CORS</button>
+            <div id="cors-status" class="status info">Haz clic para probar CORS</div>
+        </div>
+        
+        <div class="image-test">
+            <h3>Información del Sistema</h3>
+            <div id="system-info" class="status info">
+                <strong>URL Base:</strong> http://localhost:3000<br>
+                <strong>Frontend:</strong> http://localhost:4200<br>
+                <strong>Timestamp:</strong> <span id="timestamp"></span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showStatus(elementId, type, message) {
+            const element = document.getElementById(elementId);
+            element.className = `status ${type}`;
+            element.textContent = message;
+        }
+        
+        function testCORS() {
+            const corsStatus = document.getElementById('cors-status');
+            corsStatus.className = 'status info';
+            corsStatus.textContent = '⏳ Probando CORS...';
+            
+            fetch('http://localhost:3000/uploads/images/1759102344793_29t798.jpg', {
+                method: 'GET',
+                mode: 'cors'
+            })
+            .then(response => {
+                if (response.ok) {
+                    showStatus('cors-status', 'success', '✅ CORS funcionando correctamente');
+                } else {
+                    showStatus('cors-status', 'error', `❌ Error CORS: ${response.status}`);
+                }
+            })
+            .catch(error => {
+                showStatus('cors-status', 'error', `❌ Error CORS: ${error.message}`);
+            });
+        }
+        
+        // Mostrar timestamp
+        document.getElementById('timestamp').textContent = new Date().toLocaleString();
+        
+        // Test automático después de 2 segundos
+        setTimeout(() => {
+            console.log('🔍 Iniciando tests automáticos...');
+            testCORS();
+        }, 2000);
+    </script>
+</body>
+</html>

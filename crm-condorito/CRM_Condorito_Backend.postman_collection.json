@@ -1,0 +1,936 @@
+{
+	"info": {
+		"_postman_id": "crm-condorito-backend-2024",
+		"name": "CRM Condorito Backend - API Collection",
+		"description": "Colección completa de endpoints para el CRM Condorito Backend\n\n🚀 **CARACTERÍSTICAS:**\n- Sistema de autenticación JWT\n- Integración WhatsApp completa\n- Gestión de mensajes y conversaciones\n- IA automática configurable\n- Health checks y monitoreo\n\n📋 **INSTRUCCIONES:**\n1. Configurar variables de entorno\n2. Ejecutar Login para obtener token\n3. El token se guarda automáticamente\n4. Usar los demás endpoints\n\n🔧 **VARIABLES REQUERIDAS:**\n- base_url: http://localhost:3002\n- client_code: CLI001\n- password: demo123456",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "crm-condorito"
+	},
+	"item": [
+		{
+			"name": "🔐 AUTENTICACIÓN",
+			"item": [
+				{
+					"name": "Login - Obtener Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Guardar token automáticamente",
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    if (response.success && response.tokens) {",
+									"        pm.environment.set('access_token', response.tokens.accessToken);",
+									"        pm.environment.set('refresh_token', response.tokens.refreshToken);",
+									"        console.log('✅ Token guardado automáticamente');",
+									"    }",
+									"} else {",
+									"    console.log('❌ Error en login:', pm.response.text());",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"client_code\": \"{{client_code}}\",\n  \"password\": \"{{password}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"login"
+							]
+						},
+						"description": "Autentica un cliente y obtiene tokens JWT.\n\n**Respuesta exitosa:**\n- access_token (válido 24h)\n- refresh_token (válido 7d)\n- Información del cliente\n- Estadísticas básicas"
+					}
+				},
+				{
+					"name": "Verificar Token",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/auth/verify",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"verify"
+							]
+						},
+						"description": "Valida que el token de acceso sea válido y no haya expirado."
+					}
+				},
+				{
+					"name": "Perfil del Cliente",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/auth/profile",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"profile"
+							]
+						},
+						"description": "Obtiene información completa del cliente:\n- Datos personales\n- Estadísticas\n- Sesión de WhatsApp\n- Configuración del bot"
+					}
+				},
+				{
+					"name": "Logout",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/auth/logout",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"logout"
+							]
+						},
+						"description": "Invalida el token actual y cierra la sesión."
+					}
+				},
+				{
+					"name": "Health Check - Auth",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/auth/health",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"health"
+							]
+						},
+						"description": "Verifica el estado del módulo de autenticación."
+					}
+				}
+			],
+			"description": "Endpoints para autenticación y gestión de sesiones JWT."
+		},
+		{
+			"name": "📱 WHATSAPP",
+			"item": [
+				{
+					"name": "Conectar WhatsApp",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/whatsapp/connect",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"whatsapp",
+								"connect"
+							]
+						},
+						"description": "Inicia una nueva sesión de WhatsApp y genera QR code.\n\n**Proceso:**\n1. Ejecutar este endpoint\n2. Esperar 5 segundos\n3. Obtener QR code\n4. Escanear con WhatsApp\n5. Verificar estado"
+					}
+				},
+				{
+					"name": "QR Code (Imagen PNG)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/whatsapp/qr/{{client_code}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"whatsapp",
+								"qr",
+								"{{client_code}}"
+							]
+						},
+						"description": "**🖼️ DEVUELVE IMAGEN PNG DIRECTA**\n\nEste endpoint devuelve el QR code como imagen PNG que puedes:\n1. Ver directamente en Postman\n2. Guardar como archivo\n3. Escanear con WhatsApp\n\n**Válido por 5 minutos**"
+					}
+				},
+				{
+					"name": "QR Code (JSON Base64)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/whatsapp/qr-json/{{client_code}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"whatsapp",
+								"qr-json",
+								"{{client_code}}"
+							]
+						},
+						"description": "Devuelve el QR code como JSON con base64.\n\nÚsalo si necesitas procesar el QR programáticamente."
+					}
+				},
+				{
+					"name": "Estado de WhatsApp",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/whatsapp/status",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"whatsapp",
+								"status"
+							]
+						},
+						"description": "Obtiene el estado actual de WhatsApp:\n\n**Estados posibles:**\n- `not_initialized`: No conectado\n- `initializing`: Iniciando\n- `waiting_qr`: Esperando escaneo\n- `authenticated`: Autenticado\n- `ready`: ✅ Conectado y listo\n- `disconnected`: Desconectado"
+					}
+				},
+				{
+					"name": "Enviar Mensaje de Texto",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"to\": \"5491123456789\",\n  \"message\": \"¡Hola! Este es un mensaje de prueba desde el CRM Condorito 🚀\",\n  \"isBot\": false\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/whatsapp/send-message",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"whatsapp",
+								"send-message"
+							]
+						},
+						"description": "Envía un mensaje de texto a un contacto.\n\n**Parámetros:**\n- `to`: Número de teléfono (con o sin código de país)\n- `message`: Texto del mensaje\n- `isBot`: false para mensaje manual, true para bot\n\n**Requiere WhatsApp conectado (status: ready)**"
+					}
+				},
+				{
+					"name": "Enviar Imagen",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "to",
+									"value": "5491123456789",
+									"type": "text"
+								},
+								{
+									"key": "caption",
+									"value": "Imagen enviada desde el CRM 📸",
+									"type": "text"
+								},
+								{
+									"key": "image",
+									"type": "file",
+									"src": []
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/api/whatsapp/send-image",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"whatsapp",
+								"send-image"
+							]
+						},
+						"description": "Envía una imagen a un contacto.\n\n**Parámetros:**\n- `to`: Número de teléfono\n- `caption`: Descripción de la imagen (opcional)\n- `image`: Archivo de imagen (JPG, PNG, etc.)\n\n**Formatos soportados:** JPG, PNG, GIF, WebP"
+					}
+				},
+				{
+					"name": "Enviar Documento",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "to",
+									"value": "5491123456789",
+									"type": "text"
+								},
+								{
+									"key": "filename",
+									"value": "documento.pdf",
+									"type": "text"
+								},
+								{
+									"key": "document",
+									"type": "file",
+									"src": []
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/api/whatsapp/send-document",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"whatsapp",
+								"send-document"
+							]
+						},
+						"description": "Envía un documento a un contacto.\n\n**Parámetros:**\n- `to`: Número de teléfono\n- `filename`: Nombre del archivo\n- `document`: Archivo (PDF, DOC, XLS, etc.)"
+					}
+				},
+				{
+					"name": "Desconectar WhatsApp",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/whatsapp/disconnect",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"whatsapp",
+								"disconnect"
+							]
+						},
+						"description": "Desconecta la sesión actual de WhatsApp.\n\n**Nota:** Para reconectar, usar el endpoint 'Conectar WhatsApp'."
+					}
+				},
+				{
+					"name": "Estadísticas WhatsApp",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/whatsapp/stats",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"whatsapp",
+								"stats"
+							]
+						},
+						"description": "Obtiene estadísticas generales del servicio WhatsApp:\n- Total de clientes\n- Clientes conectados\n- Esperando QR\n- Desconectados"
+					}
+				},
+				{
+					"name": "Health Check - WhatsApp",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/whatsapp/health",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"whatsapp",
+								"health"
+							]
+						},
+						"description": "Verifica el estado del servicio WhatsApp."
+					}
+				}
+			],
+			"description": "Endpoints para gestión completa de WhatsApp: conexión, QR codes, envío de mensajes y monitoreo."
+		},
+		{
+			"name": "💬 MENSAJES Y CONVERSACIONES",
+			"item": [
+				{
+					"name": "Listar Conversaciones",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/messages/conversations?limit=50&offset=0&archived=false",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"messages",
+								"conversations"
+							],
+							"query": [
+								{
+									"key": "limit",
+									"value": "50",
+									"description": "Número de resultados (default: 50)"
+								},
+								{
+									"key": "offset",
+									"value": "0",
+									"description": "Desplazamiento para paginación"
+								},
+								{
+									"key": "archived",
+									"value": "false",
+									"description": "Mostrar archivadas (true/false)"
+								},
+								{
+									"key": "search",
+									"value": "",
+									"description": "Buscar por nombre o teléfono",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Lista todas las conversaciones del cliente con:\n- Información del contacto\n- Último mensaje\n- Contador de no leídos\n- Estado del bot\n- Paginación"
+					}
+				},
+				{
+					"name": "Mensajes de Conversación",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/messages/conversation/1?limit=50&offset=0",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"messages",
+								"conversation",
+								"1"
+							],
+							"query": [
+								{
+									"key": "limit",
+									"value": "50"
+								},
+								{
+									"key": "offset",
+									"value": "0"
+								}
+							]
+						},
+						"description": "Obtiene todos los mensajes de una conversación específica.\n\n**Tipos de mensaje:**\n- `contact`: Del contacto\n- `client`: Manual del cliente\n- `bot`: Automático del bot\n\n**Cambiar el ID en la URL por el conversation_id real**"
+					}
+				},
+				{
+					"name": "Marcar como Leída",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/messages/conversation/1/read",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"messages",
+								"conversation",
+								"1",
+								"read"
+							]
+						},
+						"description": "Marca todos los mensajes de una conversación como leídos.\n\n**Cambiar el ID en la URL por el conversation_id real**"
+					}
+				},
+				{
+					"name": "Buscar Mensajes",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/messages/search?q=hola&limit=20&offset=0",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"messages",
+								"search"
+							],
+							"query": [
+								{
+									"key": "q",
+									"value": "hola",
+									"description": "Término de búsqueda (requerido)"
+								},
+								{
+									"key": "limit",
+									"value": "20",
+									"description": "Número de resultados"
+								},
+								{
+									"key": "offset",
+									"value": "0",
+									"description": "Desplazamiento"
+								},
+								{
+									"key": "conversation_id",
+									"value": "",
+									"description": "Buscar solo en una conversación",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Busca mensajes por contenido de texto en todas las conversaciones del cliente."
+					}
+				},
+				{
+					"name": "Estadísticas de Mensajes",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/messages/stats?period_hours=24",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"messages",
+								"stats"
+							],
+							"query": [
+								{
+									"key": "period_hours",
+									"value": "24",
+									"description": "Período en horas para estadísticas"
+								}
+							]
+						},
+						"description": "Obtiene estadísticas detalladas de mensajes:\n- Total de mensajes\n- Mensajes manuales vs bot\n- Mensajes recibidos\n- Conversaciones activas\n- Mensajes no leídos"
+					}
+				},
+				{
+					"name": "Health Check - Messages",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/messages/health",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"messages",
+								"health"
+							]
+						},
+						"description": "Verifica el estado del módulo de mensajes y servicios relacionados."
+					}
+				}
+			],
+			"description": "Endpoints para gestión completa de mensajes, conversaciones y búsquedas."
+		},
+		{
+			"name": "📊 HEALTH CHECKS Y MONITOREO",
+			"item": [
+				{
+					"name": "Health Check General",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/health",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"health"
+							]
+						},
+						"description": "Health check general del servidor:\n- Estado del servidor\n- Tiempo de actividad\n- Timestamp actual\n- Entorno de ejecución"
+					}
+				},
+				{
+					"name": "Test de Conectividad",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								""
+							]
+						},
+						"description": "Test básico de conectividad al servidor."
+					}
+				}
+			],
+			"description": "Endpoints para monitoreo y diagnóstico del sistema."
+		},
+		{
+			"name": "🧪 TESTING Y DESARROLLO",
+			"item": [
+				{
+					"name": "Test Completo del Sistema",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Test automatizado completo",
+									"pm.test('Sistema funcionando', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Respuesta válida', function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response).to.have.property('success');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/auth/profile",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"profile"
+							]
+						},
+						"description": "Test rápido para verificar que el sistema esté funcionando correctamente."
+					}
+				},
+				{
+					"name": "Flujo Completo WhatsApp",
+					"item": [
+						{
+							"name": "1. Conectar",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{access_token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/whatsapp/connect",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"whatsapp",
+										"connect"
+									]
+								}
+							}
+						},
+						{
+							"name": "2. Obtener QR",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{access_token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/whatsapp/qr/{{client_code}}",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"whatsapp",
+										"qr",
+										"{{client_code}}"
+									]
+								}
+							}
+						},
+						{
+							"name": "3. Verificar Estado",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{access_token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/whatsapp/status",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"whatsapp",
+										"status"
+									]
+								}
+							}
+						},
+						{
+							"name": "4. Enviar Mensaje",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{access_token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"to\": \"5491123456789\",\n  \"message\": \"Test desde Postman 🚀\",\n  \"isBot\": false\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/whatsapp/send-message",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"whatsapp",
+										"send-message"
+									]
+								}
+							}
+						}
+					],
+					"description": "Secuencia completa para probar WhatsApp:\n1. Conectar\n2. Obtener QR\n3. Escanear con teléfono\n4. Verificar estado\n5. Enviar mensaje de prueba"
+				}
+			],
+			"description": "Requests para testing y desarrollo del sistema."
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Script global que se ejecuta antes de cada request",
+					"console.log('🚀 Ejecutando request:', pm.info.requestName);",
+					"",
+					"// Verificar que las variables estén configuradas",
+					"if (!pm.environment.get('base_url')) {",
+					"    console.log('⚠️ Configura la variable base_url');",
+					"}",
+					"",
+					"if (!pm.environment.get('client_code')) {",
+					"    console.log('⚠️ Configura la variable client_code');",
+					"}"
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Script global que se ejecuta después de cada request",
+					"console.log('✅ Response status:', pm.response.code);",
+					"",
+					"// Log de errores automático",
+					"if (pm.response.code >= 400) {",
+					"    console.log('❌ Error response:', pm.response.text());",
+					"}"
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:3002",
+			"type": "string"
+		},
+		{
+			"key": "client_code",
+			"value": "CLI001",
+			"type": "string"
+		},
+		{
+			"key": "password",
+			"value": "demo123456",
+			"type": "string"
+		},
+		{
+			"key": "access_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "refresh_token",
+			"value": "",
+			"type": "string"
+		}
+	]
+}
