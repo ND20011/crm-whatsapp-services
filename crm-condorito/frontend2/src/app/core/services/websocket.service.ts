@@ -102,6 +102,7 @@ export class WebSocketService {
         
         // Crear conexión Socket.io
         this.socket = io(this.config.url, {
+          path: '/backend/socket.io',
           auth: {
             token: token,
             clientId: user?.id,
