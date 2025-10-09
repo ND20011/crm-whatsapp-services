@@ -1,0 +1,535 @@
+{
+	"info": {
+		"_postman_id": "bot-control-endpoints-2024",
+		"name": "🤖 CRM Condorito - Bot Control Endpoints",
+		"description": "Colección de endpoints para controlar el bot de WhatsApp del CRM Condorito\n\n🎯 **FUNCIONALIDADES:**\n- Activar/desactivar bot globalmente\n- Control por conversación individual\n- Estadísticas del bot en tiempo real\n- Monitoreo del estado del bot\n\n📋 **INSTRUCCIONES:**\n1. Configurar variables de entorno\n2. Ejecutar Login en la colección principal para obtener token\n3. Usar estos endpoints para controlar el bot\n\n🔧 **VARIABLES REQUERIDAS:**\n- base_url: http://localhost:3000\n- access_token: (se obtiene del login)\n\n⚠️ **NOTA:** Estos endpoints requieren autenticación JWT",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "bot-control-crm"
+	},
+	"item": [
+		{
+			"name": "🌐 CONTROL GLOBAL DEL BOT",
+			"item": [
+				{
+					"name": "Activar Bot para Todas las Conversaciones",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response has success true', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"});",
+									"",
+									"pm.test('Response contains affected conversations', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('affected_conversations');",
+									"    console.log('✅ Bot activado para', jsonData.affected_conversations, 'conversaciones');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{base_url}}/api/messages/bot/enable-all",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"messages",
+								"bot",
+								"enable-all"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Desactivar Bot para Todas las Conversaciones",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response has success true', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"});",
+									"",
+									"pm.test('Response contains affected conversations', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('affected_conversations');",
+									"    console.log('🚫 Bot desactivado para', jsonData.affected_conversations, 'conversaciones');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{base_url}}/api/messages/bot/disable-all",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"messages",
+								"bot",
+								"disable-all"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Obtener Estado Global del Bot",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response has bot_status', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('bot_status');",
+									"});",
+									"",
+									"pm.test('Bot status contains statistics', function () {",
+									"    const jsonData = pm.response.json();",
+									"    const botStatus = jsonData.bot_status;",
+									"    pm.expect(botStatus).to.have.property('total_conversations');",
+									"    pm.expect(botStatus).to.have.property('bot_enabled_conversations');",
+									"    pm.expect(botStatus).to.have.property('bot_disabled_conversations');",
+									"    pm.expect(botStatus).to.have.property('bot_enabled_percentage');",
+									"    ",
+									"    console.log('📊 Estadísticas del Bot:');",
+									"    console.log('   Total conversaciones:', botStatus.total_conversations);",
+									"    console.log('   Bot activado:', botStatus.bot_enabled_conversations);",
+									"    console.log('   Bot desactivado:', botStatus.bot_disabled_conversations);",
+									"    console.log('   Porcentaje activado:', botStatus.bot_enabled_percentage + '%');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/messages/bot/status",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"messages",
+								"bot",
+								"status"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "🎯 CONTROL POR CONVERSACIÓN",
+			"item": [
+				{
+					"name": "Activar Bot para Conversación Específica",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response has success true', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"});",
+									"",
+									"pm.test('Response contains conversation info', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('conversation');",
+									"    pm.expect(jsonData.conversation.bot_enabled).to.be.true;",
+									"    console.log('✅ Bot activado para conversación:', jsonData.conversation.contact_phone);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{base_url}}/api/messages/conversation/{{conversation_id}}/bot/enable",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"messages",
+								"conversation",
+								"{{conversation_id}}",
+								"bot",
+								"enable"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Desactivar Bot para Conversación Específica",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response has success true', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"});",
+									"",
+									"pm.test('Response contains conversation info', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('conversation');",
+									"    pm.expect(jsonData.conversation.bot_enabled).to.be.false;",
+									"    console.log('🚫 Bot desactivado para conversación:', jsonData.conversation.contact_phone);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{base_url}}/api/messages/conversation/{{conversation_id}}/bot/disable",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"messages",
+								"conversation",
+								"{{conversation_id}}",
+								"bot",
+								"disable"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Obtener Estado del Bot para Conversación",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response has conversation info', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('conversation');",
+									"    pm.expect(jsonData.conversation).to.have.property('bot_enabled');",
+									"});",
+									"",
+									"pm.test('Display conversation bot status', function () {",
+									"    const jsonData = pm.response.json();",
+									"    const conv = jsonData.conversation;",
+									"    console.log('📱 Conversación:', conv.contact_phone);",
+									"    console.log('   Nombre:', conv.contact_name || 'Sin nombre');",
+									"    console.log('   Bot:', conv.bot_enabled ? '✅ Activado' : '🚫 Desactivado');",
+									"    console.log('   Último mensaje:', conv.last_message_at);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/messages/conversation/{{conversation_id}}/bot/status",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"messages",
+								"conversation",
+								"{{conversation_id}}",
+								"bot",
+								"status"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "📋 ENDPOINTS AUXILIARES",
+			"item": [
+				{
+					"name": "Obtener Lista de Conversaciones",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response has conversations', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('conversations');",
+									"});",
+									"",
+									"pm.test('Save first conversation ID', function () {",
+									"    const jsonData = pm.response.json();",
+									"    if (jsonData.conversations && jsonData.conversations.length > 0) {",
+									"        const firstConversation = jsonData.conversations[0];",
+									"        pm.environment.set('conversation_id', firstConversation.id);",
+									"        console.log('💾 ID de conversación guardado:', firstConversation.id);",
+									"        console.log('📱 Teléfono:', firstConversation.contact_phone);",
+									"        console.log('🤖 Bot:', firstConversation.bot_enabled ? 'Activado' : 'Desactivado');",
+									"    } else {",
+									"        console.log('⚠️ No hay conversaciones disponibles');",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/messages/conversations?limit=10",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"messages",
+								"conversations"
+							],
+							"query": [
+								{
+									"key": "limit",
+									"value": "10"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Health Check - Messages Module",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Module is active', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.status).to.eql('ACTIVE');",
+									"});",
+									"",
+									"pm.test('Bot endpoints are listed', function () {",
+									"    const jsonData = pm.response.json();",
+									"    const activeEndpoints = jsonData.endpoints.active;",
+									"    pm.expect(activeEndpoints).to.include('POST /api/messages/bot/enable-all');",
+									"    pm.expect(activeEndpoints).to.include('POST /api/messages/bot/disable-all');",
+									"    pm.expect(activeEndpoints).to.include('GET /api/messages/bot/status');",
+									"    console.log('✅ Todos los endpoints del bot están disponibles');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/messages/health",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"messages",
+								"health"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Verificar que el token esté disponible",
+					"const token = pm.environment.get('access_token');",
+					"if (!token) {",
+					"    console.log('⚠️ Token no encontrado. Ejecuta el Login primero.');",
+					"}"
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Log global para todas las respuestas",
+					"console.log('📡 Request:', pm.request.method, pm.request.url.toString());",
+					"console.log('📊 Response:', pm.response.status, pm.response.statusText);"
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:3000",
+			"type": "string"
+		},
+		{
+			"key": "conversation_id",
+			"value": "1",
+			"type": "string"
+		}
+	]
+}

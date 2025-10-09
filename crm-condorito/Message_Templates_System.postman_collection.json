@@ -1,0 +1,855 @@
+{
+	"info": {
+		"_postman_id": "template-system-crm-condorito",
+		"name": "📄 Message Templates System - CRM Condorito",
+		"description": "Colección completa para probar el sistema de templates de mensajes implementado en ETAPA 4.\n\n## 🎯 **FUNCIONALIDADES INCLUIDAS:**\n- ✅ CRUD completo de templates\n- ✅ Sistema de variables dinámicas\n- ✅ Preview con variables personalizadas\n- ✅ Categorización de templates\n- ✅ Estadísticas de uso\n- ✅ Duplicación de templates\n- ✅ Activar/desactivar templates\n\n## 🔑 **CONFIGURACIÓN:**\n1. Configurar variable `base_url` = `http://localhost:3000`\n2. Ejecutar **Login** para obtener JWT token\n3. El token se configurará automáticamente para todas las requests\n\n## 📋 **ORDEN RECOMENDADO DE TESTING:**\n1. **Authentication** → Login\n2. **Template Categories** → Ver categorías disponibles\n3. **Template CRUD** → Crear, listar, actualizar templates\n4. **Template Variables** → Probar preview y uso de variables\n5. **Template Management** → Duplicar, activar/desactivar\n6. **Template Stats** → Ver estadísticas de uso",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "🔐 Authentication",
+			"item": [
+				{
+					"name": "Login - Get JWT Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    if (response.success && response.tokens && response.tokens.accessToken) {",
+									"        pm.environment.set('jwt_token', response.tokens.accessToken);",
+									"        console.log('✅ JWT Token saved:', response.tokens.accessToken.substring(0, 50) + '...');",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"clientCode\": \"CLI001\",\n    \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/login",
+							"host": ["{{base_url}}"],
+							"path": ["api", "auth", "login"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "📋 Template Categories & Stats",
+			"item": [
+				{
+					"name": "Get Available Categories",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/messages/templates/categories",
+							"host": ["{{base_url}}"],
+							"path": ["api", "messages", "templates", "categories"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Template Statistics",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/messages/templates/stats",
+							"host": ["{{base_url}}"],
+							"path": ["api", "messages", "templates", "stats"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "📄 Template CRUD",
+			"item": [
+				{
+					"name": "Get All Templates",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/messages/templates?page=1&limit=20&search=&category=&is_active=&sortBy=created_at&sortOrder=DESC",
+							"host": ["{{base_url}}"],
+							"path": ["api", "messages", "templates"],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "20"
+								},
+								{
+									"key": "search",
+									"value": ""
+								},
+								{
+									"key": "category",
+									"value": ""
+								},
+								{
+									"key": "is_active",
+									"value": ""
+								},
+								{
+									"key": "sortBy",
+									"value": "created_at"
+								},
+								{
+									"key": "sortOrder",
+									"value": "DESC"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Template - Bienvenida Personalizada",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const response = pm.response.json();",
+									"    if (response.success && response.data && response.data.id) {",
+									"        pm.environment.set('welcome_template_id', response.data.id);",
+									"        console.log('✅ Welcome Template ID saved:', response.data.id);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Bienvenida Personalizada\",\n    \"content\": \"¡Hola {nombre}! 👋 Bienvenido a {empresa}. Hoy es {fecha} y son las {hora}. ¿En qué podemos ayudarte?\",\n    \"variables\": [\"nombre\", \"empresa\", \"fecha\", \"hora\"],\n    \"category\": \"saludo\",\n    \"is_active\": true\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/messages/templates",
+							"host": ["{{base_url}}"],
+							"path": ["api", "messages", "templates"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Template - Confirmación de Pedido",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const response = pm.response.json();",
+									"    if (response.success && response.data && response.data.id) {",
+									"        pm.environment.set('order_template_id', response.data.id);",
+									"        console.log('✅ Order Template ID saved:', response.data.id);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Confirmación de Pedido\",\n    \"content\": \"Hola {nombre}, tu pedido #{numero_pedido} ha sido confirmado. Total: ${monto}. Tiempo estimado de entrega: {tiempo_estimado}. ¡Gracias por tu compra!\",\n    \"variables\": [\"nombre\", \"numero_pedido\", \"monto\", \"tiempo_estimado\"],\n    \"category\": \"confirmacion\",\n    \"is_active\": true\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/messages/templates",
+							"host": ["{{base_url}}"],
+							"path": ["api", "messages", "templates"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Template - Promoción",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const response = pm.response.json();",
+									"    if (response.success && response.data && response.data.id) {",
+									"        pm.environment.set('promo_template_id', response.data.id);",
+									"        console.log('✅ Promo Template ID saved:', response.data.id);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Promoción Especial\",\n    \"content\": \"🎉 ¡Oferta especial para {nombre}! Aprovechá {descuento}% de descuento en {producto}. Válido hasta {fecha_vencimiento}. ¡No te lo pierdas!\",\n    \"variables\": [\"nombre\", \"descuento\", \"producto\", \"fecha_vencimiento\"],\n    \"category\": \"promocion\",\n    \"is_active\": true\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/messages/templates",
+							"host": ["{{base_url}}"],
+							"path": ["api", "messages", "templates"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Template by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/messages/templates/{{welcome_template_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "messages", "templates", "{{welcome_template_id}}"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Template",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Bienvenida VIP\",\n    \"content\": \"¡Hola {nombre}! 🌟 Bienvenido a {empresa}, tu tienda de confianza. Hoy es {fecha_completa} y son las {hora}. Como cliente VIP, tienes acceso a descuentos exclusivos. ¿En qué podemos ayudarte?\",\n    \"variables\": [\"nombre\", \"empresa\", \"fecha_completa\", \"hora\"],\n    \"category\": \"saludo\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/messages/templates/{{welcome_template_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "messages", "templates", "{{welcome_template_id}}"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Template",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/messages/templates/{{promo_template_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "messages", "templates", "{{promo_template_id}}"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "🔧 Template Variables & Preview",
+			"item": [
+				{
+					"name": "Preview Template with Default Variables",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"variables\": {}\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/messages/templates/{{welcome_template_id}}/preview",
+							"host": ["{{base_url}}"],
+							"path": ["api", "messages", "templates", "{{welcome_template_id}}", "preview"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Preview Template with Custom Variables",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"variables\": {\n        \"nombre\": \"María González\",\n        \"empresa\": \"TechStore Argentina\",\n        \"telefono\": \"+54 9 11 5555-1234\"\n    }\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/messages/templates/{{welcome_template_id}}/preview",
+							"host": ["{{base_url}}"],
+							"path": ["api", "messages", "templates", "{{welcome_template_id}}", "preview"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Use Template (Increment Usage Counter)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"variables\": {\n        \"nombre\": \"Carlos Fernández\",\n        \"empresa\": \"Mi Negocio Online\",\n        \"telefono\": \"+54 9 11 4444-5678\"\n    }\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/messages/templates/{{welcome_template_id}}/use",
+							"host": ["{{base_url}}"],
+							"path": ["api", "messages", "templates", "{{welcome_template_id}}", "use"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Preview Order Confirmation Template",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"variables\": {\n        \"nombre\": \"Ana Martínez\",\n        \"numero_pedido\": \"ORD-2025-001\",\n        \"monto\": \"15,500.00\",\n        \"tiempo_estimado\": \"3-5 días hábiles\"\n    }\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/messages/templates/{{order_template_id}}/preview",
+							"host": ["{{base_url}}"],
+							"path": ["api", "messages", "templates", "{{order_template_id}}", "preview"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "🔄 Template Management",
+			"item": [
+				{
+					"name": "Duplicate Template",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const response = pm.response.json();",
+									"    if (response.success && response.data && response.data.duplicated && response.data.duplicated.id) {",
+									"        pm.environment.set('duplicated_template_id', response.data.duplicated.id);",
+									"        console.log('✅ Duplicated Template ID saved:', response.data.duplicated.id);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name_suffix\": \"Backup\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/messages/templates/duplicate/{{welcome_template_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "messages", "templates", "duplicate", "{{welcome_template_id}}"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Toggle Template (Activate/Deactivate)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/messages/templates/{{duplicated_template_id}}/toggle",
+							"host": ["{{base_url}}"],
+							"path": ["api", "messages", "templates", "{{duplicated_template_id}}", "toggle"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "🔍 Template Filters & Search",
+			"item": [
+				{
+					"name": "Search Templates by Name",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/messages/templates?search=Bienvenida&page=1&limit=10",
+							"host": ["{{base_url}}"],
+							"path": ["api", "messages", "templates"],
+							"query": [
+								{
+									"key": "search",
+									"value": "Bienvenida"
+								},
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Filter by Category - Saludo",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/messages/templates?category=saludo&page=1&limit=10",
+							"host": ["{{base_url}}"],
+							"path": ["api", "messages", "templates"],
+							"query": [
+								{
+									"key": "category",
+									"value": "saludo"
+								},
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Filter by Category - Confirmación",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/messages/templates?category=confirmacion&page=1&limit=10",
+							"host": ["{{base_url}}"],
+							"path": ["api", "messages", "templates"],
+							"query": [
+								{
+									"key": "category",
+									"value": "confirmacion"
+								},
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Filter Active Templates Only",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/messages/templates?is_active=true&page=1&limit=10",
+							"host": ["{{base_url}}"],
+							"path": ["api", "messages", "templates"],
+							"query": [
+								{
+									"key": "is_active",
+									"value": "true"
+								},
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Sort by Usage Count DESC",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/messages/templates?sortBy=usage_count&sortOrder=DESC&page=1&limit=10",
+							"host": ["{{base_url}}"],
+							"path": ["api", "messages", "templates"],
+							"query": [
+								{
+									"key": "sortBy",
+									"value": "usage_count"
+								},
+								{
+									"key": "sortOrder",
+									"value": "DESC"
+								},
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Sort by Name ASC",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/messages/templates?sortBy=name&sortOrder=ASC&page=1&limit=10",
+							"host": ["{{base_url}}"],
+							"path": ["api", "messages", "templates"],
+							"query": [
+								{
+									"key": "sortBy",
+									"value": "name"
+								},
+								{
+									"key": "sortOrder",
+									"value": "ASC"
+								},
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "📊 Advanced Testing",
+			"item": [
+				{
+					"name": "Create Template with All Variable Types",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Template Completo\",\n    \"content\": \"Hola {nombre}, desde {empresa} te informamos que el {dia}/{mes}/{año} a las {hora} procesamos tu solicitud. Nuestro teléfono es {telefono}. Fecha completa: {fecha_completa}.\",\n    \"variables\": [\"nombre\", \"empresa\", \"dia\", \"mes\", \"año\", \"hora\", \"telefono\", \"fecha_completa\"],\n    \"category\": \"general\",\n    \"is_active\": true\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/messages/templates",
+							"host": ["{{base_url}}"],
+							"path": ["api", "messages", "templates"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Test Error - Create Duplicate Name",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Bienvenida VIP\",\n    \"content\": \"Este es un template duplicado que debería fallar\",\n    \"category\": \"general\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/messages/templates",
+							"host": ["{{base_url}}"],
+							"path": ["api", "messages", "templates"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Test Error - Invalid Category",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Template con categoría inválida\",\n    \"content\": \"Este template tiene una categoría que no existe\",\n    \"category\": \"categoria_invalida\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/messages/templates",
+							"host": ["{{base_url}}"],
+							"path": ["api", "messages", "templates"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Test Error - Missing Required Fields",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"\",\n    \"content\": \"\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/messages/templates",
+							"host": ["{{base_url}}"],
+							"path": ["api", "messages", "templates"]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:3000",
+			"type": "string"
+		}
+	]
+}

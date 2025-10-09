@@ -1,0 +1,94 @@
+# 📁 NODE MODULES - No subir dependencias
+node_modules/
+*/node_modules/
+**/node_modules/
+
+# 📦 PACKAGE MANAGER FILES
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# 🔧 BUILD AND DIST FILES
+dist/
+build/
+*/dist/
+*/build/
+**/dist/
+**/build/
+
+# 🌍 ENVIRONMENT FILES
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.env
+
+# 📝 LOGS
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# 🗂️ TEMPORARY FILES
+tmp/
+temp/
+.tmp/
+.temp/
+
+# 🖥️ OS GENERATED FILES
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# 📱 IDE FILES
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 🔐 SENSITIVE FILES
+config/database.js
+config/secrets.js
+*.pem
+*.key
+*.crt
+*.p12
+
+# 📊 UPLOADS AND MEDIA
+uploads/
+media/
+public/uploads/
+public/media/
+
+# 🗄️ DATABASE FILES
+*.db
+*.sqlite
+*.sqlite3
+
+# 🎯 SPECIFIC TO THIS PROJECT
+backend-deploy/uploads/
+backend-deploy/logs/
+backend-deploy/sessions/
+backend-deploy/token.txt
+backend-deploy/test_*.js
+
+# 📋 BACKUP FILES
+*.bak
+*.backup
+*.old
+
+# 🚀 DEPLOYMENT FILES
+frontend-deploy/
+crm-backend.zip
+crm-frontend.zip
+
+# 📋 DOCUMENTATION BACKUPS
+CAMBIOS.md.bak
