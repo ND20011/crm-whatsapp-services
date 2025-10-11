@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>CRM Condorito - WhatsApp CRM</title>
+  <base href="/">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="manifest.json">
+  <!-- PWA Meta Tags -->
+  <meta name="theme-color" content="#0d6efd">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="CRM Condorito">
+  <link rel="apple-touch-icon" href="icon-192x192.png">
+  <!-- Configuración de entorno -->
+  <script>
+    // Configuración para desarrollo con HTTPS auto-firmado
+    if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+      // Configurar para aceptar certificados auto-firmados en desarrollo
+      window.ENV = window.ENV || {};
+    }
+  </script>
+  <script src="env.js"></script>
+  <script src="notification-sound.js"></script>
+</head>
+<body>
+  <app-root></app-root>
+</body>
+</html>

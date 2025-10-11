@@ -1,0 +1,6 @@
+<!-- Placeholder SVG for 192x192 icon -->
+<svg width="192" height="192" xmlns="http://www.w3.org/2000/svg">
+  <rect width="192" height="192" fill="#0d6efd"/>
+  <text x="96" y="96" font-family="Arial" font-size="24" fill="white" text-anchor="middle" dominant-baseline="middle">CRM</text>
+  <text x="96" y="120" font-family="Arial" font-size="16" fill="white" text-anchor="middle" dominant-baseline="middle">Condorito</text>
+</svg>

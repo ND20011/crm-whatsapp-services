@@ -1,0 +1,590 @@
+{
+	"info": {
+		"_postman_id": "bot-quota-system-2024",
+		"name": "🤖 Sistema de Cuotas del Bot - CRM Condorito",
+		"description": "Colección completa para gestionar y probar el sistema de cuotas de respuestas automáticas del bot de WhatsApp.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "🔑 Autenticación",
+			"item": [
+				{
+					"name": "Login - Obtener Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    pm.environment.set('jwt_token', response.accessToken);",
+									"    console.log('Token JWT guardado:', response.accessToken);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"clientCode\": \"CLI001\",\n  \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"login"
+							]
+						},
+						"description": "Hacer login y obtener token JWT. El token se guarda automáticamente en la variable de entorno 'jwt_token'."
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints de autenticación para obtener tokens JWT"
+		},
+		{
+			"name": "📊 Consultas de Cuota",
+			"item": [
+				{
+					"name": "Ver Estado Actual de Cuota",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/messages/bot/quota",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"messages",
+								"bot",
+								"quota"
+							]
+						},
+						"description": "Obtiene el estado actual de la cuota del bot: uso, límite, porcentaje, fecha de reset, etc."
+					},
+					"response": []
+				},
+				{
+					"name": "Ver Historial de Uso (30 días)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/messages/bot/quota/history?days=30",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"messages",
+								"bot",
+								"quota",
+								"history"
+							],
+							"query": [
+								{
+									"key": "days",
+									"value": "30",
+									"description": "Número de días hacia atrás para el historial"
+								}
+							]
+						},
+						"description": "Obtiene el historial de uso del bot por día durante los últimos 30 días"
+					},
+					"response": []
+				},
+				{
+					"name": "Ver Historial de Uso (7 días)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/messages/bot/quota/history?days=7",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"messages",
+								"bot",
+								"quota",
+								"history"
+							],
+							"query": [
+								{
+									"key": "days",
+									"value": "7"
+								}
+							]
+						},
+						"description": "Obtiene el historial de uso del bot por día durante los últimos 7 días"
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints para consultar el estado y historial de cuotas del bot"
+		},
+		{
+			"name": "⚙️ Configuración de Cuota",
+			"item": [
+				{
+					"name": "Configurar Límite - Plan Emprendedor (2500)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"monthly_bot_limit\": 2500\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/messages/bot/quota",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"messages",
+								"bot",
+								"quota"
+							]
+						},
+						"description": "Configura el límite mensual del bot para el Plan Emprendedor (2,500 respuestas/mes)"
+					},
+					"response": []
+				},
+				{
+					"name": "Configurar Límite - Plan Profesional (5000)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"monthly_bot_limit\": 5000\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/messages/bot/quota",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"messages",
+								"bot",
+								"quota"
+							]
+						},
+						"description": "Configura el límite mensual del bot para el Plan Profesional (5,000 respuestas/mes)"
+					},
+					"response": []
+				},
+				{
+					"name": "Configurar Límite - Plan Empresarial (15000)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"monthly_bot_limit\": 15000\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/messages/bot/quota",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"messages",
+								"bot",
+								"quota"
+							]
+						},
+						"description": "Configura el límite mensual del bot para el Plan Empresarial (15,000 respuestas/mes)"
+					},
+					"response": []
+				},
+				{
+					"name": "Configurar Límite Personalizado",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"monthly_bot_limit\": 10000\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/messages/bot/quota",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"messages",
+								"bot",
+								"quota"
+							]
+						},
+						"description": "Configura un límite personalizado para el bot. Cambia el valor según necesites."
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints para configurar límites de cuota según diferentes planes"
+		},
+		{
+			"name": "🔄 Gestión de Cuota",
+			"item": [
+				{
+					"name": "Reset Manual del Contador",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{base_url}}/api/messages/bot/quota/reset",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"messages",
+								"bot",
+								"quota",
+								"reset"
+							]
+						},
+						"description": "Resetea manualmente el contador de uso del bot a 0. Útil para testing o inicio de ciclo."
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints para gestionar y resetear contadores de cuota"
+		},
+		{
+			"name": "🧪 Testing y Validaciones",
+			"item": [
+				{
+					"name": "Test - Límite Muy Bajo (para testing)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"monthly_bot_limit\": 3\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/messages/bot/quota",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"messages",
+								"bot",
+								"quota"
+							]
+						},
+						"description": "Configura un límite muy bajo para probar rápidamente el comportamiento cuando se excede la cuota"
+					},
+					"response": []
+				},
+				{
+					"name": "Test - Límite Inválido (Negativo)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"monthly_bot_limit\": -100\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/messages/bot/quota",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"messages",
+								"bot",
+								"quota"
+							]
+						},
+						"description": "Prueba validación con un límite inválido (negativo). Debería devolver error 400."
+					},
+					"response": []
+				},
+				{
+					"name": "Test - Límite Muy Alto",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"monthly_bot_limit\": 60000\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/messages/bot/quota",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"messages",
+								"bot",
+								"quota"
+							]
+						},
+						"description": "Prueba configuración con límite muy alto (superior a 50,000). Debería devolver error."
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints para testing de validaciones y casos extremos"
+		},
+		{
+			"name": "📋 Información Adicional",
+			"item": [
+				{
+					"name": "Ver Configuración General del Bot",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/messages/bot/config",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"messages",
+								"bot",
+								"config"
+							]
+						},
+						"description": "Obtiene la configuración general del bot incluyendo horarios, días activos, etc."
+					},
+					"response": []
+				},
+				{
+					"name": "Ver Estadísticas de Mensajes",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/messages/stats",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"messages",
+								"stats"
+							]
+						},
+						"description": "Obtiene estadísticas generales de mensajes del cliente"
+					},
+					"response": []
+				},
+				{
+					"name": "Ver Estado del Bot de Productos",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/messages/bot/products/status",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"messages",
+								"bot",
+								"products",
+								"status"
+							]
+						},
+						"description": "Verifica si la búsqueda de productos está habilitada para el bot"
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints informativos relacionados con el bot y mensajes"
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:3000",
+			"type": "string"
+		},
+		{
+			"key": "jwt_token",
+			"value": "",
+			"type": "string"
+		}
+	]
+}

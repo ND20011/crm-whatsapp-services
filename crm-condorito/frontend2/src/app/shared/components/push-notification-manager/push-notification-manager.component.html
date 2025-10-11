@@ -1,0 +1,120 @@
+<div class="push-notification-manager">
+  <!-- Estado de soporte -->
+  <div class="support-status" [ngClass]="{
+    'supported': isSupported(),
+    'not-supported': !isSupported()
+  }">
+    <div class="status-icon">
+      <i class="fas" [ngClass]="{
+        'fa-bell': isSupported(),
+        'fa-bell-slash': !isSupported()
+      }"></i>
+    </div>
+    <div class="status-info">
+      <h3>{{ isSupported() ? 'Notificaciones Soportadas' : 'Notificaciones No Soportadas' }}</h3>
+      <p>{{ isSupported() ? 'Tu navegador soporta notificaciones push' : 'Tu navegador no soporta notificaciones push' }}</p>
+    </div>
+  </div>
+
+  <!-- Contenido solo si está soportado -->
+  <div *ngIf="isSupported()">
+    <!-- Estado de permisos -->
+    <div class="permission-status" [ngClass]="{
+      'granted': permission().granted,
+      'denied': permission().denied,
+      'default': permission().default
+    }">
+      <div class="status-icon">
+        <i class="fas" [ngClass]="{
+          'fa-check-circle': permission().granted,
+          'fa-times-circle': permission().denied,
+          'fa-question-circle': permission().default
+        }"></i>
+      </div>
+      <div class="status-info">
+        <h4>Estado de Permisos</h4>
+        <p>
+          <span *ngIf="permission().granted">
+            Permisos concedidos - Las notificaciones están habilitadas
+          </span>
+          <span *ngIf="permission().denied">
+            Permisos denegados - Las notificaciones están bloqueadas
+          </span>
+          <span *ngIf="permission().default">
+            Permisos pendientes - Haz clic en "Activar" para solicitar permisos
+          </span>
+        </p>
+      </div>
+    </div>
+
+    <!-- Estado de suscripción -->
+    <div class="subscription-status" [ngClass]="{
+      'subscribed': isSubscribed(),
+      'not-subscribed': !isSubscribed()
+    }">
+      <div class="status-icon">
+        <i class="fas" [ngClass]="{
+          'fa-bell': isSubscribed(),
+          'fa-bell-slash': !isSubscribed()
+        }"></i>
+      </div>
+      <div class="status-info">
+        <h4>Estado de Suscripción</h4>
+        <p>{{ isSubscribed() ? 'Suscrito a notificaciones push' : 'No suscrito a notificaciones push' }}</p>
+      </div>
+    </div>
+
+    <!-- Controles -->
+    <div class="controls">
+      <div *ngIf="!isSubscribed()">
+        <button 
+          class="btn btn-primary" 
+          [disabled]="isLoading()"
+          (click)="subscribeToNotifications()">
+          <span *ngIf="isLoading()">
+            <i class="fas fa-spinner fa-spin"></i> Activando...
+          </span>
+          <span *ngIf="!isLoading()">
+            <i class="fas fa-bell"></i> Activar Notificaciones
+          </span>
+        </button>
+      </div>
+      
+      <div *ngIf="isSubscribed()" class="button-group">
+        <button 
+          class="btn btn-success" 
+          [disabled]="isLoading()"
+          (click)="sendTestNotification()">
+          <span *ngIf="isLoading()">
+            <i class="fas fa-spinner fa-spin"></i> Enviando...
+          </span>
+          <span *ngIf="!isLoading()">
+            <i class="fas fa-paper-plane"></i> Probar Notificación
+          </span>
+        </button>
+        
+        <button 
+          class="btn btn-outline-danger" 
+          [disabled]="isLoading()"
+          (click)="unsubscribeFromNotifications()">
+          <span *ngIf="isLoading()">
+            <i class="fas fa-spinner fa-spin"></i> Desactivando...
+          </span>
+          <span *ngIf="!isLoading()">
+            <i class="fas fa-bell-slash"></i> Desactivar
+          </span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Mensaje de estado -->
+    <div *ngIf="statusMessage()" class="status-message" [ngClass]="'status-' + statusMessage()!.type">
+      <i class="fas" [ngClass]="{
+        'fa-check-circle': statusMessage()!.type === 'success',
+        'fa-exclamation-triangle': statusMessage()!.type === 'error',
+        'fa-info-circle': statusMessage()!.type === 'info'
+      }"></i>
+      {{ statusMessage()!.message }}
+    </div>
+  </div>
+</div>

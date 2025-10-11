@@ -1,0 +1,102 @@
+.sound-settings {
+  .settings-header {
+    border-bottom: 1px solid #e9ecef;
+    padding-bottom: 0.75rem;
+  }
+
+  .settings-controls {
+    .test-section {
+      text-align: center;
+      padding: 1rem 0;
+      border-bottom: 1px solid #f8f9fa;
+    }
+
+    .setting-item {
+      .form-label {
+        color: #495057;
+        margin-bottom: 0.5rem;
+      }
+
+      .form-range {
+        &::-webkit-slider-thumb {
+          background-color: #0d6efd;
+        }
+        
+        &::-moz-range-thumb {
+          background-color: #0d6efd;
+          border: none;
+        }
+      }
+    }
+  }
+
+  .advanced-toggle {
+    text-align: center;
+    padding: 0.5rem 0;
+    border-top: 1px solid #f8f9fa;
+
+    .btn-link {
+      color: #6c757d;
+      font-size: 0.875rem;
+
+      &:hover {
+        color: #0d6efd;
+      }
+    }
+  }
+
+  .advanced-settings {
+    .card {
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    .technical-info {
+      ul li {
+        margin-bottom: 0.25rem;
+      }
+    }
+  }
+
+  .disabled-state {
+    .alert {
+      border: 1px solid #b3d7ff;
+      background-color: #f0f8ff;
+      color: #0066cc;
+
+      .fas {
+        color: #0066cc;
+      }
+    }
+  }
+
+  // Animaciones
+  .form-check-input {
+    transition: all 0.3s ease;
+  }
+
+  .btn {
+    transition: all 0.2s ease;
+  }
+
+  // Estados de hover
+  .setting-item:hover {
+    .form-label {
+      color: #0d6efd;
+    }
+  }
+
+  // Responsive
+  @media (max-width: 576px) {
+    .settings-header {
+      .d-flex {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: 0.5rem;
+      }
+    }
+
+    .test-section {
+      padding: 0.75rem 0;
+    }
+  }
+}

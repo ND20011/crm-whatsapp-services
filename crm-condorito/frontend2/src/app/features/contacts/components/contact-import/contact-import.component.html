@@ -1,0 +1,228 @@
+@if (isVisible()) {
+  <div class="modal-overlay" (click)="close()">
+    <div class="modal-content import-modal" (click)="$event.stopPropagation()">
+      <!-- Modal Header -->
+      <div class="modal-header">
+        <h2 class="modal-title">
+          <i class="fas fa-file-import"></i>
+          Importar Contactos desde CSV
+        </h2>
+        <button class="close-btn" (click)="close()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="modal-body">
+        <!-- Success/Error Messages -->
+        @if (successMessage()) {
+          <div class="alert alert-success">
+            <i class="fas fa-check-circle"></i>
+            {{ successMessage() }}
+          </div>
+        }
+
+        @if (errorMessage()) {
+          <div class="alert alert-error">
+            <i class="fas fa-exclamation-triangle"></i>
+            {{ errorMessage() }}
+          </div>
+        }
+
+        <!-- Step 1: Template Download -->
+        <div class="import-step">
+          <div class="step-header">
+            <div class="step-number">1</div>
+            <h3 class="step-title">Descargar Plantilla</h3>
+          </div>
+          <div class="step-content">
+            <p class="step-description">
+              Descarga la plantilla CSV con el formato correcto para importar tus contactos.
+            </p>
+            <button class="btn btn-outline" (click)="downloadTemplate()">
+              <i class="fas fa-download"></i>
+              Descargar Plantilla CSV
+            </button>
+            
+            <!-- Template Preview -->
+            <div class="template-preview">
+              <h4 class="preview-title">
+                <i class="fas fa-eye"></i>
+                Vista previa del formato:
+              </h4>
+              <div class="csv-preview">
+                <pre>{{ csvTemplate }}</pre>
+              </div>
+              <div class="format-info">
+                <h5>Campos disponibles:</h5>
+                <ul class="field-list">
+                  <li><strong>phone_number</strong> (obligatorio): Número de teléfono con código de país</li>
+                  <li><strong>name</strong> (opcional): Nombre del contacto en WhatsApp</li>
+                  <li><strong>custom_name</strong> (opcional): Nombre personalizado para el CRM</li>
+                  <li><strong>comments</strong> (opcional): Comentarios adicionales</li>
+                  <li><strong>is_blocked</strong> (opcional): true/false para contactos bloqueados</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 2: File Upload -->
+        <div class="import-step">
+          <div class="step-header">
+            <div class="step-number">2</div>
+            <h3 class="step-title">Seleccionar Archivo</h3>
+          </div>
+          <div class="step-content">
+            @if (!selectedFile()) {
+              <!-- File Drop Zone -->
+              <div 
+                class="file-drop-zone"
+                [class.drag-over]="dragOver()"
+                (dragover)="onDragOver($event)"
+                (dragleave)="onDragLeave($event)"
+                (drop)="onDrop($event)"
+              >
+                <div class="drop-zone-content">
+                  <i class="fas fa-cloud-upload-alt drop-icon"></i>
+                  <h4 class="drop-title">Arrastra tu archivo CSV aquí</h4>
+                  <p class="drop-subtitle">o haz clic para seleccionar</p>
+                  <input
+                    type="file"
+                    accept=".csv"
+                    class="file-input"
+                    (change)="onFileSelected($event)"
+                  />
+                  <div class="file-requirements">
+                    <small>
+                      <i class="fas fa-info-circle"></i>
+                      Archivo CSV, máximo 5MB
+                    </small>
+                  </div>
+                </div>
+              </div>
+            } @else {
+              <!-- Selected File Info -->
+              <div class="selected-file">
+                <div class="file-info">
+                  <div class="file-icon">
+                    <i class="fas fa-file-csv"></i>
+                  </div>
+                  <div class="file-details">
+                    <h4 class="file-name">{{ getFileName() }}</h4>
+                    <p class="file-size">{{ getFileSize() }}</p>
+                  </div>
+                  <button class="remove-file-btn" (click)="clearSelection()" title="Remover archivo">
+                    <i class="fas fa-times"></i>
+                  </button>
+                </div>
+
+                <!-- Preview Loading -->
+                @if (loadingService.isLoadingByContext('preview-import')) {
+                  <div class="preview-loading">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    Analizando archivo...
+                  </div>
+                }
+
+                <!-- Import Preview -->
+                @if (importPreview()) {
+                  <div class="import-preview">
+                    <h4 class="preview-title">
+                      <i class="fas fa-chart-bar"></i>
+                      Resumen de Importación
+                    </h4>
+                    
+                    <div class="preview-stats">
+                      <div class="stat-item">
+                        <div class="stat-number">{{ importPreview()!.totalRows }}</div>
+                        <div class="stat-label">Total Filas</div>
+                      </div>
+                      <div class="stat-item valid">
+                        <div class="stat-number">{{ importPreview()!.validRows }}</div>
+                        <div class="stat-label">Válidas</div>
+                      </div>
+                      <div class="stat-item invalid">
+                        <div class="stat-number">{{ importPreview()!.invalidRows }}</div>
+                        <div class="stat-label">Inválidas</div>
+                      </div>
+                    </div>
+
+                    @if (importPreview()!.errors.length > 0) {
+                      <div class="preview-errors">
+                        <h5 class="errors-title">
+                          <i class="fas fa-exclamation-triangle"></i>
+                          Errores encontrados:
+                        </h5>
+                        <ul class="errors-list">
+                          @for (error of importPreview()!.errors; track $index) {
+                            <li>{{ error }}</li>
+                          }
+                        </ul>
+                      </div>
+                    }
+
+                    <!-- Sample Data Preview -->
+                    @if (importPreview()!.rows.length > 0) {
+                      <div class="data-preview">
+                        <h5 class="data-title">
+                          <i class="fas fa-table"></i>
+                          Vista previa de datos (primeras 5 filas):
+                        </h5>
+                        <div class="table-container">
+                          <table class="preview-table">
+                            <thead>
+                              <tr>
+                                @for (header of importPreview()!.headers; track $index) {
+                                  <th>{{ header }}</th>
+                                }
+                              </tr>
+                            </thead>
+                            <tbody>
+                              @for (row of importPreview()!.rows.slice(0, 5); track $index) {
+                                <tr>
+                                  @for (cell of row; track $index) {
+                                    <td>{{ cell || '-' }}</td>
+                                  }
+                                </tr>
+                              }
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="close()">
+          <i class="fas fa-times"></i>
+          Cancelar
+        </button>
+        
+        @if (selectedFile() && importPreview()) {
+          <button
+            type="button"
+            class="btn btn-primary"
+            (click)="executeImport()"
+            [disabled]="!canImport()"
+          >
+            @if (loadingService.isLoadingByContext('execute-import')) {
+              <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+              Importando...
+            } @else {
+              <i class="fas fa-upload"></i>
+              Importar {{ importPreview()!.validRows }} Contactos
+            }
+          </button>
+        }
+      </div>
+    </div>
+  </div>
+}

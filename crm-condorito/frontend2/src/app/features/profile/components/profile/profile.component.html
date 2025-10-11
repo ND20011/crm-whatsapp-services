@@ -1,0 +1,449 @@
+<div class="profile-container">
+  <!-- Header -->
+  <div class="page-header">
+    <div class="header-content">
+      <div class="avatar-section">
+        <div class="user-avatar">
+          <span>{{ getCompanyInitial() }}</span>
+        </div>
+        <div class="user-info">
+          <h1>{{ currentUser()?.company_name || 'Mi Perfil' }}</h1>
+          <p class="user-subtitle">
+            <i class="fas fa-building me-2"></i>
+            {{ currentUser()?.client_code }}
+          </p>
+          @if (currentUser()?.email) {
+            <p class="user-subtitle">
+              <i class="fas fa-envelope me-2"></i>
+              {{ currentUser()?.email }}
+            </p>
+          }
+        </div>
+      </div>
+      <div class="header-actions">
+        @if (hasProfileUnsavedChanges()) {
+          <div class="unsaved-changes-indicator">
+            <i class="fas fa-exclamation-triangle"></i>
+            Cambios sin guardar
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  @if (isLoading()) {
+    <div class="loading-container">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Cargando...</span>
+      </div>
+      <p>Cargando información del perfil...</p>
+    </div>
+  } @else {
+    
+    <!-- Success/Error Messages -->
+    @if (successMessage()) {
+      <div class="alert alert-success alert-dismissible fade show">
+        <i class="fas fa-check-circle me-2"></i>
+        {{ successMessage() }}
+      </div>
+    }
+    
+    @if (errorMessage()) {
+      <div class="alert alert-danger alert-dismissible fade show">
+        <i class="fas fa-exclamation-circle me-2"></i>
+        {{ errorMessage() }}
+      </div>
+    }
+
+    <div class="profile-content">
+      <!-- Profile Information Section -->
+      <div class="profile-section">
+        <div class="section-header">
+          <div class="section-title">
+            <div class="title-icon">
+              <i class="fas fa-user"></i>
+            </div>
+            <div class="title-text">
+              <h2>Información Personal</h2>
+              <p class="section-subtitle">Gestiona tu información básica y de contacto</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-content">
+          <form [formGroup]="profileForm" (ngSubmit)="saveProfile()" class="profile-form">
+            <!-- Company Name -->
+            <div class="form-group">
+              <label for="company_name" class="form-label">
+                <i class="fas fa-building me-2"></i>
+                Nombre de Empresa *
+              </label>
+              <input
+                type="text"
+                id="company_name"
+                formControlName="company_name"
+                class="form-control"
+                [class.is-invalid]="hasFieldError(profileForm, 'company_name')"
+                placeholder="Ingresa el nombre de tu empresa">
+              @if (hasFieldError(profileForm, 'company_name')) {
+                <div class="invalid-feedback">
+                  {{ getFieldError(profileForm, 'company_name') }}
+                </div>
+              }
+            </div>
+
+            <!-- Email -->
+            <div class="form-group">
+              <label for="email" class="form-label">
+                <i class="fas fa-envelope me-2"></i>
+                Email
+              </label>
+              <input
+                type="email"
+                id="email"
+                formControlName="email"
+                class="form-control"
+                [class.is-invalid]="hasFieldError(profileForm, 'email')"
+                placeholder="tu@email.com">
+              @if (hasFieldError(profileForm, 'email')) {
+                <div class="invalid-feedback">
+                  {{ getFieldError(profileForm, 'email') }}
+                </div>
+              }
+            </div>
+
+            <!-- Phone -->
+            <div class="form-group">
+              <label for="phone" class="form-label">
+                <i class="fas fa-phone me-2"></i>
+                Teléfono
+              </label>
+              <input
+                type="tel"
+                id="phone"
+                formControlName="phone"
+                class="form-control"
+                [class.is-invalid]="hasFieldError(profileForm, 'phone')"
+                placeholder="+54 11 1234-5678">
+              @if (hasFieldError(profileForm, 'phone')) {
+                <div class="invalid-feedback">
+                  {{ getFieldError(profileForm, 'phone') }}
+                </div>
+              }
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="form-actions">
+              <button
+                type="submit"
+                class="btn btn-primary"
+                [disabled]="!isProfileFormValid() || isUpdatingProfile()">
+                @if (isUpdatingProfile()) {
+                  <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                }
+                <i class="fas fa-save me-2" [class.d-none]="isUpdatingProfile()"></i>
+                {{ isUpdatingProfile() ? 'Guardando...' : 'Guardar Cambios' }}
+              </button>
+              
+              @if (hasProfileUnsavedChanges()) {
+                <button
+                  type="button"
+                  class="btn btn-outline-secondary"
+                  (click)="discardChanges()">
+                  <i class="fas fa-undo me-2"></i>
+                  Descartar
+                </button>
+              }
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Password Section -->
+      <div class="profile-section">
+        <div class="section-header clickable" (click)="togglePasswordSection()">
+          <div class="section-title">
+            <div class="title-icon">
+              <i class="fas fa-lock"></i>
+            </div>
+            <div class="title-text">
+              <h2>Seguridad</h2>
+              <p class="section-subtitle">Cambia tu contraseña para mantener tu cuenta segura</p>
+            </div>
+          </div>
+          <div class="collapse-toggle">
+            <i class="fas" [class.fa-chevron-down]="!showPasswordSection()" [class.fa-chevron-up]="showPasswordSection()"></i>
+          </div>
+        </div>
+
+        @if (showPasswordSection()) {
+          <div class="section-content">
+            <!-- Password Messages -->
+            @if (passwordSuccessMessage()) {
+              <div class="alert alert-success">
+                <i class="fas fa-check-circle me-2"></i>
+                {{ passwordSuccessMessage() }}
+              </div>
+            }
+            
+            @if (passwordErrorMessage()) {
+              <div class="alert alert-danger">
+                <i class="fas fa-exclamation-circle me-2"></i>
+                {{ passwordErrorMessage() }}
+              </div>
+            }
+
+            <form [formGroup]="passwordForm" (ngSubmit)="changePassword()" class="password-form">
+              <!-- Current Password -->
+              <div class="form-group">
+                <label for="current_password" class="form-label">
+                  <i class="fas fa-key me-2"></i>
+                  Contraseña Actual *
+                </label>
+                <input
+                  type="password"
+                  id="current_password"
+                  formControlName="current_password"
+                  class="form-control"
+                  [class.is-invalid]="hasFieldError(passwordForm, 'current_password')"
+                  placeholder="Ingresa tu contraseña actual">
+                @if (hasFieldError(passwordForm, 'current_password')) {
+                  <div class="invalid-feedback">
+                    {{ getFieldError(passwordForm, 'current_password') }}
+                  </div>
+                }
+              </div>
+
+              <!-- New Password -->
+              <div class="form-group">
+                <label for="new_password" class="form-label">
+                  <i class="fas fa-lock me-2"></i>
+                  Nueva Contraseña *
+                </label>
+                <input
+                  type="password"
+                  id="new_password"
+                  formControlName="new_password"
+                  class="form-control"
+                  [class.is-invalid]="hasFieldError(passwordForm, 'new_password')"
+                  placeholder="Ingresa tu nueva contraseña">
+                @if (hasFieldError(passwordForm, 'new_password')) {
+                  <div class="invalid-feedback">
+                    {{ getFieldError(passwordForm, 'new_password') }}
+                  </div>
+                }
+                <div class="form-text">
+                  <i class="fas fa-info-circle me-1"></i>
+                  Mínimo 6 caracteres
+                </div>
+              </div>
+
+              <!-- Confirm Password -->
+              <div class="form-group">
+                <label for="confirm_password" class="form-label">
+                  <i class="fas fa-check-double me-2"></i>
+                  Confirmar Nueva Contraseña *
+                </label>
+                <input
+                  type="password"
+                  id="confirm_password"
+                  formControlName="confirm_password"
+                  class="form-control"
+                  [class.is-invalid]="hasFieldError(passwordForm, 'confirm_password')"
+                  placeholder="Confirma tu nueva contraseña">
+                @if (hasFieldError(passwordForm, 'confirm_password')) {
+                  <div class="invalid-feedback">
+                    {{ getFieldError(passwordForm, 'confirm_password') }}
+                  </div>
+                }
+              </div>
+
+              <!-- Password Action Buttons -->
+              <div class="form-actions">
+                <button
+                  type="submit"
+                  class="btn btn-warning"
+                  [disabled]="!isPasswordFormValid() || isChangingPassword()">
+                  @if (isChangingPassword()) {
+                    <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                  }
+                  <i class="fas fa-key me-2" [class.d-none]="isChangingPassword()"></i>
+                  {{ isChangingPassword() ? 'Cambiando...' : 'Cambiar Contraseña' }}
+                </button>
+                
+                <button
+                  type="button"
+                  class="btn btn-outline-secondary"
+                  (click)="togglePasswordSection()">
+                  <i class="fas fa-times me-2"></i>
+                  Cancelar
+                </button>
+              </div>
+            </form>
+          </div>
+        }
+      </div>
+
+      <!-- Statistics Section -->
+      <div class="profile-section">
+        <div class="section-header clickable" (click)="toggleStatsSection()">
+          <div class="section-title">
+            <div class="title-icon">
+              <i class="fas fa-chart-bar"></i>
+            </div>
+            <div class="title-text">
+              <h2>Estadísticas de Cuenta</h2>
+              <p class="section-subtitle">Resumen de tu actividad en la plataforma</p>
+            </div>
+          </div>
+          <div class="collapse-toggle">
+            <i class="fas" [class.fa-chevron-down]="!showStatsSection()" [class.fa-chevron-up]="showStatsSection()"></i>
+          </div>
+        </div>
+
+        @if (showStatsSection()) {
+          <div class="section-content">
+            @if (isLoadingStats()) {
+              <div class="stats-loading">
+                <div class="spinner-border text-primary" role="status">
+                  <span class="visually-hidden">Cargando estadísticas...</span>
+                </div>
+              </div>
+            } @else if (profileStats()) {
+              <div class="stats-grid">
+                <div class="stat-card">
+                  <div class="stat-icon">
+                    <i class="fas fa-users"></i>
+                  </div>
+                  <div class="stat-content">
+                    <div class="stat-number">{{ formatNumber(profileStats()!.total_contacts) }}</div>
+                    <div class="stat-label">Contactos</div>
+                  </div>
+                </div>
+
+                <div class="stat-card">
+                  <div class="stat-icon">
+                    <i class="fas fa-comments"></i>
+                  </div>
+                  <div class="stat-content">
+                    <div class="stat-number">{{ formatNumber(profileStats()!.total_conversations) }}</div>
+                    <div class="stat-label">Conversaciones</div>
+                  </div>
+                </div>
+
+                <div class="stat-card">
+                  <div class="stat-icon">
+                    <i class="fas fa-envelope"></i>
+                  </div>
+                  <div class="stat-content">
+                    <div class="stat-number">{{ formatNumber(profileStats()!.total_messages) }}</div>
+                    <div class="stat-label">Mensajes</div>
+                  </div>
+                </div>
+
+                <div class="stat-card">
+                  <div class="stat-icon">
+                    <i class="fas fa-robot"></i>
+                  </div>
+                  <div class="stat-content">
+                    <div class="stat-number">{{ formatNumber(profileStats()!.bot_messages) }}</div>
+                    <div class="stat-label">Bot</div>
+                  </div>
+                </div>
+
+                <div class="stat-card">
+                  <div class="stat-icon">
+                    <i class="fas fa-user"></i>
+                  </div>
+                  <div class="stat-content">
+                    <div class="stat-number">{{ formatNumber(profileStats()!.manual_messages) }}</div>
+                    <div class="stat-label">Manuales</div>
+                  </div>
+                </div>
+
+                <div class="stat-card">
+                  <div class="stat-icon">
+                    <i class="fas fa-file-alt"></i>
+                  </div>
+                  <div class="stat-content">
+                    <div class="stat-number">{{ formatNumber(profileStats()!.total_templates) }}</div>
+                    <div class="stat-label">Templates</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Account Info -->
+              <div class="account-info">
+                <div class="info-item">
+                  <i class="fas fa-calendar-alt me-2"></i>
+                  <span class="info-label">Cuenta creada:</span>
+                  <span class="info-value">{{ formatDate(profileStats()!.account_created) }}</span>
+                </div>
+                @if (profileStats()!.last_login) {
+                  <div class="info-item">
+                    <i class="fas fa-sign-in-alt me-2"></i>
+                    <span class="info-label">Último acceso:</span>
+                    <span class="info-value">{{ formatDate(profileStats()!.last_login!) }}</span>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- Data Management Section -->
+      <div class="profile-section">
+        <div class="section-header clickable" (click)="toggleDangerZone()">
+          <div class="section-title">
+            <div class="title-icon danger">
+              <i class="fas fa-database"></i>
+            </div>
+            <div class="title-text">
+              <h2>Gestión de Datos</h2>
+              <p class="section-subtitle">Exporta o gestiona tus datos personales</p>
+            </div>
+          </div>
+          <div class="collapse-toggle">
+            <i class="fas" [class.fa-chevron-down]="!showDangerZone()" [class.fa-chevron-up]="showDangerZone()"></i>
+          </div>
+        </div>
+
+        @if (showDangerZone()) {
+          <div class="section-content">
+            <div class="data-management-actions">
+              <div class="action-item">
+                <div class="action-info">
+                  <h4>
+                    <i class="fas fa-download me-2"></i>
+                    Exportar Datos
+                  </h4>
+                  <p>Descarga una copia de todos tus datos en formato JSON</p>
+                </div>
+                <button class="btn btn-outline-primary" (click)="exportUserData()">
+                  <i class="fas fa-download me-2"></i>
+                  Exportar
+                </button>
+              </div>
+
+              <div class="action-item">
+                <div class="action-info">
+                  <h4>
+                    <i class="fas fa-info-circle me-2"></i>
+                    Información
+                  </h4>
+                  <p>Tus datos están protegidos según nuestra política de privacidad</p>
+                </div>
+                <button class="btn btn-outline-info" disabled>
+                  <i class="fas fa-shield-alt me-2"></i>
+                  Protegido
+                </button>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  }
+</div>

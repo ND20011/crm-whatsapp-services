@@ -1,0 +1,410 @@
+<!-- Modern Template Form Workspace -->
+<div class="template-form-workspace">
+  
+  <!-- Professional Header -->
+  <header class="form-header">
+    <div class="header-container">
+      <div class="header-main">
+        <div class="page-identity">
+          <div class="page-icon" [class.edit-mode]="isEditMode()">
+            <i class="fas" [class.fa-edit]="isEditMode()" [class.fa-plus]="!isEditMode()"></i>
+          </div>
+          <div class="page-info">
+            <h1 class="page-title">
+              {{ isEditMode() ? 'Editar Template' : 'Crear Nuevo Template' }}
+            </h1>
+            <p class="page-description">
+              {{ isEditMode() ? 'Modifica tu plantilla de mensaje existente' : 'Diseña una plantilla de mensaje con variables dinámicas' }}
+            </p>
+          </div>
+        </div>
+        
+        <div class="header-actions">
+          <button 
+            type="button" 
+            class="action-btn secondary" 
+            (click)="cancel()"
+            [disabled]="isLoading()">
+            <i class="fas fa-times"></i>
+            <span>Cancelar</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Messages -->
+  @if (errorMessage()) {
+    <div class="alert alert-error">
+      <i class="fas fa-exclamation-triangle"></i>
+      <span>{{ errorMessage() }}</span>
+      <button class="alert-close" (click)="clearMessages()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+  }
+  
+  @if (successMessage()) {
+    <div class="alert alert-success">
+      <i class="fas fa-check-circle"></i>
+      <span>{{ successMessage() }}</span>
+      <button class="alert-close" (click)="clearMessages()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+  }
+
+  <!-- Main Form Content -->
+  <main class="form-main">
+    
+    @if (isLoading()) {
+      <!-- Loading State -->
+      <div class="loading-state">
+        <div class="loading-spinner">
+          <i class="fas fa-spinner fa-spin"></i>
+        </div>
+        <p class="loading-text">{{ isEditMode() ? 'Cargando template...' : 'Guardando template...' }}</p>
+      </div>
+    } @else {
+      
+      <!-- Form Layout -->
+      <div class="form-layout">
+        
+        <!-- Left Column - Form Fields -->
+        <div class="form-column">
+          <form [formGroup]="templateForm" (ngSubmit)="onSubmit()" class="template-form">
+            
+            <!-- Basic Information Section -->
+            <section class="form-section">
+              <div class="section-header">
+                <h2 class="section-title">
+                  <i class="fas fa-info-circle"></i>
+                  Información Básica
+                </h2>
+                <p class="section-description">Define los datos principales de tu template</p>
+              </div>
+              
+              <div class="form-grid">
+                <!-- Template Name -->
+                <div class="form-group full-width">
+                  <label for="name" class="form-label required">
+                    <i class="fas fa-tag"></i>
+                    Nombre del Template
+                  </label>
+                  <input 
+                    type="text" 
+                    id="name"
+                    class="form-input"
+                    formControlName="name"
+                    placeholder="Ej: Bienvenida a nuevos clientes"
+                    [class.error]="getFieldError('name')">
+                  @if (getFieldError('name')) {
+                    <div class="field-error">
+                      <i class="fas fa-exclamation-circle"></i>
+                      {{ getFieldError('name') }}
+                    </div>
+                  }
+                </div>
+
+                <!-- Category -->
+                <div class="form-group">
+                  <label for="category" class="form-label required">
+                    <i class="fas fa-folder"></i>
+                    Categoría
+                  </label>
+                  <div class="select-wrapper">
+                    <select 
+                      id="category"
+                      class="form-select"
+                      formControlName="category"
+                      [class.error]="getFieldError('category')">
+                      <option value="">Selecciona una categoría</option>
+                      @for (category of categories(); track category.category) {
+                        <option [value]="category.category">{{ category.category | titlecase }}</option>
+                      }
+                    </select>
+                    <i class="fas fa-chevron-down select-icon"></i>
+                  </div>
+                  @if (getFieldError('category')) {
+                    <div class="field-error">
+                      <i class="fas fa-exclamation-circle"></i>
+                      {{ getFieldError('category') }}
+                    </div>
+                  }
+                </div>
+
+                <!-- Status -->
+                <div class="form-group">
+                  <label class="form-label">
+                    <i class="fas fa-toggle-on"></i>
+                    Estado
+                  </label>
+                  <div class="toggle-wrapper">
+                    <label class="toggle-switch">
+                      <input 
+                        type="checkbox" 
+                        formControlName="is_active"
+                        class="toggle-input">
+                      <span class="toggle-slider"></span>
+                      <span class="toggle-label">
+                        {{ templateForm.get('is_active')?.value ? 'Activo' : 'Inactivo' }}
+                      </span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <!-- Content Section -->
+            <section class="form-section">
+              <div class="section-header">
+                <h2 class="section-title">
+                  <i class="fas fa-file-text"></i>
+                  Contenido del Mensaje
+                </h2>
+                <p class="section-description">
+                  Escribe tu mensaje usando variables dinámicas con la sintaxis <code>{{`{{variable}}`}}</code>
+                </p>
+              </div>
+              
+              <div class="content-editor">
+                <div class="editor-toolbar">
+                  <div class="toolbar-section">
+                    <span class="toolbar-label">Variables sugeridas:</span>
+                    <div class="variable-suggestions">
+                      @for (suggestion of commonVariables; track suggestion) {
+                        <button 
+                          type="button" 
+                          class="variable-chip"
+                          (click)="insertVariable(suggestion)">
+                          {{`{{${suggestion}}}`}}
+                        </button>
+                      }
+                    </div>
+                  </div>
+                  
+                  <div class="toolbar-section">
+                    <div class="character-count">
+                      <span class="count">{{ templateForm.get('content')?.value?.length || 0 }}</span>
+                      <span class="max">/1000</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="form-group">
+                  <textarea 
+                    #contentTextarea
+                    id="content"
+                    class="form-textarea"
+                    formControlName="content"
+                    placeholder="Escribe tu mensaje aquí... Usa {{'{{variable}}'}} para insertar variables dinámicas."
+                    rows="8"
+                    maxlength="1000"
+                    (input)="onContentChange($event)"
+                    [class.error]="getFieldError('content')">
+                  </textarea>
+                  @if (getFieldError('content')) {
+                    <div class="field-error">
+                      <i class="fas fa-exclamation-circle"></i>
+                      {{ getFieldError('content') }}
+                    </div>
+                  }
+                </div>
+              </div>
+            </section>
+
+            <!-- Variables Section -->
+            @if (extractedVariables().length > 0) {
+              <section class="form-section">
+                <div class="section-header">
+                  <h2 class="section-title">
+                    <i class="fas fa-cogs"></i>
+                    Variables Detectadas
+                    <span class="variable-count">{{ extractedVariables().length }}</span>
+                  </h2>
+                  <p class="section-description">
+                    Configura las variables encontradas en tu mensaje
+                  </p>
+                </div>
+                
+                <div class="variables-list">
+                  @for (variable of extractedVariables(); track variable; let i = $index) {
+                    <div class="variable-item">
+                      <div class="variable-header">
+                        <div class="variable-name">
+                          <i class="fas fa-code"></i>
+                          <code>{{`{{${variable}}}`}}</code>
+                        </div>
+                        <button 
+                          type="button" 
+                          class="variable-remove"
+                          (click)="removeVariableFromContent(variable)"
+                          title="Eliminar variable del contenido">
+                          <i class="fas fa-trash"></i>
+                        </button>
+                      </div>
+                      
+                      <div class="variable-config" formArrayName="variables">
+                        <div class="config-grid" [formGroupName]="i">
+                          <div class="form-group">
+                            <label class="form-label-small">Descripción</label>
+                            <input 
+                              type="text" 
+                              class="form-input-small"
+                              formControlName="description"
+                              placeholder="Describe esta variable">
+                          </div>
+                          
+                          <div class="form-group">
+                            <label class="form-label-small">Tipo</label>
+                            <div class="select-wrapper-small">
+                              <select class="form-select-small" formControlName="type">
+                                <option value="text">Texto</option>
+                                <option value="number">Número</option>
+                                <option value="date">Fecha</option>
+                                <option value="email">Email</option>
+                                <option value="phone">Teléfono</option>
+                              </select>
+                              <i class="fas fa-chevron-down select-icon-small"></i>
+                            </div>
+                          </div>
+                          
+                          <div class="form-group">
+                            <label class="form-label-small">Valor por defecto</label>
+                            <input 
+                              type="text" 
+                              class="form-input-small"
+                              formControlName="default_value"
+                              placeholder="Valor opcional">
+                          </div>
+                          
+                          <div class="form-group checkbox-group">
+                            <label class="checkbox-label">
+                              <input 
+                                type="checkbox" 
+                                formControlName="is_required"
+                                class="checkbox-input">
+                              <span class="checkbox-custom"></span>
+                              <span class="checkbox-text">Requerida</span>
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  }
+                </div>
+              </section>
+            }
+
+            <!-- Form Actions -->
+            <section class="form-actions">
+              <div class="actions-container">
+                <div class="actions-left">
+                  @if (showPreview()) {
+                    <button 
+                      type="button" 
+                      class="action-btn tertiary"
+                      (click)="togglePreview()">
+                      <i class="fas fa-eye-slash"></i>
+                      Ocultar Vista Previa
+                    </button>
+                  } @else {
+                    <button 
+                      type="button" 
+                      class="action-btn tertiary"
+                      (click)="togglePreview()">
+                      <i class="fas fa-eye"></i>
+                      Vista Previa
+                    </button>
+                  }
+                </div>
+                
+                <div class="actions-right">
+                  <button 
+                    type="button" 
+                    class="action-btn secondary"
+                    (click)="cancel()"
+                    [disabled]="isLoading()">
+                    <i class="fas fa-times"></i>
+                    Cancelar
+                  </button>
+                  
+                  <button 
+                    type="submit" 
+                    class="action-btn primary"
+                    [disabled]="templateForm.invalid || isLoading()">
+                    @if (isLoading()) {
+                      <i class="fas fa-spinner fa-spin"></i>
+                    } @else {
+                      <i class="fas" [class.fa-save]="isEditMode()" [class.fa-plus]="!isEditMode()"></i>
+                    }
+                    <span>{{ isEditMode() ? 'Actualizar Template' : 'Crear Template' }}</span>
+                  </button>
+                </div>
+              </div>
+            </section>
+
+          </form>
+        </div>
+
+        <!-- Right Column - Preview Panel -->
+        @if (showPreview()) {
+          <div class="preview-column">
+            <div class="preview-panel">
+              <div class="preview-header">
+                <h3 class="preview-title">
+                  <i class="fas fa-eye"></i>
+                  Vista Previa
+                </h3>
+                <button 
+                  type="button" 
+                  class="preview-close"
+                  (click)="togglePreview()">
+                  <i class="fas fa-times"></i>
+                </button>
+              </div>
+              
+              <div class="preview-content">
+                @if (previewContent()) {
+                  <div class="preview-section">
+                    <h4 class="preview-section-title">Mensaje renderizado</h4>
+                    <div class="message-preview">
+                      <div class="message-bubble">
+                        {{ previewContent() }}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  @if (extractedVariables().length > 0) {
+                    <div class="preview-section">
+                      <h4 class="preview-section-title">Variables utilizadas</h4>
+                      <div class="preview-variables">
+                        @for (variable of extractedVariables(); track variable) {
+                          <div class="preview-variable">
+                            <span class="variable-name">{{ variable }}</span>
+                            <span class="variable-value">{{ getSampleValue(variable) }}</span>
+                          </div>
+                        }
+                      </div>
+                      <small class="preview-note">
+                        <i class="fas fa-info-circle"></i>
+                        Los valores mostrados son ejemplos para la vista previa
+                      </small>
+                    </div>
+                  }
+                } @else {
+                  <div class="preview-empty">
+                    <i class="fas fa-file-text"></i>
+                    <p>Escribe contenido para ver la vista previa</p>
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
+        }
+        
+      </div>
+    }
+  </main>
+
+</div>

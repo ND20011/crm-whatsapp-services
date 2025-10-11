@@ -1,0 +1,144 @@
+<div class="sound-settings">
+  <div class="settings-header">
+    <div class="d-flex align-items-center justify-content-between">
+      <div class="d-flex align-items-center">
+        <i class="fas fa-volume-up me-2 text-primary"></i>
+        <h6 class="mb-0 fw-medium">Notificaciones Sonoras</h6>
+      </div>
+      <div class="form-check form-switch">
+        <input 
+          class="form-check-input" 
+          type="checkbox" 
+          id="soundToggle"
+          [checked]="soundService.isEnabled()"
+          (change)="toggleSoundEnabled()">
+        <label class="form-check-label" for="soundToggle">
+          {{ soundService.isEnabled() ? 'Activado' : 'Desactivado' }}
+        </label>
+      </div>
+    </div>
+    <small class="text-muted mt-1 d-block">
+      {{ getStatusText() }}
+    </small>
+  </div>
+
+  <!-- Controles principales -->
+  <div class="settings-controls mt-3" *ngIf="soundService.isEnabled()">
+    <!-- Botón de prueba -->
+    <div class="test-section mb-3">
+      <button 
+        class="btn btn-outline-primary btn-sm"
+        [disabled]="isTestingSound()"
+        (click)="testSound()">
+        <i class="fas" [ngClass]="{
+          'fa-play': !isTestingSound(),
+          'fa-spinner fa-spin': isTestingSound()
+        }"></i>
+        {{ isTestingSound() ? 'Reproduciendo...' : 'Probar Sonido' }}
+      </button>
+    </div>
+
+    <!-- Configuración básica -->
+    <div class="basic-settings">
+      <!-- Tipo de sonido -->
+      <div class="setting-item mb-3">
+        <label for="soundType" class="form-label small fw-medium">Tipo de Sonido</label>
+        <select 
+          id="soundType" 
+          class="form-select form-select-sm"
+          [value]="soundService.getSoundType()"
+          (change)="onSoundTypeChange($event)">
+          <option value="default">Normal</option>
+          <option value="subtle">Sutil</option>
+        </select>
+      </div>
+
+      <!-- Volumen -->
+      <div class="setting-item mb-3">
+        <label for="volumeRange" class="form-label small fw-medium">
+          Volumen ({{ getVolumePercentage() }}%)
+        </label>
+        <input 
+          type="range" 
+          class="form-range" 
+          id="volumeRange"
+          min="0" 
+          max="1" 
+          step="0.1"
+          [value]="soundService.getVolume()"
+          (input)="onVolumeChange($event)">
+        <div class="d-flex justify-content-between">
+          <small class="text-muted">Silencioso</small>
+          <small class="text-muted">Fuerte</small>
+        </div>
+      </div>
+    </div>
+
+    <!-- Configuración avanzada -->
+    <div class="advanced-toggle">
+      <button 
+        class="btn btn-link btn-sm p-0 text-decoration-none"
+        (click)="toggleAdvanced()">
+        <i class="fas" [ngClass]="{
+          'fa-chevron-down': !showAdvanced(),
+          'fa-chevron-up': showAdvanced()
+        }"></i>
+        <span class="ms-1">{{ showAdvanced() ? 'Ocultar' : 'Mostrar' }} Opciones Avanzadas</span>
+      </button>
+    </div>
+
+    <!-- Opciones avanzadas -->
+    <div class="advanced-settings mt-3" *ngIf="showAdvanced()">
+      <div class="card border-0 bg-light">
+        <div class="card-body p-3">
+          <h6 class="card-title small mb-2">
+            <i class="fas fa-cog me-1"></i>
+            Configuración Avanzada
+          </h6>
+          
+          <!-- Información técnica -->
+          <div class="technical-info mb-3">
+            <small class="text-muted d-block mb-1">
+              <strong>Estado del Sistema:</strong>
+            </small>
+            <ul class="list-unstyled small text-muted mb-0">
+              <li>
+                <i class="fas fa-circle text-success me-1" style="font-size: 0.5rem;"></i>
+                Audio Web API: Disponible
+              </li>
+              <li>
+                <i class="fas fa-circle text-success me-1" style="font-size: 0.5rem;"></i>
+                Almacenamiento: LocalStorage
+              </li>
+              <li>
+                <i class="fas fa-circle text-info me-1" style="font-size: 0.5rem;"></i>
+                Configuración: {{ soundService.isEnabled() ? 'Guardada' : 'Desactivada' }}
+              </li>
+            </ul>
+          </div>
+
+          <!-- Botón reset -->
+          <div class="reset-section">
+            <button 
+              class="btn btn-outline-secondary btn-sm"
+              (click)="resetToDefaults()">
+              <i class="fas fa-undo me-1"></i>
+              Restaurar Configuración
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Estado desactivado -->
+  <div class="disabled-state mt-3" *ngIf="!soundService.isEnabled()">
+    <div class="alert alert-info py-2">
+      <i class="fas fa-info-circle me-2"></i>
+      <small>
+        Las notificaciones sonoras están desactivadas. 
+        Actívalas para recibir alertas sonoras cuando lleguen mensajes nuevos.
+      </small>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,595 @@
+<div class="contact-list-container">
+  <!-- ============================================================================ -->
+  <!-- HEADER SECTION -->
+  <!-- ============================================================================ -->
+  <header class="contact-header">
+    <div class="header-top">
+      <div class="header-title">
+        <div class="title-icon">
+          <i class="fas fa-address-book"></i>
+        </div>
+        <div class="title-text">
+          <h1>Gestión de Contactos</h1>
+          <p class="subtitle">{{ totalContacts() }} contactos en total</p>
+        </div>
+      </div>
+      
+      <div class="header-actions">
+        <button class="action-btn btn-secondary" (click)="goToTagManagement()">
+          <i class="fas fa-tags"></i>
+          Gestionar Etiquetas
+        </button>
+        <button class="action-btn btn-info" (click)="openImportModal()">
+          <i class="fas fa-file-import"></i>
+          Importar CSV
+        </button>
+        <button class="action-btn btn-primary" (click)="openNewContactModal()">
+          <i class="fas fa-user-plus"></i>
+          Nuevo Contacto
+        </button>
+      </div>
+    </div>
+
+    <!-- FILTERS SECTION -->
+    <div class="filters-section" [formGroup]="filterForm">
+      <!-- Search Row - Always on top -->
+      <div class="search-row">
+        <div class="search-container">
+          <input
+            type="text"
+            formControlName="search"
+            placeholder="Buscar por nombre, teléfono o comentarios..."
+            class="search-input"
+          />
+          <i class="fas fa-search search-icon"></i>
+        </div>
+        <div class="search-actions">
+          <!-- View Mode Toggle -->
+          <div class="view-mode-toggle">
+            <button 
+              class="view-mode-btn"
+              [class.active]="viewMode() === 'grid'"
+              (click)="setViewMode('grid')"
+              title="Vista en tarjetas">
+              <i class="fas fa-th"></i>
+            </button>
+            <button 
+              class="view-mode-btn"
+              [class.active]="viewMode() === 'table'"
+              (click)="setViewMode('table')"
+              title="Vista en tabla">
+              <i class="fas fa-list"></i>
+            </button>
+          </div>
+          <button class="clear-filters-btn" (click)="clearFilters()">
+            <i class="fas fa-times"></i>
+            <span class="clear-text">Limpiar</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Filters Grid - Responsive layout -->
+      <div class="filters-grid">
+        <!-- Tags Section -->
+        <div class="filter-section tags-section">
+          <h4 class="section-title">
+            <i class="fas fa-tags"></i>
+            Etiquetas
+          </h4>
+          <div class="section-content">
+            <!-- Legacy Single Tag Filter -->
+            <div class="filter-group">
+              <label class="filter-label">Etiqueta individual</label>
+              <select formControlName="tagId" class="filter-select">
+                <option [ngValue]="null">Seleccionar etiqueta</option>
+                @for (tag of allTags(); track trackByTagId($index, tag)) {
+                  <option [ngValue]="tag.id">{{ tag.name }}</option>
+                }
+              </select>
+            </div>
+
+            <!-- Multiple Tags Filter -->
+            <div class="filter-group">
+              <label class="filter-label">Múltiples etiquetas</label>
+              <app-tag-selector
+                [selectedTags]="selectedTagsForFilter()"
+                (tagsChanged)="onFilterTagsChanged($event)"
+                placeholder="Seleccionar etiquetas..."
+              ></app-tag-selector>
+            </div>
+          </div>
+        </div>
+
+        <!-- Date Range Section -->
+        <div class="filter-section date-section">
+          <h4 class="section-title">
+            <i class="fas fa-calendar-alt"></i>
+            Fecha de Asignación
+          </h4>
+          <div class="section-content">
+            <div class="date-range-row">
+              <div class="filter-group">
+                <label class="filter-label">Desde</label>
+                <input
+                  type="date"
+                  formControlName="tagAssignedFrom"
+                  class="date-input"
+                  title="Fecha de inicio para filtro de asignación de etiquetas"
+                />
+              </div>
+              <div class="filter-group">
+                <label class="filter-label">Hasta</label>
+                <input
+                  type="date"
+                  formControlName="tagAssignedTo"
+                  class="date-input"
+                  title="Fecha de fin para filtro de asignación de etiquetas"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Status & Sort Section -->
+        <div class="filter-section controls-section">
+          <h4 class="section-title">
+            <i class="fas fa-filter"></i>
+            Estado y Ordenamiento
+          </h4>
+          <div class="section-content">
+            <div class="controls-row">
+              <div class="filter-group">
+                <label class="filter-label">Estado</label>
+                <select formControlName="isBlocked" class="filter-select">
+                  <option [ngValue]="null">Todos los Estados</option>
+                  <option [ngValue]="false">Activos</option>
+                  <option [ngValue]="true">Bloqueados</option>
+                </select>
+              </div>
+
+              <div class="filter-group">
+                <label class="filter-label">Ordenar por</label>
+                <select formControlName="sortBy" class="filter-select">
+                  <option value="created_at">Fecha de Creación</option>
+                  <option value="updated_at">Última Actualización</option>
+                  <option value="name">Nombre</option>
+                  <option value="custom_name">Nombre Personalizado</option>
+                  <option value="last_message_at">Último Mensaje</option>
+                </select>
+              </div>
+
+              <div class="filter-group">
+                <label class="filter-label">Orden</label>
+                <select formControlName="sortOrder" class="filter-select">
+                  <option value="DESC">Más Recientes</option>
+                  <option value="ASC">Más Antiguos</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ============================================================================ -->
+  <!-- MAIN CONTENT -->
+  <!-- ============================================================================ -->
+  <main class="contact-main">
+    @if (loadingService.isLoadingByContext('load-contacts')) {
+      <div class="loading-state">
+        <div class="state-icon">
+          <i class="fas fa-spinner fa-spin"></i>
+        </div>
+        <h3 class="state-title">Cargando Contactos</h3>
+        <p class="state-message">Obteniendo la información más reciente...</p>
+      </div>
+    } @else if (errorMessage()) {
+      <div class="empty-state">
+        <div class="state-icon">
+          <i class="fas fa-exclamation-triangle"></i>
+        </div>
+        <h3 class="state-title">Error al Cargar</h3>
+        <p class="state-message">{{ errorMessage() }}</p>
+        <button class="action-btn btn-primary" (click)="loadContacts()">
+          <i class="fas fa-refresh"></i>
+          Reintentar
+        </button>
+      </div>
+    } @else if (contacts().length === 0 && filterForm.get('search')?.value) {
+      <div class="empty-state">
+        <div class="state-icon">
+          <i class="fas fa-search-minus"></i>
+        </div>
+        <h3 class="state-title">Sin Resultados</h3>
+        <p class="state-message">No se encontraron contactos que coincidan con "{{ filterForm.get('search')?.value }}"</p>
+        <button class="action-btn btn-secondary" (click)="clearFilters()">
+          <i class="fas fa-times"></i>
+          Limpiar Filtros
+        </button>
+      </div>
+    } @else if (contacts().length === 0) {
+      <div class="empty-state">
+        <div class="state-icon">
+          <i class="fas fa-users-slash"></i>
+        </div>
+        <h3 class="state-title">Sin Contactos</h3>
+        <p class="state-message">Aún no tienes contactos registrados. ¡Comienza agregando tu primer contacto!</p>
+        <div class="empty-state-actions">
+          <button class="action-btn btn-primary" (click)="openNewContactModal()">
+            <i class="fas fa-user-plus"></i>
+            Agregar Primer Contacto
+          </button>
+          <button class="action-btn btn-secondary" (click)="openImportModal()">
+            <i class="fas fa-file-import"></i>
+            Importar desde CSV
+          </button>
+        </div>
+      </div>
+    } @else {
+      <!-- ============================================================================ -->
+      <!-- GRID VIEW -->
+      <!-- ============================================================================ -->
+      @if (viewMode() === 'grid') {
+        <div class="contacts-grid">
+          @for (contact of contacts(); track trackByContactId($index, contact)) {
+            <div class="contact-card">
+              <div class="card-header">
+                <div class="contact-avatar">
+                  @if (contact.profile_pic_url) {
+                    <img [src]="contact.profile_pic_url" [alt]="getContactDisplayName(contact)" />
+                  } @else {
+                    <span class="avatar-initials">{{ getContactInitials(contact) }}</span>
+                  }
+                </div>
+                
+                <div class="contact-info">
+                  <h3 class="contact-name">{{ getContactDisplayName(contact) }}</h3>
+                  <p class="contact-phone">{{ formatPhoneNumber(contact.phone_number) }}</p>
+                </div>
+                
+                <div class="contact-status" [class]="getContactStatusClass(contact)"></div>
+              </div>
+
+              <div class="card-body">
+                <div class="contact-meta">
+                  <div class="meta-item">
+                    <div class="meta-label">Último Mensaje</div>
+                    <div class="meta-value" [class.no-data]="!contact.last_message_at">
+                      {{ contact.last_message_at ? (contact.last_message_at | date:'short') : 'Nunca' }}
+                    </div>
+                  </div>
+                  <div class="meta-item">
+                    <div class="meta-label">Estado</div>
+                    <div class="meta-value">
+                      {{ contact.is_blocked ? 'Bloqueado' : 'Activo' }}
+                    </div>
+                  </div>
+                </div>
+
+                @if (contact.comments) {
+                  <div class="contact-comments">
+                    <div class="comments-label">Comentarios</div>
+                    <div class="comments-text">{{ contact.comments }}</div>
+                  </div>
+                } @else {
+                  <div class="contact-comments">
+                    <div class="comments-label">Comentarios</div>
+                    <div class="comments-text no-comments">Sin comentarios adicionales</div>
+                  </div>
+                }
+              </div>
+
+              <div class="card-footer">
+                <div class="contact-tags">
+                  @if (contact.tags && contact.tags.length > 0) {
+                    @for (tag of contact.tags; track trackByTagId($index, tag)) {
+                      <div class="tag-chip-container">
+                        <span class="tag-chip" [style.background-color]="tag.color">
+                          {{ tag.name }}
+                        </span>
+                        @if (tag.assigned_at) {
+                          <span class="tag-assignment-date" [title]="'Asignada: ' + formatDate(tag.assigned_at)">
+                            <i class="fas fa-clock"></i>
+                            {{ formatDateRelative(tag.assigned_at) }}
+                          </span>
+                        }
+                      </div>
+                    }
+                  } @else {
+                    <span class="no-tags">Sin etiquetas</span>
+                  }
+                </div>
+
+                <div class="card-actions">
+                  <button class="action-btn btn-tags" (click)="openAssignTagsModal(contact)" title="Gestionar Etiquetas">
+                    <i class="fas fa-tags"></i>
+                  </button>
+                  <button class="action-btn btn-edit" (click)="openEditContactModal(contact)" title="Editar Contacto">
+                    <i class="fas fa-edit"></i>
+                  </button>
+                  <button class="action-btn btn-delete" title="Eliminar Contacto">
+                    <i class="fas fa-trash-alt"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- ============================================================================ -->
+      <!-- TABLE VIEW -->
+      <!-- ============================================================================ -->
+      @if (viewMode() === 'table') {
+        <div class="contacts-table-container">
+          <div class="table-wrapper">
+            <table class="contacts-table">
+              <thead>
+                <tr>
+                  <th class="col-avatar">Avatar</th>
+                  <th class="col-name">Nombre</th>
+                  <th class="col-phone">Teléfono</th>
+                  <th class="col-status">Estado</th>
+                  <th class="col-last-message">Último Mensaje</th>
+                  <th class="col-tags">Etiquetas</th>
+                  <th class="col-comments">Comentarios</th>
+                  <th class="col-actions">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (contact of contacts(); track trackByContactId($index, contact)) {
+                  <tr class="contact-row">
+                    <!-- Avatar -->
+                    <td class="col-avatar">
+                      <div class="avatar-cell">
+                        @if (contact.profile_pic_url) {
+                          <img [src]="contact.profile_pic_url" [alt]="getContactDisplayName(contact)" class="avatar-img" />
+                        } @else {
+                          <span class="avatar-initials">{{ getContactInitials(contact) }}</span>
+                        }
+                      </div>
+                    </td>
+
+                    <!-- Name -->
+                    <td class="col-name">
+                      <div class="name-cell">
+                        <div class="contact-name">{{ getContactDisplayName(contact) }}</div>
+                        @if (contact.custom_name && contact.name && contact.custom_name !== contact.name) {
+                          <div class="contact-original-name">{{ contact.name }}</div>
+                        }
+                      </div>
+                    </td>
+
+                    <!-- Phone -->
+                    <td class="col-phone">
+                      <div class="phone-cell">
+                        {{ formatPhoneNumber(contact.phone_number) }}
+                      </div>
+                    </td>
+
+                    <!-- Status -->
+                    <td class="col-status">
+                      <div class="status-cell">
+                        <span class="status-badge" [class]="getContactStatusClass(contact)">
+                          {{ contact.is_blocked ? 'Bloqueado' : 'Activo' }}
+                        </span>
+                      </div>
+                    </td>
+
+                    <!-- Last Message -->
+                    <td class="col-last-message">
+                      <div class="last-message-cell">
+                        @if (contact.last_message_at) {
+                          <div class="message-date">{{ contact.last_message_at | date:'short' }}</div>
+                          <div class="message-relative">{{ formatDateRelative(contact.last_message_at) }}</div>
+                        } @else {
+                          <span class="no-message">Nunca</span>
+                        }
+                      </div>
+                    </td>
+
+                    <!-- Tags -->
+                    <td class="col-tags">
+                      <div class="tags-cell">
+                        @if (contact.tags && contact.tags.length > 0) {
+                          <div class="tags-list">
+                            @for (tag of contact.tags; track trackByTagId($index, tag)) {
+                              <span class="tag-chip-mini" [style.background-color]="tag.color">
+                                {{ tag.name }}
+                              </span>
+                            }
+                          </div>
+                        } @else {
+                          <span class="no-tags">Sin etiquetas</span>
+                        }
+                      </div>
+                    </td>
+
+                    <!-- Comments -->
+                    <td class="col-comments">
+                      <div class="comments-cell">
+                        @if (contact.comments) {
+                          <span class="comments-text" [title]="contact.comments">
+                            {{ contact.comments | slice:0:50 }}
+                            @if (contact.comments.length > 50) {
+                              <span class="text-truncated">...</span>
+                            }
+                          </span>
+                        } @else {
+                          <span class="no-comments">Sin comentarios</span>
+                        }
+                      </div>
+                    </td>
+
+                    <!-- Actions -->
+                    <td class="col-actions">
+                      <div class="action-buttons-table">
+                        <button class="action-btn-sm btn-tags" (click)="openAssignTagsModal(contact)" title="Gestionar Etiquetas">
+                          <i class="fas fa-tags"></i>
+                        </button>
+                        <button class="action-btn-sm btn-edit" (click)="openEditContactModal(contact)" title="Editar Contacto">
+                          <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="action-btn-sm btn-delete" title="Eliminar Contacto">
+                          <i class="fas fa-trash-alt"></i>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      }
+
+      <!-- PAGINATION -->
+      @if (getTotalPages().length > 1) {
+        <div class="pagination-section">
+          <div class="pagination">
+            <button 
+              class="page-btn page-nav" 
+              [disabled]="currentPage() === 1"
+              (click)="onPageChange(currentPage() - 1)"
+            >
+              <i class="fas fa-chevron-left"></i>
+            </button>
+
+            @for (page of getTotalPages(); track page) {
+              <button 
+                class="page-btn page-number" 
+                [class.active]="currentPage() === page"
+                (click)="onPageChange(page)"
+              >
+                {{ page }}
+              </button>
+            }
+
+            <button 
+              class="page-btn page-nav" 
+              [disabled]="currentPage() === getTotalPages().length"
+              (click)="onPageChange(currentPage() + 1)"
+            >
+              <i class="fas fa-chevron-right"></i>
+            </button>
+
+            <div class="page-info">
+              Página {{ currentPage() }} de {{ getTotalPages().length }}
+            </div>
+          </div>
+        </div>
+      }
+    }
+  </main>
+
+  <!-- ============================================================================ -->
+  <!-- ASSIGN TAGS MODAL -->
+  <!-- ============================================================================ -->
+  @if (showTagModal() && currentContactForTags()) {
+    <div class="modal-overlay" (click)="closeAssignTagsModal()">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+          <div class="modal-header">
+            <h2 class="modal-title">
+              <i class="fas fa-tags"></i>
+              Gestionar Etiquetas - {{ getContactDisplayName(currentContactForTags()!) }}
+            </h2>
+            <div class="modal-header-actions">
+              <button class="debug-btn" (click)="debugCurrentContact()" title="Debug datos del contacto">
+                <i class="fas fa-bug"></i>
+              </button>
+              <button class="close-btn" (click)="closeAssignTagsModal()">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+          </div>
+        
+        <div class="modal-body">
+          <div class="modal-description">
+            <p class="description-text">
+              <i class="fas fa-info-circle"></i>
+              Selecciona las etiquetas que deseas asignar a este contacto. Puedes buscar etiquetas existentes o crear nuevas directamente desde el selector.
+            </p>
+          </div>
+
+          <!-- Current Tags with Assignment Dates -->
+          @if (currentContactForTags()?.tags && currentContactForTags()!.tags.length > 0) {
+            <div class="current-tags-section">
+              <h4 class="current-tags-title">
+                <i class="fas fa-history"></i>
+                Etiquetas Actuales
+              </h4>
+              <div class="current-tags-list">
+                @for (tag of currentContactForTags()!.tags; track trackByTagId($index, tag)) {
+                  <div class="current-tag-item">
+                    <span class="tag-chip" [style.background-color]="tag.color">
+                      {{ tag.name }}
+                    </span>
+                    @if (tag.assigned_at) {
+                      <span class="tag-assignment-info">
+                        Asignada {{ formatDateRelative(tag.assigned_at) }}
+                        <small class="tag-assignment-full-date">{{ formatDate(tag.assigned_at) }}</small>
+                      </span>
+                    } @else {
+                      <span class="tag-assignment-info no-date">
+                        <i class="fas fa-info-circle"></i>
+                        Fecha no disponible
+                      </span>
+                    }
+                  </div>
+                }
+              </div>
+            </div>
+          }
+          
+          <div class="tag-selector-wrapper">
+            <app-tag-selector
+              [selectedTags]="getSelectedTagsForContact()"
+              (tagsChanged)="onSelectedTagsChanged($event)"
+              placeholder="Buscar o seleccionar etiquetas para este contacto..."
+            ></app-tag-selector>
+          </div>
+        </div>
+        
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="closeAssignTagsModal()">
+            Cancelar
+          </button>
+          <button
+            type="button"
+            class="btn btn-primary"
+            (click)="saveContactTags()"
+            [disabled]="loadingService.isLoadingByContext('assign-tags')"
+          >
+            @if (loadingService.isLoadingByContext('assign-tags')) {
+              <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+              Guardando...
+            } @else {
+              <i class="fas fa-save"></i>
+              Guardar Etiquetas
+            }
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ============================================================================ -->
+  <!-- CONTACT FORM MODAL -->
+  <!-- ============================================================================ -->
+  <app-contact-form
+    [contact]="editingContact()"
+    [isVisible]="showContactForm()"
+    (onClose)="closeContactForm()"
+    (onSaved)="onContactSaved($event)"
+  ></app-contact-form>
+
+  <!-- ============================================================================ -->
+  <!-- IMPORT MODAL -->
+  <!-- ============================================================================ -->
+  <app-contact-import
+    [isVisible]="showImportModal()"
+    (onClose)="closeImportModal()"
+    (onImported)="onImportCompleted($event)"
+  ></app-contact-import>
+</div>

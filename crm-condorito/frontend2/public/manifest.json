@@ -1,0 +1,33 @@
+{
+  "name": "CRM Condorito - WhatsApp CRM",
+  "short_name": "CRM Condorito",
+  "description": "Sistema CRM para gestión de WhatsApp con múltiples clientes",
+  "theme_color": "#0d6efd",
+  "background_color": "#ffffff",
+  "display": "standalone",
+  "scope": "./",
+  "start_url": "./",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable any"
+    }
+  ],
+  "categories": ["business", "productivity"],
+  "lang": "es-AR",
+  "dir": "ltr"
+}

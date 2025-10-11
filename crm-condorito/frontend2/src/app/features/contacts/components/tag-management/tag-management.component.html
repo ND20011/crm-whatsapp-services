@@ -1,0 +1,655 @@
+<!-- ============================================================================ -->
+<!-- TAG MANAGEMENT COMPONENT - CRM CONDORITO FRONTEND -->
+<!-- ============================================================================ -->
+
+<div class="tag-management-container">
+  
+  <!-- ========================================================================== -->
+  <!-- HEADER SECTION -->
+  <!-- ========================================================================== -->
+  <header class="header">
+    <div class="title-section">
+      <h1 class="title">
+        <i class="fas fa-tags" aria-hidden="true"></i>
+        Gestión de Etiquetas
+      </h1>
+      <p class="subtitle">
+        Organiza y administra las etiquetas para categorizar tus contactos de manera eficiente
+      </p>
+    </div>
+
+    <div class="actions">
+      <button 
+        type="button"
+        class="btn btn-primary"
+        (click)="openCreateModal()"
+        [disabled]="loadingService.isLoadingByContext('load-tags')"
+        aria-label="Crear nueva etiqueta">
+        <i class="fas fa-plus" aria-hidden="true"></i>
+        Nueva Etiqueta
+      </button>
+    </div>
+  </header>
+
+  <!-- ========================================================================== -->
+  <!-- ESTADÍSTICAS -->
+  <!-- ========================================================================== -->
+  <section class="stats-section" aria-label="Estadísticas de etiquetas">
+    <div class="stat-card">
+      <div class="stat-value">{{ tags().length }}</div>
+      <div class="stat-label">Total Etiquetas</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">{{ totalContacts() }}</div>
+      <div class="stat-label">Contactos Etiquetados</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">{{ filteredTags().length }}</div>
+      <div class="stat-label">Resultados Mostrados</div>
+    </div>
+  </section>
+
+  <!-- ========================================================================== -->
+  <!-- BÚSQUEDA Y CONTROLES -->
+  <!-- ========================================================================== -->
+  <section class="search-section" aria-label="Búsqueda de etiquetas">
+    <div class="search-input-container">
+      <i class="fas fa-search search-icon" aria-hidden="true"></i>
+      <input
+        type="text"
+        class="search-input"
+        placeholder="Buscar por nombre o descripción..."
+        [value]="searchQuery()"
+        (input)="onSearch($event)"
+        aria-label="Buscar etiquetas"
+        autocomplete="off">
+    </div>
+    
+    <!-- View Mode Toggle -->
+    <div class="search-actions">
+      <div class="view-mode-toggle">
+        <button 
+          class="view-mode-btn"
+          [class.active]="viewMode() === 'grid'"
+          (click)="setViewMode('grid')"
+          title="Vista en tarjetas">
+          <i class="fas fa-th"></i>
+        </button>
+        <button 
+          class="view-mode-btn"
+          [class.active]="viewMode() === 'table'"
+          (click)="setViewMode('table')"
+          title="Vista en tabla">
+          <i class="fas fa-list"></i>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================================== -->
+  <!-- CONTENIDO PRINCIPAL -->
+  <!-- ========================================================================== -->
+  <main class="main-content">
+    
+    <!-- Estado de Carga -->
+    @if (loadingService.isLoadingByContext('load-tags')) {
+      <div class="loading-state" role="status" aria-live="polite">
+        <div class="loading-spinner" aria-hidden="true"></div>
+        <h3>Cargando etiquetas...</h3>
+        <p>Por favor espera mientras obtenemos la información</p>
+      </div>
+    }
+    
+    <!-- Estado Vacío - Sin Etiquetas -->
+    @else if (tags().length === 0) {
+      <div class="empty-state" role="status">
+        <i class="fas fa-tags empty-icon" aria-hidden="true"></i>
+        <h3>¡Comienza organizando tus contactos!</h3>
+        <p>
+          Aún no tienes etiquetas creadas. Las etiquetas te ayudan a categorizar 
+          y organizar tus contactos de manera eficiente.
+        </p>
+        <button 
+          type="button"
+          class="btn btn-primary"
+          (click)="openCreateModal()">
+          <i class="fas fa-plus" aria-hidden="true"></i>
+          Crear Mi Primera Etiqueta
+        </button>
+      </div>
+    }
+    
+    <!-- Sin Resultados de Búsqueda -->
+    @else if (filteredTags().length === 0 && searchQuery()) {
+      <div class="no-results" role="status">
+        <i class="fas fa-search-minus no-results-icon" aria-hidden="true"></i>
+        <h3>No se encontraron resultados</h3>
+        <p>
+          No hay etiquetas que coincidan con "<strong>{{ searchQuery() }}</strong>".
+          Intenta con otros términos de búsqueda.
+        </p>
+        <button 
+          type="button"
+          class="btn btn-secondary"
+          (click)="clearSearch()">
+          <i class="fas fa-times" aria-hidden="true"></i>
+          Limpiar Búsqueda
+        </button>
+      </div>
+    }
+    
+    <!-- Vista de Etiquetas -->
+    @else {
+      <!-- ============================================================================ -->
+      <!-- GRID VIEW -->
+      <!-- ============================================================================ -->
+      @if (viewMode() === 'grid') {
+        <section class="tags-grid" aria-label="Lista de etiquetas">
+          @for (tag of filteredTags(); track trackByTagId($index, tag)) {
+            <article class="tag-card" [attr.aria-label]="'Etiqueta: ' + tag.name">
+              
+              <!-- Header de la Etiqueta -->
+              <header class="tag-header">
+                <div 
+                  class="tag-color-indicator" 
+                  [style.background-color]="tag.color"
+                  [attr.aria-label]="'Color: ' + tag.color">
+                </div>
+                
+                <div class="tag-info">
+                  <div class="tag-name-row">
+                    <h4 class="tag-name">{{ tag.name }}</h4>
+                    @if (tag.has_auto_message) {
+                      <i class="fas fa-robot auto-message-indicator" 
+                         title="Mensaje automático configurado"
+                         aria-label="Esta etiqueta tiene mensaje automático configurado"></i>
+                    }
+                  </div>
+                  @if (tag.description) {
+                    <p class="tag-description">{{ tag.description }}</p>
+                  }
+                </div>
+                
+                <!-- Badge de Contador -->
+                @if ((tag.contact_count || 0) > 0) {
+                  <div 
+                    class="contact-count-badge"
+                    [attr.aria-label]="tag.contact_count + ' contactos asociados'">
+                    {{ tag.contact_count }}
+                  </div>
+                }
+              </header>
+              
+              <!-- Estadísticas de la Etiqueta -->
+              <div class="tag-stats">
+                <div class="stat">
+                  <i class="fas fa-users" aria-hidden="true"></i>
+                  <span>{{ tag.contact_count || 0 }} contactos</span>
+                </div>
+                
+                <div class="stat">
+                  <i class="fas fa-calendar-alt" aria-hidden="true"></i>
+                  <span>{{ tag.created_at | date:'dd/MM/yyyy' }}</span>
+                </div>
+                
+                <!-- Acciones -->
+                <div class="tag-actions">
+                  <button 
+                    type="button"
+                    class="action-btn edit-btn"
+                    (click)="openEditModal(tag)"
+                    [attr.aria-label]="'Editar etiqueta ' + tag.name"
+                    title="Editar etiqueta">
+                    <i class="fas fa-edit" aria-hidden="true"></i>
+                  </button>
+                  
+                  <button 
+                    type="button"
+                    class="action-btn delete-btn"
+                    (click)="deleteTag(tag)"
+                    [disabled]="(tag.contact_count || 0) > 0"
+                    [attr.aria-label]="'Eliminar etiqueta ' + tag.name"
+                    [title]="(tag.contact_count || 0) > 0 ? 
+                      'No se puede eliminar: tiene ' + tag.contact_count + ' contactos asociados' : 
+                      'Eliminar etiqueta'">
+                    <i class="fas fa-trash-alt" aria-hidden="true"></i>
+                  </button>
+                </div>
+              </div>
+              
+            </article>
+          }
+        </section>
+      }
+
+      <!-- ============================================================================ -->
+      <!-- TABLE VIEW -->
+      <!-- ============================================================================ -->
+      @if (viewMode() === 'table') {
+        <div class="tags-table-container">
+          <div class="table-wrapper">
+            <table class="tags-table">
+              <thead>
+                <tr>
+                  <th class="col-color">Color</th>
+                  <th class="col-name">Nombre</th>
+                  <th class="col-description">Descripción</th>
+                  <th class="col-contacts">Contactos</th>
+                  <th class="col-auto-message">Auto-Mensaje</th>
+                  <th class="col-created">Creada</th>
+                  <th class="col-actions">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (tag of filteredTags(); track trackByTagId($index, tag)) {
+                  <tr class="tag-row">
+                    <!-- Color -->
+                    <td class="col-color">
+                      <div class="color-cell">
+                        <div 
+                          class="color-indicator" 
+                          [style.background-color]="tag.color"
+                          [title]="'Color: ' + tag.color">
+                        </div>
+                      </div>
+                    </td>
+
+                    <!-- Name -->
+                    <td class="col-name">
+                      <div class="name-cell">
+                        <div class="tag-name">{{ tag.name }}</div>
+                        @if (tag.has_auto_message) {
+                          <i class="fas fa-robot auto-message-icon" 
+                             title="Mensaje automático configurado"></i>
+                        }
+                      </div>
+                    </td>
+
+                    <!-- Description -->
+                    <td class="col-description">
+                      <div class="description-cell">
+                        @if (tag.description) {
+                          <span class="description-text" [title]="tag.description">
+                            {{ tag.description | slice:0:60 }}
+                            @if (tag.description.length > 60) {
+                              <span class="text-truncated">...</span>
+                            }
+                          </span>
+                        } @else {
+                          <span class="no-description">Sin descripción</span>
+                        }
+                      </div>
+                    </td>
+
+                    <!-- Contacts -->
+                    <td class="col-contacts">
+                      <div class="contacts-cell">
+                        <span class="contact-count">{{ tag.contact_count || 0 }}</span>
+                        <span class="contact-label">contactos</span>
+                      </div>
+                    </td>
+
+                    <!-- Auto Message -->
+                    <td class="col-auto-message">
+                      <div class="auto-message-cell">
+                        @if (tag.has_auto_message) {
+                          <span class="auto-message-badge active">
+                            <i class="fas fa-robot"></i>
+                            Activo
+                          </span>
+                        } @else {
+                          <span class="auto-message-badge inactive">
+                            <i class="fas fa-times"></i>
+                            Inactivo
+                          </span>
+                        }
+                      </div>
+                    </td>
+
+                    <!-- Created -->
+                    <td class="col-created">
+                      <div class="created-cell">
+                        <div class="created-date">{{ tag.created_at | date:'dd/MM/yyyy' }}</div>
+                        <div class="created-time">{{ tag.created_at | date:'HH:mm' }}</div>
+                      </div>
+                    </td>
+
+                    <!-- Actions -->
+                    <td class="col-actions">
+                      <div class="action-buttons-table">
+                        <button 
+                          type="button"
+                          class="action-btn-sm btn-edit"
+                          (click)="openEditModal(tag)"
+                          [attr.aria-label]="'Editar etiqueta ' + tag.name"
+                          title="Editar etiqueta">
+                          <i class="fas fa-edit"></i>
+                        </button>
+                        
+                        <button 
+                          type="button"
+                          class="action-btn-sm btn-delete"
+                          (click)="deleteTag(tag)"
+                          [disabled]="(tag.contact_count || 0) > 0"
+                          [attr.aria-label]="'Eliminar etiqueta ' + tag.name"
+                          [title]="(tag.contact_count || 0) > 0 ? 
+                            'No se puede eliminar: tiene ' + tag.contact_count + ' contactos asociados' : 
+                            'Eliminar etiqueta'">
+                          <i class="fas fa-trash-alt"></i>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      }
+    }
+    
+  </main>
+  
+</div>
+
+<!-- ============================================================================ -->
+<!-- MODAL DE CREACIÓN/EDICIÓN -->
+<!-- ============================================================================ -->
+@if (isModalOpen()) {
+  <div 
+    class="modal-overlay" 
+    (click)="closeModal()"
+    role="dialog"
+    aria-modal="true"
+    [attr.aria-label]="modalTitle()">
+    
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      
+      <!-- Header del Modal -->
+      <header class="modal-header">
+        <h2 class="modal-title" id="modal-title">{{ modalTitle() }}</h2>
+        <button 
+          type="button"
+          class="modal-close-btn"
+          (click)="closeModal()"
+          aria-label="Cerrar modal"
+          title="Cerrar">
+          <i class="fas fa-times" aria-hidden="true"></i>
+        </button>
+      </header>
+      
+      <!-- Cuerpo del Modal -->
+      <div class="modal-body">
+        <form [formGroup]="tagForm" (ngSubmit)="saveTag()" novalidate>
+          
+          <!-- Campo Nombre -->
+          <div class="form-group">
+            <label for="tag-name" class="form-label">
+              <i class="fas fa-tag" aria-hidden="true"></i>
+              Nombre de la etiqueta *
+            </label>
+            <input
+              id="tag-name"
+              type="text"
+              class="form-input"
+              formControlName="name"
+              placeholder="Ej: Clientes VIP, Proveedores, Familia..."
+              [class.error]="hasError('name')"
+              autocomplete="off"
+              maxlength="100">
+            
+            @if (hasError('name')) {
+              <div class="error-message" role="alert">
+                {{ getErrorMessage('name') }}
+              </div>
+            }
+          </div>
+          
+          <!-- Selector de Color -->
+          <div class="form-group">
+            <label class="form-label">
+              <i class="fas fa-palette" aria-hidden="true"></i>
+              Color de la etiqueta *
+            </label>
+            
+            <!-- Paleta de Colores Predefinidos -->
+            <div class="color-palette" role="radiogroup" aria-label="Seleccionar color">
+              @for (color of TAG_COLORS; track trackByColor($index, color)) {
+                <div
+                  class="color-option"
+                  [class.selected]="selectedColor() === color"
+                  [style.background-color]="color"
+                  (click)="selectColor(color)"
+                  (keydown.enter)="selectColor(color)"
+                  (keydown.space)="selectColor(color)"
+                  role="radio"
+                  [attr.aria-checked]="selectedColor() === color"
+                  [attr.aria-label]="'Color ' + color"
+                  tabindex="0">
+                </div>
+              }
+            </div>
+            
+            <!-- Color Personalizado -->
+            <div class="custom-color-section">
+              <label for="custom-color" class="form-label">
+                <i class="fas fa-eyedropper" aria-hidden="true"></i>
+                Color personalizado
+              </label>
+              <input
+                id="custom-color"
+                type="color"
+                class="custom-color-input"
+                [value]="selectedColor()"
+                (input)="onCustomColorChange($event)"
+                aria-label="Selector de color personalizado">
+            </div>
+            
+            @if (hasError('color')) {
+              <div class="error-message" role="alert">
+                {{ getErrorMessage('color') }}
+              </div>
+            }
+          </div>
+          
+          <!-- Campo Descripción -->
+          <div class="form-group">
+            <label for="tag-description" class="form-label">
+              <i class="fas fa-align-left" aria-hidden="true"></i>
+              Descripción (opcional)
+            </label>
+            <textarea
+              id="tag-description"
+              class="form-textarea"
+              formControlName="description"
+              placeholder="Describe el propósito o uso de esta etiqueta..."
+              rows="3"
+              maxlength="500"
+              [class.error]="hasError('description')">
+            </textarea>
+            
+            @if (hasError('description')) {
+              <div class="error-message" role="alert">
+                {{ getErrorMessage('description') }}
+              </div>
+            }
+          </div>
+          
+          <!-- Configuración de Mensajes Automáticos -->
+          <div class="form-group auto-message-section">
+            <div class="auto-message-header">
+              <label class="form-label checkbox-label">
+                <input
+                  type="checkbox"
+                  class="form-checkbox"
+                  formControlName="has_auto_message"
+                  (change)="toggleAutoMessageConfig()">
+                <i class="fas fa-robot" aria-hidden="true"></i>
+                Enviar mensaje automático
+              </label>
+              <div class="auto-message-description">
+                Cuando se asigne esta etiqueta, se programará automáticamente un mensaje
+              </div>
+            </div>
+
+            @if (tagForm.get('has_auto_message')?.value) {
+              <div class="auto-message-config">
+                
+                <!-- Retraso del mensaje -->
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="auto-delay" class="form-label">
+                      <i class="fas fa-clock" aria-hidden="true"></i>
+                      Enviar después de (horas) *
+                    </label>
+                    <input
+                      id="auto-delay"
+                      type="number"
+                      class="form-input"
+                      formControlName="auto_message_delay_hours"
+                      min="0.1"
+                      max="168"
+                      step="0.1"
+                      placeholder="24">
+                    <small class="form-help">
+                      Entre 0.1 y 168 horas (6 minutos a 7 días)
+                      @if (tagForm.get('auto_message_delay_hours')?.value) {
+                        <br><strong>≈ {{ getReadableTime(tagForm.get('auto_message_delay_hours')?.value) }}</strong>
+                      }
+                    </small>
+                  </div>
+                </div>
+
+                <!-- Template o contenido personalizado -->
+                <div class="form-group">
+                  <label for="auto-template" class="form-label">
+                    <i class="fas fa-file-alt" aria-hidden="true"></i>
+                    Template de mensaje (opcional)
+                  </label>
+                  <select
+                    id="auto-template"
+                    class="form-select"
+                    formControlName="auto_message_template_id"
+                    (change)="onTemplateChange($event)">
+                    <option value="">Escribir mensaje personalizado</option>
+                    @for (template of messageTemplates(); track trackByTemplateId($index, template)) {
+                      <option [value]="template.id">{{ template.name }}</option>
+                    }
+                  </select>
+                </div>
+
+                <!-- Contenido del mensaje -->
+                <div class="form-group">
+                  <label for="auto-content" class="form-label">
+                    <i class="fas fa-comment-alt" aria-hidden="true"></i>
+                    Contenido del mensaje *
+                  </label>
+                  <textarea
+                    id="auto-content"
+                    class="form-textarea"
+                    formControlName="auto_message_content"
+                    placeholder="Escribe el mensaje que se enviará automáticamente..."
+                    rows="4"
+                    maxlength="1000"
+                    [class.error]="hasError('auto_message_content')">
+                  </textarea>
+                  
+                  <!-- Variables disponibles -->
+                  @if (autoMessageVariables().length > 0) {
+                    <div class="variables-section">
+                      <label class="variables-label">
+                        <i class="fas fa-code" aria-hidden="true"></i>
+                        Variables disponibles (click para insertar):
+                      </label>
+                      <div class="variables-grid">
+                        @for (variable of autoMessageVariables(); track trackByVariableName($index, variable)) {
+                          <button
+                            type="button"
+                            class="variable-button"
+                            (click)="insertVariable(variable.name)"
+                            [title]="variable.description + ' - Ejemplo: ' + variable.example">
+                            <span class="variable-name">{{variable.format || '{' + variable.name + '}'}}</span>
+                            <span class="variable-example">{{ variable.example }}</span>
+                          </button>
+                        }
+                      </div>
+                    </div>
+                  }
+                  
+                  @if (hasError('auto_message_content')) {
+                    <div class="error-message" role="alert">
+                      {{ getErrorMessage('auto_message_content') }}
+                    </div>
+                  }
+                </div>
+
+                <!-- Estado activo -->
+                <div class="form-group">
+                  <label class="form-label checkbox-label">
+                    <input
+                      type="checkbox"
+                      class="form-checkbox"
+                      formControlName="is_active_auto">
+                    <i class="fas fa-toggle-on" aria-hidden="true"></i>
+                    Mensaje automático activo
+                  </label>
+                  <small class="form-help">
+                    Si está desactivado, no se enviarán mensajes automáticos aunque la configuración esté guardada
+                  </small>
+                </div>
+
+              </div>
+            }
+          </div>
+
+          <!-- Vista Previa -->
+          <div class="form-group">
+            <label class="form-label">
+              <i class="fas fa-eye" aria-hidden="true"></i>
+              Vista previa
+            </label>
+            <div class="tag-preview">
+              <div 
+                class="preview-tag"
+                [style.background-color]="selectedColor()"
+                [attr.aria-label]="'Vista previa: ' + (tagForm.get('name')?.value || 'Nombre de etiqueta')">
+                {{ tagForm.get('name')?.value || 'Nombre de etiqueta' }}
+                @if (tagForm.get('has_auto_message')?.value) {
+                  <i class="fas fa-robot auto-icon" title="Con mensaje automático"></i>
+                }
+              </div>
+            </div>
+          </div>
+          
+        </form>
+      </div>
+      
+      <!-- Footer del Modal -->
+      <footer class="modal-footer">
+        <button 
+          type="button"
+          class="btn btn-secondary"
+          (click)="closeModal()">
+          <i class="fas fa-times" aria-hidden="true"></i>
+          Cancelar
+        </button>
+        
+        <button 
+          type="button"
+          class="btn btn-primary"
+          (click)="saveTag()"
+          [disabled]="tagForm.invalid || loadingService.isLoadingByContext('create-tag') || loadingService.isLoadingByContext('update-tag')">
+          
+          @if (loadingService.isLoadingByContext('create-tag') || loadingService.isLoadingByContext('update-tag')) {
+            <div class="loading-spinner" style="width: 1rem; height: 1rem; margin-right: 0.5rem;" aria-hidden="true"></div>
+            Guardando...
+          } @else {
+            <i class="fas fa-save" aria-hidden="true"></i>
+            {{ isEditing() ? 'Actualizar' : 'Crear' }} Etiqueta
+          }
+        </button>
+      </footer>
+      
+    </div>
+  </div>
+}

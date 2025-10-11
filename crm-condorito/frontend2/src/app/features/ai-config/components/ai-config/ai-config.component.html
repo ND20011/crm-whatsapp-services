@@ -1,0 +1,735 @@
+<div class="ai-config-container">
+  <!-- ============================================================================ -->
+  <!-- HEADER SECTION -->
+  <!-- ============================================================================ -->
+  <header class="ai-config-header">
+    <div class="header-top">
+      <div class="header-title">
+        <div class="title-icon">
+          <i class="fas fa-robot"></i>
+        </div>
+        <div class="title-text">
+          <h1>Configuración de IA</h1>
+          <p class="subtitle">Personaliza tu asistente automático de WhatsApp</p>
+        </div>
+      </div>
+      
+      <div class="header-actions">
+        <button class="action-btn btn-secondary" (click)="toggleTestSection()">
+          <i class="fas fa-vial"></i>
+          {{ showTestSection ? 'Ocultar' : 'Probar' }} IA
+        </button>
+        <button class="action-btn btn-warning" (click)="onReset()" [disabled]="isLoading || isSaving">
+          <i class="fas fa-undo"></i>
+          Resetear
+        </button>
+      </div>
+    </div>
+
+    <!-- STATUS SECTION -->
+    <div class="status-section">
+      <div class="status-card">
+        <div class="status-icon" [class.active]="configForm.get('enabled')?.value">
+          <i class="fas fa-power-off"></i>
+        </div>
+        <div class="status-info">
+          <div class="status-title">Estado del Asistente</div>
+          <div class="status-value" [class.active]="configForm.get('enabled')?.value">
+            {{ configForm.get('enabled')?.value ? 'Activado' : 'Desactivado' }}
+          </div>
+        </div>
+      </div>
+
+      <div class="status-card">
+        <div class="status-icon mode">
+          <i class="fas fa-cog"></i>
+        </div>
+        <div class="status-info">
+          <div class="status-title">Modo de Operación</div>
+          <div class="status-value">
+            {{ configForm.get('ai_mode')?.value === 'prompt_only' ? 'Solo Prompt' : 'Base de Datos' }}
+          </div>
+        </div>
+      </div>
+
+      <div class="status-card">
+        <div class="status-icon tokens">
+          <i class="fas fa-text-width"></i>
+        </div>
+        <div class="status-info">
+          <div class="status-title">Tokens Máximos</div>
+          <div class="status-value">{{ configForm.get('max_tokens')?.value || 500 }}</div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ============================================================================ -->
+  <!-- MAIN CONTENT -->
+  <!-- ============================================================================ -->
+  <main class="ai-config-main">
+    @if (isLoading) {
+      <div class="loading-state">
+        <div class="state-icon">
+          <i class="fas fa-spinner fa-spin"></i>
+        </div>
+        <h3 class="state-title">Cargando Configuración</h3>
+        <p class="state-message">Obteniendo la configuración actual de tu asistente IA...</p>
+      </div>
+    } @else if (errorMessage) {
+      <div class="empty-state">
+        <div class="state-icon error">
+          <i class="fas fa-exclamation-triangle"></i>
+        </div>
+        <h3 class="state-title">Error al Cargar</h3>
+        <p class="state-message">{{ errorMessage }}</p>
+        <button class="action-btn btn-primary" (click)="loadInitialData()">
+          <i class="fas fa-refresh"></i>
+          Reintentar
+        </button>
+      </div>
+    } @else {
+      <!-- NEW CONFIGURATION MESSAGE -->
+      @if (!currentConfig) {
+        <div class="new-config-state">
+          <div class="state-icon new">
+            <i class="fas fa-robot"></i>
+          </div>
+          <h3 class="state-title">Configurar Asistente IA</h3>
+          <p class="state-message">
+            ¡Bienvenido! Parece que es la primera vez que configuras tu asistente de IA. 
+            Completa el formulario a continuación para personalizar las respuestas automáticas.
+          </p>
+          <div class="config-benefits">
+            <div class="benefit-item">
+              <i class="fas fa-check-circle"></i>
+              <span>Respuestas automáticas 24/7</span>
+            </div>
+            <div class="benefit-item">
+              <i class="fas fa-check-circle"></i>
+              <span>Personalización completa del tono</span>
+            </div>
+            <div class="benefit-item">
+              <i class="fas fa-check-circle"></i>
+              <span>Horarios de trabajo configurables</span>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- SUCCESS MESSAGE -->
+      @if (successMessage) {
+        <div class="alert alert-success">
+          <i class="fas fa-check-circle"></i>
+          {{ successMessage }}
+          <button class="alert-close" (click)="successMessage = ''">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+      }
+
+      <!-- ERROR MESSAGE -->
+      @if (errorMessage) {
+        <div class="alert alert-danger">
+          <i class="fas fa-exclamation-triangle"></i>
+          {{ errorMessage }}
+          <button class="alert-close" (click)="errorMessage = ''">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+      }
+
+      <!-- CONFIGURATION FORM -->
+      <form [formGroup]="configForm" (ngSubmit)="onSave()" class="ai-config-form">
+        
+        <!-- ============================================================================ -->
+        <!-- BASIC CONFIGURATION SECTION -->
+        <!-- ============================================================================ -->
+        <div class="config-section basic-section">
+          <div class="section-header">
+            <div class="section-title">
+              <div class="section-icon basic">
+                <i class="fas fa-sliders-h"></i>
+              </div>
+              <div class="section-info">
+                <h2>Configuración Básica</h2>
+                <p>Configuración principal de tu asistente IA</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="section-content">
+            <div class="config-grid">
+              <!-- AI Status Toggle -->
+              <div class="config-card status-card">
+                <div class="card-header">
+                  <div class="card-title">
+                    <i class="fas fa-power-off"></i>
+                    Estado del Asistente
+                  </div>
+                </div>
+                <div class="card-body">
+                  <div class="toggle-container">
+                    <div class="form-check form-switch">
+                      <input 
+                        class="form-check-input" 
+                        type="checkbox" 
+                        id="enabled"
+                        formControlName="enabled">
+                      <label class="form-check-label" for="enabled">
+                        <span class="toggle-text" [class.active]="configForm.get('enabled')?.value">
+                          {{ configForm.get('enabled')?.value ? 'Activado' : 'Desactivado' }}
+                        </span>
+                      </label>
+                    </div>
+                    <div class="toggle-description">
+                      {{ configForm.get('enabled')?.value ? 
+                          'El asistente responderá automáticamente a los mensajes' : 
+                          'El asistente está pausado y no responderá automáticamente' }}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- AI Mode Selection -->
+              <div class="config-card mode-card">
+                <div class="card-header">
+                  <div class="card-title">
+                    <i class="fas fa-cog"></i>
+                    Modo de Operación
+                  </div>
+                </div>
+                <div class="card-body">
+                  <div class="mode-selector">
+                    <select formControlName="ai_mode" class="form-select mode-select">
+                      <option value="prompt_only">🎯 Solo Prompt del Negocio</option>
+                      <option value="database_search" disabled>🔍 Búsqueda en Base de Datos (Próximamente)</option>
+                    </select>
+                    <div class="mode-description">
+                      @if (configForm.get('ai_mode')?.value === 'prompt_only') {
+                        <i class="fas fa-info-circle"></i>
+                        El asistente responderá únicamente basándose en el prompt de tu negocio
+                      } @else {
+                        <i class="fas fa-info-circle"></i>
+                        El asistente podrá buscar información en tu base de datos (próximamente)
+                      }
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ============================================================================ -->
+        <!-- BUSINESS PROMPT SECTION -->
+        <!-- ============================================================================ -->
+        <div class="config-section prompt-section">
+          <div class="section-header featured">
+            <div class="section-title">
+              <div class="section-icon prompt">
+                <i class="fas fa-comment-alt"></i>
+              </div>
+              <div class="section-info">
+                <h2>
+                  Prompt de tu Negocio
+                  <span class="required-badge">Obligatorio</span>
+                </h2>
+                <p>Esta es la información más importante. Describe tu negocio detalladamente.</p>
+              </div>
+            </div>
+            <div class="section-badge">
+              <i class="fas fa-star"></i>
+              Importante
+            </div>
+          </div>
+
+          <div class="section-content">
+            <div class="prompt-card">
+              <div class="prompt-editor">
+                <textarea 
+                  formControlName="business_prompt"
+                  class="prompt-textarea"
+                  rows="12"
+                  placeholder="🏪 INFORMACIÓN DE TU NEGOCIO:
+
+Ejemplo completo:
+Sos un asistente que responde mensajes de WhatsApp de una panadería llamada 'Panadería Don José'.
+
+📋 DATOS DEL NEGOCIO:
+• Nombre: Panadería Don José
+• Rubro: Panadería artesanal
+• Horarios: Lunes a Sábado de 8:00 a 20:00 hs, Domingos de 9:00 a 18:00 hs
+• Especialidades: Pan artesanal, facturas, tortas, empanadas
+• Ubicación: Av. Principal 123, Centro
+• Teléfono: (011) 1234-5678
+• WhatsApp: (011) 1234-5678
+• Delivery: Disponible en un radio de 5km - Costo $500
+• Formas de pago: Efectivo, tarjetas, transferencia
+
+🎯 INSTRUCCIONES PARA EL ASISTENTE:
+• Siempre sé amable, profesional y usa emojis apropiados
+• Proporciona información precisa sobre horarios y productos
+• Si preguntan por precios específicos, sugiere que llamen o visiten la panadería
+• Promociona nuestras especialidades cuando sea apropiado
+• Si no sabes algo, deriva al teléfono o visita presencial
+• Usa un tono cálido y familiar, como si fueras parte del equipo
+• Siempre termina preguntando si necesitan algo más"
+                  [class.is-invalid]="hasFieldError('business_prompt')">
+                </textarea>
+                
+                @if (hasFieldError('business_prompt')) {
+                  <div class="invalid-feedback">
+                    {{ getFieldError('business_prompt') }}
+                  </div>
+                }
+
+                <!-- Character Counter -->
+                <div class="prompt-footer">
+                  <div class="prompt-tips">
+                    <div class="tip-item">
+                      <i class="fas fa-lightbulb"></i>
+                      <span>Incluye horarios, productos, ubicación y políticas</span>
+                    </div>
+                  </div>
+                  <div class="char-counter">
+                    <span class="counter-badge" 
+                          [class.success]="getCharCount('business_prompt') <= 1500"
+                          [class.warning]="getCharCount('business_prompt') > 5500 && getCharCount('business_prompt') <= 1800"
+                          [class.danger]="getCharCount('business_prompt') > 7800">
+                      {{ getCharCount('business_prompt') }}/8000
+                    </span>
+                  </div>
+                </div>
+
+                <!-- Quick Examples -->
+                <div class="quick-examples">
+                  <div class="examples-title">
+                    <i class="fas fa-magic"></i>
+                    Elementos importantes a incluir:
+                  </div>
+                  <div class="examples-tags">
+                    <span class="example-tag">📍 Ubicación y zona de delivery</span>
+                    <span class="example-tag">🕐 Horarios detallados</span>
+                    <span class="example-tag">💳 Formas de pago</span>
+                    <span class="example-tag">📱 Teléfono y redes</span>
+                    <span class="example-tag">🎯 Productos estrella</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ============================================================================ -->
+        <!-- ADVANCED CONFIGURATION SECTION -->
+        <!-- ============================================================================ -->
+        <div class="config-section advanced-section">
+          <div class="section-header collapsible" (click)="toggleAdvancedSettings()">
+            <div class="section-title">
+              <div class="section-icon advanced">
+                <i class="fas fa-cogs"></i>
+              </div>
+              <div class="section-info">
+                <h2>Configuración Avanzada</h2>
+                <p>Parámetros técnicos y horarios de trabajo</p>
+              </div>
+            </div>
+            <div class="collapse-toggle">
+              <i class="fas" [class.fa-chevron-down]="!showAdvancedSettings" [class.fa-chevron-up]="showAdvancedSettings"></i>
+            </div>
+          </div>
+
+          @if (showAdvancedSettings) {
+            <div class="section-content">
+              <div class="config-grid advanced-grid">
+                <!-- Technical Parameters -->
+                <div class="config-card params-card">
+                  <div class="card-header">
+                    <div class="card-title">
+                      <i class="fas fa-sliders-h"></i>
+                      Parámetros Técnicos
+                    </div>
+                  </div>
+                  <div class="card-body">
+                    <div class="param-group">
+                      <label class="param-label">
+                        <i class="fas fa-text-width"></i>
+                        Máximo de Tokens
+                      </label>
+                      <input 
+                        type="number" 
+                        formControlName="max_tokens"
+                        class="form-control param-input"
+                        min="50" max="2000"
+                        [class.is-invalid]="hasFieldError('max_tokens')">
+                      @if (hasFieldError('max_tokens')) {
+                        <div class="invalid-feedback">{{ getFieldError('max_tokens') }}</div>
+                      }
+                      <div class="param-help">Longitud máxima de la respuesta (50-2000)</div>
+                    </div>
+
+                    <div class="param-group">
+                      <label class="param-label">
+                        <i class="fas fa-thermometer-half"></i>
+                        Creatividad (Temperature)
+                      </label>
+                      <input 
+                        type="number" 
+                        formControlName="temperature"
+                        class="form-control param-input"
+                        min="0" max="1" step="0.1"
+                        [class.is-invalid]="hasFieldError('temperature')">
+                      @if (hasFieldError('temperature')) {
+                        <div class="invalid-feedback">{{ getFieldError('temperature') }}</div>
+                      }
+                      <div class="param-help">0.0 = Muy predecible, 1.0 = Muy creativo</div>
+                    </div>
+
+                    <div class="param-group">
+                      <label class="param-label">
+                        <i class="fas fa-history"></i>
+                        Mensajes de Historial
+                      </label>
+                      <input 
+                        type="number" 
+                        formControlName="maxHistoryMessages"
+                        class="form-control param-input"
+                        min="1" max="50"
+                        [class.is-invalid]="hasFieldError('maxHistoryMessages')">
+                      @if (hasFieldError('maxHistoryMessages')) {
+                        <div class="invalid-feedback">{{ getFieldError('maxHistoryMessages') }}</div>
+                      }
+                      <div class="param-help">Cuántos mensajes anteriores recordar (1-50)</div>
+                    </div>
+
+                    <div class="param-group">
+                      <label class="param-label">
+                        <i class="fas fa-clock"></i>
+                        Timeout (ms)
+                      </label>
+                      <input 
+                        type="number" 
+                        formControlName="responseTimeout"
+                        class="form-control param-input"
+                        min="5000" max="60000" step="1000"
+                        [class.is-invalid]="hasFieldError('responseTimeout')">
+                      @if (hasFieldError('responseTimeout')) {
+                        <div class="invalid-feedback">{{ getFieldError('responseTimeout') }}</div>
+                      }
+                      <div class="param-help">Tiempo máximo de espera (5-60 segundos)</div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Error Message -->
+                <div class="config-card error-card">
+                  <div class="card-header">
+                    <div class="card-title">
+                      <i class="fas fa-exclamation-triangle"></i>
+                      Mensaje de Error
+                    </div>
+                  </div>
+                  <div class="card-body">
+                    <div class="param-group">
+                      <textarea 
+                        formControlName="fallbackMessage"
+                        class="form-control error-textarea"
+                        rows="3"
+                        placeholder="Mensaje que se envía cuando la IA no puede responder"
+                        [class.is-invalid]="hasFieldError('fallbackMessage')">
+                      </textarea>
+                      @if (hasFieldError('fallbackMessage')) {
+                        <div class="invalid-feedback">{{ getFieldError('fallbackMessage') }}</div>
+                      }
+                      <div class="param-help">Mensaje automático cuando hay problemas técnicos</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Working Hours -->
+              <div class="working-hours-section" formGroupName="workingHours">
+                <div class="hours-header">
+                  <div class="hours-title">
+                    <i class="fas fa-business-time"></i>
+                    Horarios de Trabajo
+                  </div>
+                  <div class="form-check form-switch">
+                    <input 
+                      class="form-check-input" 
+                      type="checkbox" 
+                      id="workingHoursEnabled"
+                      formControlName="enabled">
+                    <label class="form-check-label" for="workingHoursEnabled">
+                      Activar horarios
+                    </label>
+                  </div>
+                </div>
+
+                @if (configForm.get('workingHours.enabled')?.value) {
+                  <div class="hours-content">
+                    <div class="time-config">
+                      <div class="time-group">
+                        <label class="time-label">
+                          <i class="fas fa-sun"></i>
+                          Hora de Inicio
+                        </label>
+                        <input 
+                          type="time" 
+                          formControlName="start"
+                          class="form-control time-input">
+                      </div>
+                      <div class="time-group">
+                        <label class="time-label">
+                          <i class="fas fa-moon"></i>
+                          Hora de Fin
+                        </label>
+                        <input 
+                          type="time" 
+                          formControlName="end"
+                          class="form-control time-input">
+                      </div>
+                    </div>
+
+                    <div class="days-config">
+                      <div class="days-title">Días de la Semana</div>
+                      <div class="days-grid">
+                        @for (day of [0,1,2,3,4,5,6]; track day) {
+                          <button 
+                            type="button"
+                            class="day-btn"
+                            [class.active]="isDaySelected(day)"
+                            (click)="toggleWorkingDay(day)">
+                            {{ getDayName(day) }}
+                          </button>
+                        }
+                      </div>
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- ============================================================================ -->
+        <!-- FORM ACTIONS -->
+        <!-- ============================================================================ -->
+        <div class="form-actions">
+          <div class="actions-info">
+            <i class="fas fa-info-circle"></i>
+            Los cambios se aplicarán inmediatamente después de guardar
+          </div>
+          <div class="actions-buttons">
+            <button 
+              type="button" 
+              class="action-btn btn-secondary"
+              (click)="loadConfiguration()"
+              [disabled]="isLoading || isSaving">
+              <i class="fas fa-refresh"></i>
+              Recargar
+            </button>
+            <button 
+              type="submit" 
+              class="action-btn btn-primary btn-save"
+              [disabled]="configForm.invalid || isSaving">
+              @if (isSaving) {
+                <span class="spinner-border spinner-border-sm"></span>
+                Guardando...
+              } @else {
+                <i class="fas fa-save"></i>
+                Guardar Configuración
+              }
+            </button>
+          </div>
+        </div>
+      </form>
+    }
+  </main>
+
+  <!-- ============================================================================ -->
+  <!-- TEST SECTION -->
+  <!-- ============================================================================ -->
+  @if (showTestSection) {
+    <div class="test-section">
+      <div class="test-header">
+        <div class="test-title">
+          <div class="test-icon">
+            <i class="fas fa-vial"></i>
+          </div>
+          <div class="test-info">
+            <h2>Probar Asistente IA</h2>
+            <p>Envía un mensaje de prueba para ver cómo responde tu asistente</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="test-content">
+        <div class="test-input-section">
+          <div class="input-group">
+            <div class="input-group-prepend">
+              <span class="input-group-text">
+                <i class="fas fa-user"></i>
+              </span>
+            </div>
+            <input 
+              type="text" 
+              class="form-control test-input"
+              [(ngModel)]="testMessage"
+              placeholder="Ejemplo: ¿Hasta qué hora están abiertos hoy?"
+              (keyup.enter)="onTestAI()"
+              [disabled]="isTesting">
+            <div class="input-group-append">
+              <button 
+                class="btn btn-primary test-btn"
+                (click)="onTestAI()"
+                [disabled]="!testMessage.trim() || isTesting">
+                @if (isTesting) {
+                  <span class="spinner-border spinner-border-sm"></span>
+                  Probando...
+                } @else {
+                  <i class="fas fa-paper-plane"></i>
+                  Probar IA
+                }
+              </button>
+            </div>
+          </div>
+          <div class="test-suggestions">
+            <div class="suggestions-title">
+              <i class="fas fa-lightbulb"></i>
+              Sugerencias de prueba:
+            </div>
+            <div class="suggestions-list">
+              <span class="suggestion-tag" (click)="testMessage = '¿Hasta qué hora están abiertos?'">Horarios</span>
+              <span class="suggestion-tag" (click)="testMessage = '¿Qué productos tienen disponibles?'">Productos</span>
+              <span class="suggestion-tag" (click)="testMessage = '¿Dónde están ubicados?'">Ubicación</span>
+              <span class="suggestion-tag" (click)="testMessage = '¿Hacen delivery?'">Delivery</span>
+            </div>
+          </div>
+        </div>
+
+        @if (testResponse) {
+          <div class="test-response">
+            <div class="response-header">
+              <div class="response-title">
+                <i class="fas fa-robot"></i>
+                Respuesta del Asistente
+              </div>
+              <div class="response-actions">
+                <button class="btn btn-sm btn-outline-secondary" (click)="testResponse = null; testMessage = ''">
+                  <i class="fas fa-times"></i>
+                  Limpiar
+                </button>
+              </div>
+            </div>
+            <div class="response-content">
+              <div class="response-bubble">
+                <div class="bubble-content">
+                  {{ testResponse.ai_response }}
+                </div>
+                <div class="bubble-meta">
+                  <i class="fas fa-clock"></i>
+                  {{ testResponse.timestamp | date:'medium' }}
+                  <span class="success-indicator">
+                    <i class="fas fa-check-circle"></i>
+                    Respuesta generada exitosamente
+                  </span>
+                </div>
+              </div>
+              
+              <!-- Información de Uso de Cuotas -->
+              <div class="usage-info">
+                <div class="usage-section">
+                  <h6 class="usage-title">
+                    <i class="fas fa-tachometer-alt"></i>
+                    Uso de Mensajes
+                  </h6>
+                  <div class="usage-stats">
+                    <div class="usage-stat">
+                      <span class="stat-label">Usado:</span>
+                      <span class="stat-value">{{ testResponse.quotaUsed || 0 }}</span>
+                    </div>
+                    <div class="usage-stat">
+                      <span class="stat-label">Límite:</span>
+                      <span class="stat-value">{{ testResponse.quotaLimit || 0 }}</span>
+                    </div>
+                    <div class="usage-stat">
+                      <span class="stat-label">Restante:</span>
+                      <span class="stat-value">{{ testResponse.quotaRemaining || 0 }}</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="usage-section">
+                  <h6 class="usage-title">
+                    <i class="fas fa-coins"></i>
+                    Uso de Tokens
+                  </h6>
+                  <div class="usage-stats">
+                    <div class="usage-stat">
+                      <span class="stat-label">Usado:</span>
+                      <span class="stat-value">{{ (testResponse.tokensUsed || 0) | number }}</span>
+                    </div>
+                    <div class="usage-stat">
+                      <span class="stat-label">Límite:</span>
+                      <span class="stat-value">{{ (testResponse.tokenLimit || 0) | number }}</span>
+                    </div>
+                    <div class="usage-stat">
+                      <span class="stat-label">Restante:</span>
+                      <span class="stat-value">{{ (testResponse.tokensRemaining || 0) | number }}</span>
+                    </div>
+                  </div>
+                  
+                  @if (testResponse.tokenDetails) {
+                    <div class="token-details">
+                      <small class="text-muted">
+                        <i class="fas fa-info-circle"></i>
+                        Esta prueba consumió {{ testResponse.tokenDetails.total_tokens }} tokens
+                        ({{ testResponse.tokenDetails.prompt_tokens }} entrada + {{ testResponse.tokenDetails.completion_tokens }} salida)
+                      </small>
+                    </div>
+                  }
+                </div>
+              </div>
+            </div>
+          </div>
+        }
+
+        @if (isTesting) {
+          <div class="test-loading">
+            <div class="loading-content">
+              <div class="spinner-border text-primary"></div>
+              <div class="loading-text">
+                <i class="fas fa-cogs"></i>
+                Generando respuesta con tu configuración...
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- ============================================================================ -->
+  <!-- SOUND NOTIFICATIONS SECTION -->
+  <!-- ============================================================================ -->
+  <section class="sound-config-section">
+    <div class="section-header">
+      <div class="section-title">
+        <div class="title-icon">
+          <i class="fas fa-volume-up"></i>
+        </div>
+        <div class="title-text">
+          <h2>Notificaciones Sonoras</h2>
+          <p class="section-subtitle">Configura los sonidos para mensajes entrantes</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-content">
+      <app-sound-settings-professional></app-sound-settings-professional>
+    </div>
+  </section>
+
+</div>

@@ -1,0 +1,528 @@
+<div class="scheduled-message-form-container">
+  <!-- ============================================================================ -->
+  <!-- HEADER -->
+  <!-- ============================================================================ -->
+  <header class="form-header">
+    <div class="header-content">
+      <div class="header-title">
+        <button class="back-btn" (click)="cancel()">
+          <i class="fas fa-arrow-left"></i>
+        </button>
+        <div class="title-text">
+          <h1>{{ pageTitle() }}</h1>
+          <p>Configura los detalles de tu mensaje programado</p>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ============================================================================ -->
+  <!-- FORM -->
+  <!-- ============================================================================ -->
+  <main class="form-main">
+    <form [formGroup]="messageForm" (ngSubmit)="onSubmit()" class="message-form">
+      
+      <!-- ============================================================================ -->
+      <!-- INFORMACIÓN BÁSICA -->
+      <!-- ============================================================================ -->
+      <div class="form-section">
+        <div class="section-header">
+          <h2 class="section-title">
+            <i class="fas fa-info-circle"></i>
+            Información Básica
+          </h2>
+          <p class="section-description">Nombre y descripción del mensaje programado</p>
+        </div>
+
+        <div class="section-content">
+          <div class="form-grid">
+            <!-- Name -->
+            <div class="form-group">
+              <label class="form-label required">Nombre del Mensaje</label>
+              <input
+                type="text"
+                formControlName="name"
+                class="form-control"
+                [class.is-invalid]="hasFieldError('name')"
+                placeholder="Ej: Recordatorio semanal de promociones"
+              />
+              @if (hasFieldError('name')) {
+                <div class="invalid-feedback">{{ getFieldError('name') }}</div>
+              }
+            </div>
+
+            <!-- Description -->
+            <div class="form-group">
+              <label class="form-label">Descripción (Opcional)</label>
+              <textarea
+                formControlName="description"
+                class="form-control"
+                rows="3"
+                placeholder="Describe el propósito de este mensaje programado..."
+              ></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================================================ -->
+      <!-- TIPO DE ENVÍO -->
+      <!-- ============================================================================ -->
+      <div class="form-section">
+        <div class="section-header">
+          <h2 class="section-title">
+            <i class="fas fa-paper-plane"></i>
+            Tipo de Envío
+          </h2>
+          <p class="section-description">Define a quién se enviará el mensaje</p>
+        </div>
+
+        <div class="section-content">
+          <!-- Send Type Selection -->
+          <div class="send-type-selector">
+            @for (option of SEND_TYPE_OPTIONS; track option.value) {
+              <div class="send-type-option">
+                <input
+                  type="radio"
+                  [id]="'send-type-' + option.value"
+                  [value]="option.value"
+                  formControlName="send_type"
+                  class="send-type-radio"
+                />
+                <label [for]="'send-type-' + option.value" class="send-type-label">
+                  <div class="option-header">
+                    <span class="option-title">{{ option.label }}</span>
+                  </div>
+                  <div class="option-description">{{ option.description }}</div>
+                </label>
+              </div>
+            }
+          </div>
+
+          <!-- Recipients Configuration -->
+          <div class="recipients-config">
+            @if (messageForm.value.send_type === 'individual') {
+              <div class="form-grid">
+                <div class="form-group">
+                  <label class="form-label">Seleccionar Contacto</label>
+                  <select
+                    formControlName="recipient_contact_id"
+                    class="form-control"
+                    [class.is-invalid]="hasFieldError('recipient_contact_id')"
+                  >
+                    <option [ngValue]="null">Seleccionar contacto existente</option>
+                    @for (contact of contacts(); track contact.id) {
+                      <option [ngValue]="contact.id">
+                        {{ getContactDisplayName(contact) }} - {{ contact.phone_number }}
+                      </option>
+                    }
+                  </select>
+                  @if (hasFieldError('recipient_contact_id')) {
+                    <div class="invalid-feedback">{{ getFieldError('recipient_contact_id') }}</div>
+                  }
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">O escribir número manualmente</label>
+                  <input
+                    type="tel"
+                    formControlName="recipient_phone"
+                    class="form-control"
+                    placeholder="549123456789"
+                  />
+                  <div class="field-hint">
+                    <i class="fas fa-info-circle"></i>
+                    Formato: código país + número (ej: 549123456789)
+                  </div>
+                </div>
+              </div>
+            }
+
+            @if (messageForm.value.send_type === 'bulk_tags') {
+              <div class="form-group">
+                <label class="form-label required">Etiquetas de Destinatarios</label>
+                <div class="tags-selector">
+                  <div class="tags-selection-container">
+                    <!-- Multi-select dropdown for tags -->
+                    <div class="tags-dropdown">
+                      <div class="selected-tags-display" 
+                           [class.has-tags]="getSelectedTags().length > 0"
+                           [class.is-invalid]="hasFieldError('selected_tags')">
+                        @if (getSelectedTags().length === 0) {
+                          <span class="placeholder-text">
+                            <i class="fas fa-tags"></i>
+                            Seleccionar etiquetas...
+                          </span>
+                        } @else {
+                          <div class="selected-tags-list">
+                            @for (tag of getSelectedTags(); track tag.id) {
+                              <span class="selected-tag" [style.background-color]="tag.color + '20'" [style.border-color]="tag.color">
+                                <span class="tag-color-dot" [style.background-color]="tag.color"></span>
+                                {{ tag.name }}
+                                <button type="button" class="remove-tag-btn" (click)="removeTag(tag)">
+                                  <i class="fas fa-times"></i>
+                                </button>
+                              </span>
+                            }
+                          </div>
+                        }
+                      </div>
+                      
+                      <!-- Available tags list -->
+                      <div class="available-tags-dropdown">
+                        <div class="dropdown-header">
+                          <i class="fas fa-search"></i>
+                          <input 
+                            type="text" 
+                            placeholder="Buscar etiquetas..." 
+                            class="tag-search-input"
+                            #searchInput
+                            (input)="filterTags(searchInput.value)"
+                          />
+                        </div>
+                        <div class="tags-list" [class.empty]="getAvailableTags().length === 0">
+                          @if (getAvailableTags().length === 0) {
+                            <div class="no-tags-message">
+                              <i class="fas fa-info-circle"></i>
+                              <span>No hay etiquetas disponibles</span>
+                            </div>
+                          } @else {
+                            @for (tag of getAvailableTags(); track tag.id) {
+                              <div class="tag-option" 
+                                   [class.selected]="isTagSelected(tag)"
+                                   (click)="toggleTag(tag)">
+                                <div class="tag-info">
+                                  <span class="tag-color-dot" [style.background-color]="tag.color"></span>
+                                  <span class="tag-name">{{ tag.name }}</span>
+                                  @if (tag.description) {
+                                    <span class="tag-description">{{ tag.description }}</span>
+                                  }
+                                </div>
+                                <div class="tag-checkbox">
+                                  <i class="fas" [class.fa-check-square]="isTagSelected(tag)" [class.fa-square]="!isTagSelected(tag)"></i>
+                                </div>
+                              </div>
+                            }
+                          }
+                        </div>
+                      </div>
+                    </div>
+                    
+                    @if (hasFieldError('selected_tags')) {
+                      <div class="invalid-feedback">{{ getFieldError('selected_tags') }}</div>
+                    }
+                    
+                    <!-- Recipients count preview -->
+                    @if (getSelectedTags().length > 0) {
+                      <div class="recipients-preview">
+                        <i class="fas fa-users"></i>
+                        <span>Se enviará a contactos con {{ getSelectedTags().length === 1 ? 'esta etiqueta' : 'estas etiquetas' }}</span>
+                        <button type="button" class="preview-contacts-btn" (click)="previewContacts()">
+                          <i class="fas fa-eye"></i>
+                          Vista previa de contactos
+                        </button>
+                      </div>
+                    }
+                  </div>
+                </div>
+              </div>
+            }
+
+            @if (messageForm.value.send_type === 'bulk_all') {
+              <div class="bulk-all-info">
+                <div class="info-card">
+                  <i class="fas fa-users"></i>
+                  <div class="info-content">
+                    <h4>Envío a Todos los Contactos</h4>
+                    <p>El mensaje se enviará a todos los contactos activos (no bloqueados) del sistema.</p>
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================================================ -->
+      <!-- CONTENIDO DEL MENSAJE -->
+      <!-- ============================================================================ -->
+      <div class="form-section">
+        <div class="section-header">
+          <h2 class="section-title">
+            <i class="fas fa-comment"></i>
+            Contenido del Mensaje
+          </h2>
+          <p class="section-description">Define qué mensaje se enviará</p>
+        </div>
+
+        <div class="section-content">
+          <!-- Message Type Selection -->
+          <div class="message-type-selector">
+            @for (option of MESSAGE_TYPE_OPTIONS; track option.value) {
+              <div class="message-type-option">
+                <input
+                  type="radio"
+                  [id]="'message-type-' + option.value"
+                  [value]="option.value"
+                  formControlName="message_type"
+                  class="message-type-radio"
+                />
+                <label [for]="'message-type-' + option.value" class="message-type-label">
+                  <span class="option-title">{{ option.label }}</span>
+                  <span class="option-description">{{ option.description }}</span>
+                </label>
+              </div>
+            }
+          </div>
+
+          <!-- Text Message Content -->
+          @if (messageForm.value.message_type === 'text') {
+            <div class="form-group">
+              <label class="form-label required">Contenido del Mensaje</label>
+              <textarea
+                formControlName="message_content"
+                class="form-control message-textarea"
+                [class.is-invalid]="hasFieldError('message_content')"
+                rows="6"
+                placeholder="Escribe el contenido de tu mensaje aquí...&#10;&#10;Puedes usar variables como:&#10;{{ '{' }}NOMBRE_CONTACTO{{ '}' }} - Nombre del contacto&#10;{{ '{' }}TELEFONO{{ '}' }} - Número de teléfono&#10;{{ '{' }}FECHA{{ '}' }} - Fecha actual&#10;{{ '{' }}HORA{{ '}' }} - Hora actual"
+              ></textarea>
+              @if (hasFieldError('message_content')) {
+                <div class="invalid-feedback">{{ getFieldError('message_content') }}</div>
+              }
+              <div class="field-hint">
+                <i class="fas fa-lightbulb"></i>
+                Usa variables como {{ '{' }}NOMBRE_CONTACTO{{ '}' }}, {{ '{' }}FECHA{{ '}' }}, {{ '{' }}HORA{{ '}' }} para personalizar el mensaje
+              </div>
+            </div>
+          }
+
+          <!-- Template Selection -->
+          @if (messageForm.value.message_type === 'template') {
+            <div class="form-group">
+              <label class="form-label required">Seleccionar Template</label>
+              <select
+                formControlName="template_id"
+                class="form-control"
+                [class.is-invalid]="hasFieldError('template_id')"
+              >
+                <option [ngValue]="null">Seleccionar template...</option>
+                @for (template of templates(); track template.id) {
+                  <option [ngValue]="template.id">
+                    {{ template.name }} ({{ template.category }})
+                  </option>
+                }
+              </select>
+              @if (hasFieldError('template_id')) {
+                <div class="invalid-feedback">{{ getFieldError('template_id') }}</div>
+              }
+            </div>
+
+            <!-- Template Preview -->
+            @if (templatePreview()) {
+              <div class="template-preview">
+                <label class="preview-label">Vista previa:</label>
+                <div class="preview-content">{{ templatePreview() }}</div>
+                <div class="preview-note">
+                  <i class="fas fa-info-circle"></i>
+                  Las variables se reemplazarán automáticamente para cada destinatario
+                </div>
+              </div>
+            }
+          }
+        </div>
+      </div>
+
+      <!-- ============================================================================ -->
+      <!-- PROGRAMACIÓN TEMPORAL -->
+      <!-- ============================================================================ -->
+      <div class="form-section">
+        <div class="section-header">
+          <h2 class="section-title">
+            <i class="fas fa-calendar-alt"></i>
+            Programación Temporal
+          </h2>
+          <p class="section-description">Define cuándo se enviará el mensaje</p>
+        </div>
+
+        <div class="section-content">
+          <div class="form-grid">
+            <!-- Scheduled Date -->
+            <div class="form-group">
+              <label class="form-label required">Fecha Programada</label>
+              <input
+                type="date"
+                formControlName="scheduled_date"
+                class="form-control"
+                [class.is-invalid]="hasFieldError('scheduled_date')"
+              />
+              @if (hasFieldError('scheduled_date')) {
+                <div class="invalid-feedback">{{ getFieldError('scheduled_date') }}</div>
+              }
+            </div>
+
+            <!-- Scheduled Time -->
+            <div class="form-group">
+              <label class="form-label required">Hora Programada</label>
+              <input
+                type="time"
+                formControlName="scheduled_time"
+                class="form-control"
+                [class.is-invalid]="hasFieldError('scheduled_time')"
+              />
+              @if (hasFieldError('scheduled_time')) {
+                <div class="invalid-feedback">{{ getFieldError('scheduled_time') }}</div>
+              }
+            </div>
+
+            <!-- Timezone -->
+            <div class="form-group">
+              <label class="form-label">Zona Horaria</label>
+              <select formControlName="timezone" class="form-control">
+                @for (tz of TIMEZONE_OPTIONS; track tz.value) {
+                  <option [value]="tz.value">{{ tz.label }}</option>
+                }
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================================================ -->
+      <!-- RECURRENCIA -->
+      <!-- ============================================================================ -->
+      <div class="form-section">
+        <div class="section-header">
+          <h2 class="section-title">
+            <i class="fas fa-sync-alt"></i>
+            Recurrencia (Opcional)
+          </h2>
+          <p class="section-description">Configura si el mensaje se debe repetir automáticamente</p>
+        </div>
+
+        <div class="section-content">
+          <!-- Enable Recurring -->
+          <div class="form-group">
+            <div class="checkbox-group">
+              <input
+                type="checkbox"
+                id="is_recurring"
+                formControlName="is_recurring"
+                class="form-checkbox"
+              />
+              <label for="is_recurring" class="checkbox-label">
+                <span class="checkbox-text">Hacer este mensaje recurrente</span>
+                <span class="checkbox-description">El mensaje se enviará automáticamente según el intervalo configurado</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Recurrence Configuration -->
+          @if (messageForm.value.is_recurring) {
+            <div class="recurrence-config">
+              <div class="form-grid">
+                <!-- Recurrence Type -->
+                <div class="form-group">
+                  <label class="form-label required">Repetir Cada</label>
+                  <div class="recurrence-input-group">
+                    <input
+                      type="number"
+                      formControlName="recurrence_interval"
+                      class="form-control interval-input"
+                      [class.is-invalid]="hasFieldError('recurrence_interval')"
+                      min="1"
+                      placeholder="1"
+                    />
+                    <select
+                      formControlName="recurrence_type"
+                      class="form-control type-select"
+                      [class.is-invalid]="hasFieldError('recurrence_type')"
+                    >
+                      <option [ngValue]="null">Seleccionar...</option>
+                      @for (option of RECURRENCE_OPTIONS; track option.value) {
+                        <option [value]="option.value">{{ option.label }}</option>
+                      }
+                    </select>
+                  </div>
+                  @if (hasFieldError('recurrence_interval') || hasFieldError('recurrence_type')) {
+                    <div class="invalid-feedback">
+                      {{ getFieldError('recurrence_interval') || getFieldError('recurrence_type') }}
+                    </div>
+                  }
+                </div>
+              </div>
+
+              <!-- Recurrence End Configuration -->
+              <div class="recurrence-end">
+                <h4 class="subsection-title">Finalización de la Recurrencia</h4>
+                <p class="subsection-description">Define cuándo debe dejar de repetirse el mensaje</p>
+
+                <div class="form-grid">
+                  <!-- End Date -->
+                  <div class="form-group">
+                    <label class="form-label">Fecha de Finalización</label>
+                    <div class="datetime-group">
+                      <input
+                        type="date"
+                        formControlName="recurrence_end_date"
+                        class="form-control"
+                      />
+                      <input
+                        type="time"
+                        formControlName="recurrence_end_time"
+                        class="form-control"
+                      />
+                    </div>
+                    <div class="field-hint">
+                      <i class="fas fa-info-circle"></i>
+                      Opcional: si no se especifica, usa máximo de ejecuciones
+                    </div>
+                  </div>
+
+                  <!-- Max Executions -->
+                  <div class="form-group">
+                    <label class="form-label">Máximo de Ejecuciones</label>
+                    <input
+                      type="number"
+                      formControlName="max_executions"
+                      class="form-control"
+                      min="1"
+                      placeholder="Ej: 10"
+                    />
+                    <div class="field-hint">
+                      <i class="fas fa-info-circle"></i>
+                      Opcional: número máximo de veces que se enviará el mensaje
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- ============================================================================ -->
+      <!-- ACTIONS -->
+      <!-- ============================================================================ -->
+      <div class="form-actions">
+        <button type="button" class="btn btn-secondary" (click)="cancel()">
+          <i class="fas fa-times"></i>
+          Cancelar
+        </button>
+        
+        <button
+          type="submit"
+          class="btn btn-primary"
+          [disabled]="!canSubmit()"
+        >
+          @if (loadingService.isLoadingByContext('create-message') || loadingService.isLoadingByContext('update-message')) {
+            <span class="spinner-border spinner-border-sm" role="status"></span>
+            {{ isEditMode() ? 'Actualizando...' : 'Creando...' }}
+          } @else {
+            <i class="fas" [class.fa-save]="isEditMode()" [class.fa-clock]="!isEditMode()"></i>
+            {{ submitButtonText() }}
+          }
+        </button>
+      </div>
+    </form>
+  </main>
+</div>

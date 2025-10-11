@@ -1,0 +1,1340 @@
+<div class="backoffice-container">
+  <!-- Header -->
+  <header class="backoffice-header">
+    <div class="header-content">
+      <div class="header-left">
+        <h1 class="header-title">
+          <i class="fas fa-crown"></i>
+          Backoffice CRM Condorito
+        </h1>
+        <p class="header-subtitle">Panel de Administración del Sistema</p>
+      </div>
+      
+      <div class="header-actions">
+        <!-- Auto Refresh Toggle -->
+        <button 
+          class="btn me-2"
+          [class]="autoRefresh() ? 'btn-success' : 'btn-outline-light'"
+          (click)="toggleAutoRefresh()"
+          title="Actualización automática"
+        >
+          <i class="fas" [class]="autoRefresh() ? 'fa-pause' : 'fa-play'"></i>
+          {{ autoRefresh() ? 'Auto' : 'Manual' }}
+        </button>
+
+        <!-- System Health Indicator -->
+        <div class="system-health me-3">
+          <span class="badge" [class]="'bg-' + (getSystemHealthClass().includes('success') ? 'success' : getSystemHealthClass().includes('warning') ? 'warning' : 'danger')">
+            <i class="fas fa-heartbeat"></i>
+            {{ getSystemHealthStatus() }}
+          </span>
+        </div>
+
+        <button class="btn btn-outline-light me-2" (click)="openReportsModal()">
+          <i class="fas fa-chart-line"></i>
+          Reportes
+        </button>
+        <button class="btn btn-outline-success me-2" (click)="openWhatsAppModal()" title="Gestión de WhatsApp">
+          <i class="fab fa-whatsapp"></i>
+          WhatsApp
+        </button>
+        <button class="btn btn-outline-light me-2" (click)="goToDashboard()">
+          <i class="fas fa-tachometer-alt"></i>
+          Dashboard Normal
+        </button>
+        <button class="btn btn-outline-light" (click)="logout()">
+          <i class="fas fa-sign-out-alt"></i>
+          Cerrar Sesión
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="backoffice-main">
+    @if (isLoading()) {
+      <div class="loading-container">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Cargando...</span>
+        </div>
+        <p>Cargando panel de administración...</p>
+      </div>
+    } @else {
+      <!-- Estadísticas del Sistema -->
+      @if (systemStats()) {
+        <section class="stats-section">
+          <h2 class="section-title">
+            <i class="fas fa-chart-bar"></i>
+            Estadísticas del Sistema
+          </h2>
+          
+          <div class="stats-grid">
+            <!-- Estadísticas de Clientes -->
+            <div class="stat-card clients">
+              <div class="stat-icon">
+                <i class="fas fa-users"></i>
+              </div>
+              <div class="stat-content">
+                <h3 class="stat-number">{{ systemStats()?.clients?.total_clients || 0 }}</h3>
+                <p class="stat-label">Total Clientes</p>
+                <div class="stat-breakdown">
+                  <span class="badge bg-success me-1">
+                    {{ systemStats()?.clients?.active_clients || 0 }} Activos
+                  </span>
+                  <span class="badge bg-secondary me-1">
+                    {{ systemStats()?.clients?.inactive_clients || 0 }} Inactivos
+                  </span>
+                  <span class="badge bg-danger">
+                    {{ systemStats()?.clients?.suspended_clients || 0 }} Suspendidos
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Estadísticas de Bot -->
+            <div class="stat-card bot">
+              <div class="stat-icon">
+                <i class="fas fa-robot"></i>
+              </div>
+              <div class="stat-content">
+                <h3 class="stat-number">{{ systemStats()?.bot_usage?.avg_bot_usage_percentage || 0 }}%</h3>
+                <p class="stat-label">Uso Promedio Bot</p>
+                <div class="stat-details">
+                  <small>
+                    {{ systemStats()?.bot_usage?.total_bot_usage || 0 }} / 
+                    {{ systemStats()?.bot_usage?.total_bot_limit || 0 }} mensajes
+                  </small>
+                </div>
+              </div>
+            </div>
+
+            <!-- Estadísticas de Tokens -->
+            <div class="stat-card tokens">
+              <div class="stat-icon">
+                <i class="fas fa-coins"></i>
+              </div>
+              <div class="stat-content">
+                <h3 class="stat-number">{{ systemStats()?.token_usage?.avg_token_usage_percentage || 0 }}%</h3>
+                <p class="stat-label">Uso Promedio Tokens</p>
+                <div class="stat-details">
+                  <small>
+                    {{ systemStats()?.token_usage?.total_token_usage || 0 }} / 
+                    {{ systemStats()?.token_usage?.total_token_limit || 0 }} tokens
+                  </small>
+                </div>
+              </div>
+            </div>
+
+            <!-- Cuotas Agotadas -->
+            <div class="stat-card alerts">
+              <div class="stat-icon">
+                <i class="fas fa-exclamation-triangle"></i>
+              </div>
+              <div class="stat-content">
+                <h3 class="stat-number">{{ systemStats()?.quota_exceeded || 0 }}</h3>
+                <p class="stat-label">Cuotas Agotadas</p>
+                <div class="stat-details">
+                  <small>Clientes que superaron su límite</small>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      }
+
+      <!-- Gestión de Clientes -->
+      <section class="clients-section">
+        <div class="section-header">
+          <h2 class="section-title">
+            <i class="fas fa-users-cog"></i>
+            Gestión de Clientes
+          </h2>
+          
+          <div class="section-actions">
+            <div class="btn-group me-2" role="group">
+              <button class="btn btn-outline-secondary" (click)="exportClients('csv')" title="Exportar CSV">
+                <i class="fas fa-file-csv"></i>
+                CSV
+              </button>
+              <button class="btn btn-outline-secondary" (click)="exportClients('excel')" title="Exportar Excel">
+                <i class="fas fa-file-excel"></i>
+                Excel
+              </button>
+            </div>
+            
+            <div class="btn-group me-2" role="group">
+              <button class="btn btn-outline-info" (click)="runMaintenance('cleanup')" title="Limpiar sistema">
+                <i class="fas fa-broom"></i>
+                Limpiar
+              </button>
+              <button class="btn btn-outline-warning" (click)="runMaintenance('optimize')" title="Optimizar BD">
+                <i class="fas fa-rocket"></i>
+                Optimizar
+              </button>
+            </div>
+
+            <button 
+              class="btn btn-outline-danger me-2" 
+              (click)="resetMonthlyQuotas()" 
+              title="Resetear cuotas mensuales de todos los clientes"
+              [disabled]="isSubmitting()">
+              <i class="fas fa-calendar-times"></i>
+              Reset Mensual
+            </button>
+
+            <button class="btn btn-primary" (click)="openCreateModal()">
+              <i class="fas fa-plus"></i>
+              Nuevo Cliente
+            </button>
+          </div>
+        </div>
+
+        <!-- FILTERS SECTION -->
+        <div class="filters-section">
+          <!-- Search Row - Always on top -->
+          <div class="search-row">
+            <div class="search-container">
+              <input
+                type="text"
+                placeholder="Buscar por código, empresa o email..."
+                class="search-input"
+                [value]="searchQuery()"
+                (input)="onSearch($any($event.target).value || '')"
+              />
+              <i class="fas fa-search search-icon"></i>
+            </div>
+            <div class="search-actions">
+              <!-- View Mode Toggle -->
+              <div class="view-mode-toggle">
+                <button 
+                  class="view-mode-btn"
+                  [class.active]="viewMode() === 'grid'"
+                  (click)="setViewMode('grid')"
+                  title="Vista en tarjetas">
+                  <i class="fas fa-th"></i>
+                </button>
+                <button 
+                  class="view-mode-btn"
+                  [class.active]="viewMode() === 'table'"
+                  (click)="setViewMode('table')"
+                  title="Vista en tabla">
+                  <i class="fas fa-list"></i>
+                </button>
+              </div>
+              <button class="clear-filters-btn" (click)="clearFilters()">
+                <i class="fas fa-times"></i>
+                <span class="clear-text">Limpiar</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Filters Grid - Responsive layout -->
+          <div class="filters-grid">
+            <!-- Status Section -->
+            <div class="filter-section status-section">
+              <h4 class="section-title">
+                <i class="fas fa-circle"></i>
+                Estado
+              </h4>
+              <div class="section-content">
+                <div class="filter-group">
+                  <label class="filter-label">Estado del cliente</label>
+                  <select class="filter-select" [value]="statusFilter()" (change)="onStatusFilter($any($event.target).value || '')">
+                    <option value="">Todos los estados</option>
+                    <option value="active">✅ Activos</option>
+                    <option value="inactive">⏸️ Inactivos</option>
+                    <option value="suspended">🚫 Suspendidos</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- Quota Section -->
+            <div class="filter-section quota-section">
+              <h4 class="section-title">
+                <i class="fas fa-chart-pie"></i>
+                Uso de Cuota
+              </h4>
+              <div class="section-content">
+                <div class="filter-group">
+                  <label class="filter-label">Nivel de uso</label>
+                  <select class="filter-select" title="Filtrar por uso de cuota">
+                    <option value="">Todas las cuotas</option>
+                    <option value="low">🟢 Uso bajo (&lt;50%)</option>
+                    <option value="medium">🟡 Uso medio (50-80%)</option>
+                    <option value="high">🟠 Uso alto (80-95%)</option>
+                    <option value="critical">🔴 Crítico (&gt;95%)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- Controls Section -->
+            <div class="filter-section controls-section">
+              <h4 class="section-title">
+                <i class="fas fa-cogs"></i>
+                Configuración
+              </h4>
+              <div class="section-content">
+                <div class="controls-row">
+                  <div class="filter-group">
+                    <label class="filter-label">Por página</label>
+                    <select class="filter-select" title="Registros por página">
+                      <option value="10">10</option>
+                      <option value="20" selected>20</option>
+                      <option value="50">50</option>
+                      <option value="100">100</option>
+                    </select>
+                  </div>
+                  <div class="filter-group">
+                    <button class="action-btn btn-secondary" (click)="loadClients(1)">
+                      <i class="fas fa-sync-alt"></i>
+                      Actualizar
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Results Info -->
+          <div class="results-summary">
+            <div class="summary-text">
+              Mostrando {{ clients().length }} de {{ totalClients() }} clientes
+              @if (searchQuery() || statusFilter()) {
+                <span class="filter-badge">Filtrado</span>
+              }
+            </div>
+          </div>
+        </div>
+
+        <!-- MAIN CONTENT -->
+        @if (isLoadingClients()) {
+          <div class="loading-state">
+            <div class="state-icon">
+              <i class="fas fa-spinner fa-spin"></i>
+            </div>
+            <h3 class="state-title">Cargando Clientes</h3>
+            <p class="state-message">Obteniendo la información más reciente...</p>
+          </div>
+        } @else if (errorMessage()) {
+          <div class="empty-state">
+            <div class="state-icon">
+              <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <h3 class="state-title">Error al Cargar</h3>
+            <p class="state-message">{{ errorMessage() }}</p>
+            <button class="action-btn btn-primary" (click)="loadClients(1)">
+              <i class="fas fa-refresh"></i>
+              Reintentar
+            </button>
+          </div>
+        } @else if (clients().length === 0 && searchQuery()) {
+          <div class="empty-state">
+            <div class="state-icon">
+              <i class="fas fa-search-minus"></i>
+            </div>
+            <h3 class="state-title">Sin Resultados</h3>
+            <p class="state-message">No se encontraron clientes que coincidan con "{{ searchQuery() }}"</p>
+            <button class="action-btn btn-secondary" (click)="clearFilters()">
+              <i class="fas fa-times"></i>
+              Limpiar Filtros
+            </button>
+          </div>
+        } @else if (clients().length === 0) {
+          <div class="empty-state">
+            <div class="state-icon">
+              <i class="fas fa-users-slash"></i>
+            </div>
+            <h3 class="state-title">Sin Clientes</h3>
+            <p class="state-message">Aún no tienes clientes registrados. ¡Comienza agregando tu primer cliente!</p>
+            <div class="empty-state-actions">
+              <button class="action-btn btn-primary" (click)="openCreateModal()">
+                <i class="fas fa-user-plus"></i>
+                Agregar Primer Cliente
+              </button>
+            </div>
+          </div>
+        } @else {
+          <!-- ============================================================================ -->
+          <!-- GRID VIEW -->
+          <!-- ============================================================================ -->
+          @if (viewMode() === 'grid') {
+            <div class="clients-grid">
+              @for (client of clients(); track client.id) {
+                <div class="client-card">
+                  <div class="card-header">
+                    <div class="client-avatar">
+                      <span class="avatar-initials">{{ getClientInitials(client) }}</span>
+                    </div>
+                    
+                    <div class="client-info">
+                      <h3 class="client-name">{{ client.client_code }}</h3>
+                      <p class="client-company">{{ client.company_name }}</p>
+                    </div>
+                    
+                    <div class="client-status" [class]="getStatusClass(client.status)"></div>
+                  </div>
+
+                  <div class="card-body">
+                    <div class="client-meta">
+                      <div class="meta-item">
+                        <div class="meta-label">Estado</div>
+                        <div class="meta-value">
+                          {{ getStatusText(client.status) }}
+                        </div>
+                      </div>
+                      <div class="meta-item">
+                        <div class="meta-label">Creado</div>
+                        <div class="meta-value">
+                          {{ formatDate(client.created_at) }}
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Quota Progress Bars -->
+                    <div class="quota-section">
+                      <div class="quota-item">
+                        <div class="quota-label">
+                          <i class="fas fa-robot"></i>
+                          Cuota Bot
+                          <span class="quota-percentage">{{ client.bot_usage_percentage }}%</span>
+                        </div>
+                        <div class="progress quota-progress">
+                          <div 
+                            class="progress-bar" 
+                            [class]="getProgressBarClass(client.bot_usage_percentage)"
+                            [style.width.%]="client.bot_usage_percentage"
+                          ></div>
+                        </div>
+                        <div class="quota-numbers">
+                          {{ client.current_bot_usage | number }} / {{ client.monthly_bot_limit | number }}
+                        </div>
+                      </div>
+
+                      <div class="quota-item">
+                        <div class="quota-label">
+                          <i class="fas fa-coins"></i>
+                          Cuota Tokens
+                          <span class="quota-percentage">{{ client.token_usage_percentage }}%</span>
+                        </div>
+                        <div class="progress quota-progress">
+                          <div 
+                            class="progress-bar" 
+                            [class]="getProgressBarClass(client.token_usage_percentage)"
+                            [style.width.%]="client.token_usage_percentage"
+                          ></div>
+                        </div>
+                        <div class="quota-numbers">
+                          {{ client.current_token_usage | number }} / {{ client.monthly_token_limit | number }}
+                        </div>
+                      </div>
+                    </div>
+
+                    @if (client.email || client.phone) {
+                      <div class="contact-info">
+                        @if (client.email) {
+                          <div class="contact-item">
+                            <i class="fas fa-envelope"></i>
+                            <span>{{ client.email }}</span>
+                          </div>
+                        }
+                        @if (client.phone) {
+                          <div class="contact-item">
+                            <i class="fas fa-phone"></i>
+                            <span>{{ client.phone }}</span>
+                          </div>
+                        }
+                      </div>
+                    }
+                  </div>
+
+                  <div class="card-footer">
+                    <div class="card-actions">
+                      <button class="action-btn btn-edit" (click)="openEditModal(client)" title="Editar Cliente">
+                        <i class="fas fa-edit"></i>
+                      </button>
+                      <button class="action-btn btn-quota" (click)="openQuotaModal(client)" title="Gestionar Cuotas">
+                        <i class="fas fa-chart-pie"></i>
+                      </button>
+                      <button class="action-btn btn-delete" (click)="openDeleteModal(client)" title="Eliminar Cliente">
+                        <i class="fas fa-trash-alt"></i>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+
+          <!-- ============================================================================ -->
+          <!-- TABLE VIEW -->
+          <!-- ============================================================================ -->
+          @if (viewMode() === 'table') {
+            <div class="clients-table-container">
+              <div class="table-wrapper">
+                <table class="clients-table">
+                  <thead>
+                    <tr>
+                      <th class="col-avatar">Avatar</th>
+                      <th class="col-client">Cliente</th>
+                      <th class="col-company">Empresa</th>
+                      <th class="col-status">Estado</th>
+                      <th class="col-bot-quota">Cuota Bot</th>
+                      <th class="col-token-quota">Cuota Tokens</th>
+                      <th class="col-created">Creado</th>
+                      <th class="col-actions">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (client of clients(); track client.id) {
+                      <tr class="client-row" [class.warning-row]="client.bot_usage_percentage > 90 || client.token_usage_percentage > 90">
+                        <!-- Avatar -->
+                        <td class="col-avatar">
+                          <div class="avatar-cell">
+                            <span class="avatar-initials">{{ getClientInitials(client) }}</span>
+                          </div>
+                        </td>
+
+                        <!-- Cliente -->
+                        <td class="col-client">
+                          <div class="client-cell">
+                            <div class="client-code">{{ client.client_code }}</div>
+                            @if (client.email) {
+                              <div class="client-email">{{ client.email }}</div>
+                            }
+                          </div>
+                        </td>
+
+                        <!-- Empresa -->
+                        <td class="col-company">
+                          <div class="company-cell">
+                            <div class="company-name">{{ client.company_name }}</div>
+                            @if (client.phone) {
+                              <div class="company-phone">{{ client.phone }}</div>
+                            }
+                          </div>
+                        </td>
+
+                        <!-- Estado -->
+                        <td class="col-status">
+                          <div class="status-cell">
+                            <span class="status-badge" [class]="getStatusClass(client.status)">
+                              {{ getStatusText(client.status) }}
+                            </span>
+                          </div>
+                        </td>
+
+                        <!-- Cuota Bot -->
+                        <td class="col-bot-quota">
+                          <div class="quota-cell">
+                            <div class="quota-info">
+                              <div class="quota-numbers">
+                                {{ client.current_bot_usage | number }} / {{ client.monthly_bot_limit | number }}
+                              </div>
+                              <div class="quota-percentage" [class]="getUsageClass(client.bot_usage_percentage)">
+                                {{ client.bot_usage_percentage }}%
+                              </div>
+                            </div>
+                            <div class="progress quota-progress">
+                              <div 
+                                class="progress-bar" 
+                                [class]="getProgressBarClass(client.bot_usage_percentage)"
+                                [style.width.%]="client.bot_usage_percentage"
+                              ></div>
+                            </div>
+                          </div>
+                        </td>
+
+                        <!-- Cuota Tokens -->
+                        <td class="col-token-quota">
+                          <div class="quota-cell">
+                            <div class="quota-info">
+                              <div class="quota-numbers">
+                                {{ client.current_token_usage | number }} / {{ client.monthly_token_limit | number }}
+                              </div>
+                              <div class="quota-percentage" [class]="getUsageClass(client.token_usage_percentage)">
+                                {{ client.token_usage_percentage }}%
+                              </div>
+                            </div>
+                            <div class="progress quota-progress">
+                              <div 
+                                class="progress-bar" 
+                                [class]="getProgressBarClass(client.token_usage_percentage)"
+                                [style.width.%]="client.token_usage_percentage"
+                              ></div>
+                            </div>
+                          </div>
+                        </td>
+
+                        <!-- Creado -->
+                        <td class="col-created">
+                          <div class="date-cell">
+                            <div class="date-main">{{ formatDate(client.created_at) }}</div>
+                            <div class="date-relative">{{ getRelativeDate(client.created_at) }}</div>
+                          </div>
+                        </td>
+
+                        <!-- Acciones -->
+                        <td class="col-actions">
+                          <div class="action-buttons-table">
+                            <button class="action-btn-sm btn-edit" (click)="openEditModal(client)" title="Editar Cliente">
+                              <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="action-btn-sm btn-quota" (click)="openQuotaModal(client)" title="Gestionar Cuotas">
+                              <i class="fas fa-chart-pie"></i>
+                            </button>
+                            <button class="action-btn-sm btn-delete" (click)="openDeleteModal(client)" title="Eliminar Cliente">
+                              <i class="fas fa-trash-alt"></i>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          }
+
+          <!-- PAGINATION -->
+          @if (totalPages() > 1) {
+            <div class="pagination-section">
+              <div class="pagination">
+                <button 
+                  class="page-btn page-nav" 
+                  [disabled]="currentPage() === 1"
+                  (click)="loadClients(currentPage() - 1)"
+                >
+                  <i class="fas fa-chevron-left"></i>
+                </button>
+
+                @for (page of [].constructor(totalPages()); track $index) {
+                  <button 
+                    class="page-btn page-number" 
+                    [class.active]="currentPage() === $index + 1"
+                    (click)="loadClients($index + 1)"
+                  >
+                    {{ $index + 1 }}
+                  </button>
+                }
+
+                <button 
+                  class="page-btn page-nav" 
+                  [disabled]="currentPage() === totalPages()"
+                  (click)="loadClients(currentPage() + 1)"
+                >
+                  <i class="fas fa-chevron-right"></i>
+                </button>
+
+                <div class="page-info">
+                  Página {{ currentPage() }} de {{ totalPages() }}
+                </div>
+              </div>
+            </div>
+          }
+        }
+      </section>
+    }
+
+    <!-- Mensajes de Error/Éxito -->
+    @if (errorMessage()) {
+      <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="fas fa-exclamation-triangle"></i>
+        {{ errorMessage() }}
+        <button type="button" class="btn-close" (click)="errorMessage.set('')"></button>
+      </div>
+    }
+
+    @if (successMessage()) {
+      <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="fas fa-check-circle"></i>
+        {{ successMessage() }}
+        <button type="button" class="btn-close" (click)="successMessage.set('')"></button>
+      </div>
+    }
+  </main>
+
+  <!-- Modal Crear Cliente -->
+  @if (showCreateModal()) {
+    <div class="modal show" tabindex="-1" (click)="closeModals()">
+      <div class="modal-dialog modal-lg" (click)="$event.stopPropagation()">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">
+              <i class="fas fa-user-plus"></i>
+              Crear Nuevo Cliente
+            </h5>
+            <button type="button" class="btn-close" (click)="closeModals()"></button>
+          </div>
+          
+          <form [formGroup]="createForm" (ngSubmit)="createClient()">
+            <div class="modal-body">
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label">Código de Cliente *</label>
+                  <input 
+                    type="text" 
+                    class="form-control"
+                    formControlName="client_code"
+                    placeholder="ej: empresa123"
+                  >
+                  @if (createForm.get('client_code')?.invalid && createForm.get('client_code')?.touched) {
+                    <div class="text-danger small mt-1">
+                      El código de cliente es requerido (3-50 caracteres)
+                    </div>
+                  }
+                </div>
+                
+                <div class="col-md-6">
+                  <label class="form-label">Contraseña *</label>
+                  <input 
+                    type="password" 
+                    class="form-control"
+                    formControlName="password"
+                    placeholder="Mínimo 6 caracteres"
+                  >
+                  @if (createForm.get('password')?.invalid && createForm.get('password')?.touched) {
+                    <div class="text-danger small mt-1">
+                      La contraseña es requerida (mínimo 6 caracteres)
+                    </div>
+                  }
+                </div>
+                
+                <div class="col-12">
+                  <label class="form-label">Nombre de la Empresa *</label>
+                  <input 
+                    type="text" 
+                    class="form-control"
+                    formControlName="company_name"
+                    placeholder="ej: Empresa SA"
+                  >
+                  @if (createForm.get('company_name')?.invalid && createForm.get('company_name')?.touched) {
+                    <div class="text-danger small mt-1">
+                      El nombre de la empresa es requerido
+                    </div>
+                  }
+                </div>
+                
+                <div class="col-md-6">
+                  <label class="form-label">Email</label>
+                  <input 
+                    type="email" 
+                    class="form-control"
+                    formControlName="email"
+                    placeholder="contacto@empresa.com"
+                  >
+                  @if (createForm.get('email')?.invalid && createForm.get('email')?.touched) {
+                    <div class="text-danger small mt-1">
+                      Ingresa un email válido
+                    </div>
+                  }
+                </div>
+                
+                <div class="col-md-6">
+                  <label class="form-label">Teléfono</label>
+                  <input 
+                    type="tel" 
+                    class="form-control"
+                    formControlName="phone"
+                    placeholder="+54 11 1234-5678"
+                  >
+                </div>
+                
+                <div class="col-md-6">
+                  <label class="form-label">Límite Mensual Bot *</label>
+                  <input 
+                    type="number" 
+                    class="form-control"
+                    formControlName="monthly_bot_limit"
+                    min="0"
+                  >
+                </div>
+                
+                <div class="col-md-6">
+                  <label class="form-label">Límite Mensual Tokens *</label>
+                  <input 
+                    type="number" 
+                    class="form-control"
+                    formControlName="monthly_token_limit"
+                    min="0"
+                  >
+                </div>
+              </div>
+            </div>
+            
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" (click)="closeModals()">
+                Cancelar
+              </button>
+              <button 
+                type="submit" 
+                class="btn btn-primary"
+                [disabled]="createForm.invalid || isSubmitting()"
+              >
+                @if (isSubmitting()) {
+                  <span class="spinner-border spinner-border-sm me-2"></span>
+                }
+                Crear Cliente
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Modal Editar Cliente -->
+  @if (showEditModal() && selectedClient()) {
+    <div class="modal show" tabindex="-1" (click)="closeModals()">
+      <div class="modal-dialog modal-lg" (click)="$event.stopPropagation()">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">
+              <i class="fas fa-user-edit"></i>
+              Editar Cliente: {{ selectedClient()?.client_code }}
+            </h5>
+            <button type="button" class="btn-close" (click)="closeModals()"></button>
+          </div>
+          
+          <form [formGroup]="editForm" (ngSubmit)="updateClient()">
+            <div class="modal-body">
+              <div class="row g-3">
+                <div class="col-12">
+                  <label class="form-label">Nombre de la Empresa *</label>
+                  <input 
+                    type="text" 
+                    class="form-control"
+                    formControlName="company_name"
+                  >
+                </div>
+                
+                <div class="col-md-6">
+                  <label class="form-label">Email</label>
+                  <input 
+                    type="email" 
+                    class="form-control"
+                    formControlName="email"
+                  >
+                </div>
+                
+                <div class="col-md-6">
+                  <label class="form-label">Teléfono</label>
+                  <input 
+                    type="tel" 
+                    class="form-control"
+                    formControlName="phone"
+                  >
+                </div>
+                
+                <div class="col-md-4">
+                  <label class="form-label">Estado *</label>
+                  <select class="form-select" formControlName="status">
+                    <option value="active">Activo</option>
+                    <option value="inactive">Inactivo</option>
+                    <option value="suspended">Suspendido</option>
+                  </select>
+                </div>
+                
+                <div class="col-md-4">
+                  <label class="form-label">Límite Bot *</label>
+                  <input 
+                    type="number" 
+                    class="form-control"
+                    formControlName="monthly_bot_limit"
+                    min="0"
+                  >
+                </div>
+                
+                <div class="col-md-4">
+                  <label class="form-label">Límite Tokens *</label>
+                  <input 
+                    type="number" 
+                    class="form-control"
+                    formControlName="monthly_token_limit"
+                    min="0"
+                  >
+                </div>
+              </div>
+            </div>
+            
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" (click)="closeModals()">
+                Cancelar
+              </button>
+              <button 
+                type="submit" 
+                class="btn btn-primary"
+                [disabled]="editForm.invalid || isSubmitting()"
+              >
+                @if (isSubmitting()) {
+                  <span class="spinner-border spinner-border-sm me-2"></span>
+                }
+                Actualizar Cliente
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Modal Gestión de Cuotas -->
+  @if (showQuotaModal() && selectedClient()) {
+    <div class="modal show" tabindex="-1" (click)="closeModals()">
+      <div class="modal-dialog" (click)="$event.stopPropagation()">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">
+              <i class="fas fa-chart-pie"></i>
+              Gestionar Cuotas: {{ selectedClient()?.client_code }}
+            </h5>
+            <button type="button" class="btn-close" (click)="closeModals()"></button>
+          </div>
+          
+          <div class="modal-body">
+            <div class="quota-summary">
+              <div class="row g-3">
+                <div class="col-6">
+                  <div class="quota-card bot">
+                    <h6>Cuota Bot</h6>
+                    <div class="quota-numbers">
+                      <span class="current">{{ selectedClient()?.current_bot_usage }}</span>
+                      <span class="separator">/</span>
+                      <span class="limit">{{ selectedClient()?.monthly_bot_limit }}</span>
+                    </div>
+                    <div class="quota-percentage">
+                      {{ selectedClient()?.bot_usage_percentage }}%
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="col-6">
+                  <div class="quota-card tokens">
+                    <h6>Cuota Tokens</h6>
+                    <div class="quota-numbers">
+                      <span class="current">{{ selectedClient()?.current_token_usage }}</span>
+                      <span class="separator">/</span>
+                      <span class="limit">{{ selectedClient()?.monthly_token_limit }}</span>
+                    </div>
+                    <div class="quota-percentage">
+                      {{ selectedClient()?.token_usage_percentage }}%
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="quota-actions mt-4">
+              <h6>Acciones de Reset</h6>
+              <p class="text-muted small">
+                Resetear las cuotas pondrá los contadores en 0 y actualizará la fecha de reset.
+              </p>
+              
+              <div class="d-grid gap-2">
+                <button 
+                  class="btn btn-outline-primary"
+                  (click)="resetQuota('bot')"
+                  [disabled]="isSubmitting()"
+                >
+                  <i class="fas fa-robot"></i>
+                  Resetear Solo Cuota Bot
+                </button>
+                
+                <button 
+                  class="btn btn-outline-warning"
+                  (click)="resetQuota('token')"
+                  [disabled]="isSubmitting()"
+                >
+                  <i class="fas fa-coins"></i>
+                  Resetear Solo Cuota Tokens
+                </button>
+                
+                <button 
+                  class="btn btn-outline-danger"
+                  (click)="resetQuota('both')"
+                  [disabled]="isSubmitting()"
+                >
+                  <i class="fas fa-sync-alt"></i>
+                  Resetear Ambas Cuotas
+                </button>
+              </div>
+            </div>
+          </div>
+          
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" (click)="closeModals()">
+              Cerrar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Modal Eliminar Cliente -->
+  @if (showDeleteModal() && selectedClient()) {
+    <div class="modal show" tabindex="-1" (click)="closeModals()">
+      <div class="modal-dialog" (click)="$event.stopPropagation()">
+        <div class="modal-content">
+          <div class="modal-header bg-danger text-white">
+            <h5 class="modal-title">
+              <i class="fas fa-exclamation-triangle"></i>
+              Confirmar Eliminación
+            </h5>
+            <button type="button" class="btn-close" (click)="closeModals()"></button>
+          </div>
+          
+          <div class="modal-body">
+            <div class="alert alert-warning">
+              <i class="fas fa-exclamation-triangle"></i>
+              <strong>¡Atención!</strong> Esta acción no se puede deshacer.
+            </div>
+            
+            <p>¿Estás seguro de que deseas eliminar el cliente <strong>{{ selectedClient()?.client_code }}</strong>?</p>
+            
+            <div class="client-details">
+              <h6>Detalles del cliente:</h6>
+              <ul class="list-unstyled">
+                <li><strong>Empresa:</strong> {{ selectedClient()?.company_name }}</li>
+                <li><strong>Email:</strong> {{ selectedClient()?.email || 'No especificado' }}</li>
+                <li><strong>Estado:</strong> {{ selectedClient()?.status }}</li>
+                <li><strong>Uso Bot:</strong> {{ selectedClient()?.current_bot_usage }}/{{ selectedClient()?.monthly_bot_limit }}</li>
+                <li><strong>Uso Tokens:</strong> {{ selectedClient()?.current_token_usage }}/{{ selectedClient()?.monthly_token_limit }}</li>
+              </ul>
+            </div>
+          </div>
+          
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" (click)="closeModals()">
+              Cancelar
+            </button>
+            <button 
+              type="button" 
+              class="btn btn-danger"
+              (click)="deleteClient()"
+              [disabled]="isSubmitting()"
+            >
+              @if (isSubmitting()) {
+                <span class="spinner-border spinner-border-sm me-2"></span>
+              }
+              <i class="fas fa-trash-alt"></i>
+              Eliminar Cliente
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Modal Reportes -->
+  @if (showReportsModal()) {
+    <div class="modal show" tabindex="-1" (click)="closeModals()">
+      <div class="modal-dialog modal-xl" (click)="$event.stopPropagation()">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">
+              <i class="fas fa-chart-line"></i>
+              Reportes del Sistema
+            </h5>
+            <button type="button" class="btn-close" (click)="closeModals()"></button>
+          </div>
+          
+          <div class="modal-body">
+            @if (reports()) {
+              <div class="reports-container">
+                <div class="row g-4">
+                  <!-- Gráfico de Uso por Cliente -->
+                  <div class="col-md-6">
+                    <div class="report-card">
+                      <h6><i class="fas fa-users"></i> Uso por Cliente</h6>
+                      <div class="chart-placeholder">
+                        <p class="text-muted">Gráfico de uso de bot y tokens por cliente</p>
+                        <!-- Aquí iría un gráfico real -->
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <!-- Tendencias de Uso -->
+                  <div class="col-md-6">
+                    <div class="report-card">
+                      <h6><i class="fas fa-chart-area"></i> Tendencias</h6>
+                      <div class="chart-placeholder">
+                        <p class="text-muted">Tendencias de uso en el tiempo</p>
+                        <!-- Aquí iría un gráfico real -->
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <!-- Top Clientes -->
+                  <div class="col-md-6">
+                    <div class="report-card">
+                      <h6><i class="fas fa-trophy"></i> Top Clientes</h6>
+                      <div class="top-clients">
+                        <p class="text-muted">Clientes con mayor uso del sistema</p>
+                        <!-- Lista de top clientes -->
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <!-- Alertas del Sistema -->
+                  <div class="col-md-6">
+                    <div class="report-card">
+                      <h6><i class="fas fa-exclamation-triangle"></i> Alertas</h6>
+                      <div class="system-alerts">
+                        <p class="text-muted">Clientes cerca del límite de cuota</p>
+                        <!-- Lista de alertas -->
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            } @else {
+              <div class="text-center py-4">
+                <div class="spinner-border text-primary" role="status">
+                  <span class="visually-hidden">Cargando reportes...</span>
+                </div>
+                <p class="mt-2">Generando reportes...</p>
+              </div>
+            }
+          </div>
+          
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-primary" (click)="exportClients('csv')">
+              <i class="fas fa-download"></i>
+              Exportar Datos
+            </button>
+            <button type="button" class="btn btn-secondary" (click)="closeModals()">
+              Cerrar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Modal Gestión de WhatsApp -->
+  @if (showWhatsAppModal()) {
+    <div class="modal show d-flex" tabindex="-1" (click)="closeModals()" style="z-index: 9999;">
+      <div class="modal-dialog modal-xl" (click)="$event.stopPropagation()" style="z-index: 10000;">
+        <div class="modal-content" style="z-index: 10001;">
+          <div class="modal-header bg-success text-white">
+            <h5 class="modal-title">
+              <i class="fab fa-whatsapp"></i>
+              Gestión de WhatsApp - Administración
+            </h5>
+            <button type="button" class="btn-close btn-close-white" (click)="closeModals()"></button>
+          </div>
+          
+          <div class="modal-body">
+            <!-- Acciones Principales -->
+            <div class="whatsapp-actions mb-4">
+              <div class="row g-3">
+                <div class="col-md-4">
+                  <div class="action-card reconnect">
+                    <h6><i class="fas fa-sync-alt"></i> Reconectar Todo</h6>
+                    <p class="text-muted small">Reconecta todas las sesiones de WhatsApp. Usar después de reiniciar el servidor.</p>
+                    <button 
+                      class="btn btn-success w-100"
+                      (click)="reconnectAllWhatsApp()"
+                      [disabled]="isReconnectingWhatsApp() || isSubmitting()"
+                    >
+                      @if (isReconnectingWhatsApp()) {
+                        <span class="spinner-border spinner-border-sm me-2"></span>
+                        Reconectando...
+                      } @else {
+                        <i class="fas fa-plug"></i>
+                        Reconectar Todas
+                      }
+                    </button>
+                  </div>
+                </div>
+                
+                <div class="col-md-4">
+                  <div class="action-card status">
+                    <h6><i class="fas fa-info-circle"></i> Estado Actual</h6>
+                    <p class="text-muted small">Ver el estado de conexión de todos los clientes.</p>
+                    <button 
+                      class="btn btn-info w-100"
+                      (click)="loadWhatsAppStatus()"
+                      [disabled]="isSubmitting()"
+                    >
+                      <i class="fas fa-refresh"></i>
+                      Actualizar Estado
+                    </button>
+                  </div>
+                </div>
+                
+                <div class="col-md-4">
+                  <div class="action-card disconnect">
+                    <h6><i class="fas fa-power-off"></i> Desconectar Todo</h6>
+                    <p class="text-muted small">Desconecta todas las sesiones. Útil para mantenimiento.</p>
+                    <button 
+                      class="btn btn-outline-danger w-100"
+                      (click)="disconnectAllWhatsApp()"
+                      [disabled]="isSubmitting()"
+                    >
+                      <i class="fas fa-unlink"></i>
+                      Desconectar Todas
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Resultado de Reconexión -->
+            @if (whatsappReconnectResult()) {
+              <div class="reconnect-results mb-4">
+                <h6><i class="fas fa-chart-bar"></i> Resultado de Reconexión</h6>
+                
+                <!-- Resumen -->
+                <div class="result-summary mb-3">
+                  <div class="row g-2">
+                    <div class="col-3">
+                      <div class="stat-mini success">
+                        <div class="stat-number">{{ whatsappReconnectResult()?.summary?.successful || 0 }}</div>
+                        <div class="stat-label">Exitosos</div>
+                      </div>
+                    </div>
+                    <div class="col-3">
+                      <div class="stat-mini danger">
+                        <div class="stat-number">{{ whatsappReconnectResult()?.summary?.failed || 0 }}</div>
+                        <div class="stat-label">Fallidos</div>
+                      </div>
+                    </div>
+                    <div class="col-3">
+                      <div class="stat-mini warning">
+                        <div class="stat-number">{{ whatsappReconnectResult()?.summary?.skipped || 0 }}</div>
+                        <div class="stat-label">Omitidos</div>
+                      </div>
+                    </div>
+                    <div class="col-3">
+                      <div class="stat-mini info">
+                        <div class="stat-number">{{ (whatsappReconnectResult()?.summary?.execution_time_ms || 0) / 1000 | number:'1.1-1' }}s</div>
+                        <div class="stat-label">Tiempo</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Detalles por Cliente -->
+                <div class="result-details">
+                  <div class="table-responsive">
+                    <table class="table table-sm">
+                      <thead>
+                        <tr>
+                          <th>Cliente</th>
+                          <th>Empresa</th>
+                          <th>Estado</th>
+                          <th>Mensaje</th>
+                          <th>Tiempo</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        @for (detail of whatsappReconnectResult()?.details; track detail.client_id) {
+                          <tr>
+                            <td><code>{{ detail.client_code }}</code></td>
+                            <td>{{ detail.company_name }}</td>
+                            <td>
+                              <span class="badge" [class]="'bg-' + (detail.status === 'success' ? 'success' : detail.status === 'failed' ? 'danger' : 'warning')">
+                                {{ detail.status }}
+                              </span>
+                            </td>
+                            <td class="small">{{ detail.message }}</td>
+                            <td class="small">{{ detail.execution_time_ms }}ms</td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            }
+
+            <!-- Estado de WhatsApp -->
+            @if (whatsappStatus()) {
+              <div class="whatsapp-status">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                  <h6><i class="fas fa-list"></i> Estado de Conexiones</h6>
+                  <div class="status-summary">
+                    <span class="badge bg-success me-1">
+                      {{ whatsappStatus()?.summary?.connected || 0 }} Conectados
+                    </span>
+                    <span class="badge bg-danger">
+                      {{ whatsappStatus()?.summary?.disconnected || 0 }} Desconectados
+                    </span>
+                  </div>
+                </div>
+                
+                <div class="table-responsive">
+                  <table class="table table-hover">
+                    <thead>
+                      <tr>
+                        <th>Cliente</th>
+                        <th>Empresa</th>
+                        <th>Estado</th>
+                        <th>Teléfono</th>
+                        <th>Última Actividad</th>
+                        <th>QR</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (client of whatsappStatus()?.clients; track client.client_id) {
+                        <tr [class.table-success]="client.whatsapp_connected" [class.table-danger]="!client.whatsapp_connected">
+                          <td><code>{{ client.client_code }}</code></td>
+                          <td>{{ client.company_name }}</td>
+                          <td>
+                            <span class="badge" [class]="client.whatsapp_connected ? 'bg-success' : 'bg-danger'">
+                              <i class="fas" [class]="client.whatsapp_connected ? 'fa-check' : 'fa-times'"></i>
+                              {{ getWhatsAppStatusText(client.whatsapp_connected) }}
+                            </span>
+                          </td>
+                          <td>
+                            @if (client.phone_number) {
+                              <span class="small">{{ client.phone_number }}</span>
+                            } @else {
+                              <span class="text-muted small">-</span>
+                            }
+                          </td>
+                          <td class="small">
+                            @if (client.last_activity) {
+                              {{ client.last_activity | date:'short' }}
+                            } @else {
+                              <span class="text-muted">-</span>
+                            }
+                          </td>
+                          <td>
+                            @if (client.has_qr) {
+                              <span class="badge bg-warning">
+                                <i class="fas fa-qrcode"></i>
+                                QR Disponible
+                              </span>
+                            } @else {
+                              <span class="text-muted small">-</span>
+                            }
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            } @else {
+              <div class="text-center py-4">
+                <div class="spinner-border text-success" role="status">
+                  <span class="visually-hidden">Cargando estado de WhatsApp...</span>
+                </div>
+                <p class="mt-2 text-muted">Obteniendo estado de las conexiones...</p>
+              </div>
+            }
+          </div>
+          
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" (click)="closeModals()">
+              Cerrar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+</div>

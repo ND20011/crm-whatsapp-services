@@ -1,0 +1,261 @@
+<div class="sound-settings-professional" [ngClass]="getAnimationClass()">
+  <!-- Loading State -->
+  <div class="loading-overlay" *ngIf="isInitializing()">
+    <div class="loading-spinner">
+      <i class="fas fa-circle-notch fa-spin"></i>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="settings-container" [class.loading]="isInitializing()">
+    
+    <!-- Header Section -->
+    <div class="settings-header">
+      <div class="header-content">
+        <div class="header-icon">
+          <i class="fas fa-volume-up"></i>
+        </div>
+        <div class="header-text">
+          <h4 class="header-title">Notificaciones Sonoras</h4>
+          <p class="header-subtitle">Configura los sonidos para mensajes entrantes</p>
+        </div>
+        <div class="header-status">
+          <span class="status-badge" [ngClass]="{
+            'status-enabled': soundService.isEnabled(),
+            'status-disabled': !soundService.isEnabled()
+          }">
+            <i class="fas" [ngClass]="{
+              'fa-check-circle': soundService.isEnabled(),
+              'fa-times-circle': !soundService.isEnabled()
+            }"></i>
+            {{ soundService.isEnabled() ? 'Activo' : 'Inactivo' }}
+          </span>
+        </div>
+      </div>
+      <div class="status-description">
+        {{ getStatusText() }}
+      </div>
+    </div>
+
+    <!-- Quick Presets -->
+    <div class="presets-section">
+      <h6 class="section-title">
+        <i class="fas fa-magic me-2"></i>
+        Configuraciones Rápidas
+      </h6>
+      <div class="presets-grid">
+        <button 
+          *ngFor="let preset of presets"
+          class="preset-card"
+          [ngClass]="{ 'preset-active': isPresetActive(preset.id) }"
+          (click)="applyPreset(preset.id)"
+          [disabled]="animationState() === 'saving'">
+          <div class="preset-icon">
+            <i class="fas" [ngClass]="preset.icon"></i>
+          </div>
+          <div class="preset-content">
+            <div class="preset-name">{{ preset.name }}</div>
+            <div class="preset-description">{{ preset.description }}</div>
+          </div>
+          <div class="preset-indicator" *ngIf="isPresetActive(preset.id)">
+            <i class="fas fa-check"></i>
+          </div>
+        </button>
+      </div>
+    </div>
+
+    <!-- Test Section -->
+    <div class="test-section" *ngIf="soundService.isEnabled()">
+      <div class="test-content">
+        <div class="test-info">
+          <h6 class="test-title">Probar Configuración</h6>
+          <p class="test-description">Reproduce un sonido de ejemplo</p>
+        </div>
+        <button 
+          class="btn-test"
+          [disabled]="isTestingSound() || !isAudioAvailable()"
+          (click)="testSound()">
+          <div class="btn-content">
+            <i class="fas" [ngClass]="{
+              'fa-play': !isTestingSound(),
+              'fa-circle-notch fa-spin': isTestingSound()
+            }"></i>
+            <span>{{ isTestingSound() ? 'Reproduciendo...' : 'Probar Sonido' }}</span>
+          </div>
+          <div class="btn-waves" *ngIf="isTestingSound()">
+            <div class="wave"></div>
+            <div class="wave"></div>
+            <div class="wave"></div>
+          </div>
+        </button>
+      </div>
+    </div>
+
+    <!-- Advanced Settings -->
+    <div class="advanced-section">
+      <button 
+        class="advanced-toggle"
+        (click)="toggleAdvanced()">
+        <i class="fas" [ngClass]="{
+          'fa-chevron-down': !showAdvanced(),
+          'fa-chevron-up': showAdvanced()
+        }"></i>
+        <span>Configuración Avanzada</span>
+      </button>
+
+      <div class="advanced-content" [class.expanded]="showAdvanced()">
+        <div class="advanced-inner">
+          
+          <!-- Manual Toggle -->
+          <div class="setting-group">
+            <div class="setting-header">
+              <label class="setting-label">Estado Manual</label>
+              <div class="custom-switch">
+                <input 
+                  type="checkbox" 
+                  id="manualToggle"
+                  [checked]="soundService.isEnabled()"
+                  (change)="toggleSoundEnabled()">
+                <label for="manualToggle" class="switch-label">
+                  <span class="switch-slider"></span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Volume Control -->
+          <div class="setting-group" *ngIf="soundService.isEnabled()">
+            <div class="setting-header">
+              <label class="setting-label">Volumen</label>
+              <span class="setting-value">{{ getVolumePercentage() }}%</span>
+            </div>
+            <div class="volume-control">
+              <div class="volume-slider-container">
+                <input 
+                  type="range" 
+                  class="volume-slider"
+                  min="0" 
+                  max="1" 
+                  step="0.05"
+                  [value]="soundService.getVolume()"
+                  (input)="onVolumeChange($event)">
+                <div class="volume-track">
+                  <div class="volume-fill" [style.width.%]="getVolumePercentage()"></div>
+                </div>
+              </div>
+              <div class="volume-labels">
+                <span class="volume-label-min">
+                  <i class="fas fa-volume-off"></i>
+                </span>
+                <span class="volume-label-max">
+                  <i class="fas fa-volume-up"></i>
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sound Type -->
+          <div class="setting-group" *ngIf="soundService.isEnabled()">
+            <div class="setting-header">
+              <label class="setting-label">Tipo de Sonido</label>
+            </div>
+            <div class="sound-type-selector">
+              <div class="radio-group">
+                <label class="radio-option">
+                  <input 
+                    type="radio" 
+                    name="soundType" 
+                    value="default"
+                    [checked]="soundService.getSoundType() === 'default'"
+                    (change)="onSoundTypeChange($event)">
+                  <span class="radio-custom"></span>
+                  <span class="radio-text">
+                    <strong>Normal</strong>
+                    <small>Sonido estándar y claro</small>
+                  </span>
+                </label>
+                <label class="radio-option">
+                  <input 
+                    type="radio" 
+                    name="soundType" 
+                    value="subtle"
+                    [checked]="soundService.getSoundType() === 'subtle'"
+                    (change)="onSoundTypeChange($event)">
+                  <span class="radio-custom"></span>
+                  <span class="radio-text">
+                    <strong>Discreto</strong>
+                    <small>Sonido suave y breve</small>
+                  </span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- System Info -->
+          <div class="setting-group">
+            <div class="system-info">
+              <h6 class="info-title">
+                <i class="fas fa-info-circle me-2"></i>
+                Información del Sistema
+              </h6>
+              <div class="info-grid">
+                <div class="info-item">
+                  <span class="info-label">Estado Audio:</span>
+                  <span class="info-value" [ngClass]="{
+                    'text-success': isAudioAvailable(),
+                    'text-danger': !isAudioAvailable()
+                  }">
+                    <i class="fas" [ngClass]="{
+                      'fa-check-circle': isAudioAvailable(),
+                      'fa-times-circle': !isAudioAvailable()
+                    }"></i>
+                    {{ isAudioAvailable() ? 'Disponible' : 'No disponible' }}
+                  </span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">Almacenamiento:</span>
+                  <span class="info-value text-success">
+                    <i class="fas fa-check-circle"></i>
+                    LocalStorage
+                  </span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">Preset Activo:</span>
+                  <span class="info-value text-info">
+                    {{ getActivePreset() || 'Personalizado' }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Reset Button -->
+          <div class="setting-group">
+            <div class="reset-section">
+              <button 
+                class="btn-reset"
+                (click)="resetToDefaults()"
+                [disabled]="animationState() === 'saving'">
+                <i class="fas fa-undo-alt me-2"></i>
+                Restaurar Configuración por Defecto
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- Audio Unavailable Warning -->
+    <div class="audio-warning" *ngIf="!isAudioAvailable()">
+      <div class="warning-content">
+        <i class="fas fa-exclamation-triangle"></i>
+        <div class="warning-text">
+          <strong>Sistema de audio no disponible</strong>
+          <p>Tu navegador no soporta la reproducción de sonidos de notificación.</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>

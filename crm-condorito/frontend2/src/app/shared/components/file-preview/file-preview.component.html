@@ -1,0 +1,118 @@
+<div class="file-preview-container" [class.disabled]="disabled()">
+  <!-- Preview para imágenes -->
+  @if (isImage() && file().preview) {
+    <div class="image-preview">
+      <div class="image-wrapper">
+        <img 
+          [src]="file().preview" 
+          [alt]="file().name"
+          class="preview-image"
+        />
+        @if (showRemove()) {
+          <button 
+            type="button"
+            class="btn-remove"
+            (click)="removeFile()"
+            [disabled]="disabled()"
+            title="Remover archivo"
+          >
+            <i class="fas fa-times"></i>
+          </button>
+        }
+      </div>
+      
+      <div class="file-info">
+        <div class="file-details">
+          <span class="file-name" [title]="file().name">
+            {{ getTruncatedName() }}
+          </span>
+          <span class="file-size">{{ file().size }}</span>
+        </div>
+        
+        @if (showCaption()) {
+          <div class="caption-input">
+            <input
+              type="text"
+              class="form-control form-control-sm"
+              placeholder="Agregar descripción..."
+              [value]="caption()"
+              (input)="onCaptionInput($event)"
+              [disabled]="disabled()"
+              maxlength="200"
+            />
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- Preview para documentos -->
+  @if (isDocument()) {
+    <div class="document-preview">
+      <div class="document-icon">
+        <i [class]="getFileIcon()"></i>
+      </div>
+      
+      <div class="document-info">
+        <div class="file-details">
+          <span class="file-name" [title]="file().name">
+            {{ getTruncatedName() }}
+          </span>
+          <span class="file-size">{{ file().size }}</span>
+        </div>
+        
+        @if (showCaption()) {
+          <div class="caption-input">
+            <input
+              type="text"
+              class="form-control form-control-sm"
+              placeholder="Agregar nombre personalizado..."
+              [value]="caption()"
+              (input)="onCaptionInput($event)"
+              [disabled]="disabled()"
+              maxlength="100"
+            />
+          </div>
+        }
+      </div>
+
+      @if (showRemove()) {
+        <button 
+          type="button"
+          class="btn-remove-doc"
+          (click)="removeFile()"
+          [disabled]="disabled()"
+          title="Remover archivo"
+        >
+          <i class="fas fa-times"></i>
+        </button>
+      }
+    </div>
+  }
+
+  <!-- Fallback si no hay preview -->
+  @if (isImage() && !file().preview) {
+    <div class="no-preview">
+      <div class="no-preview-icon">
+        <i class="fas fa-image"></i>
+      </div>
+      <div class="file-info">
+        <span class="file-name" [title]="file().name">
+          {{ getTruncatedName() }}
+        </span>
+        <span class="file-size">{{ file().size }}</span>
+      </div>
+      @if (showRemove()) {
+        <button 
+          type="button"
+          class="btn-remove-doc"
+          (click)="removeFile()"
+          [disabled]="disabled()"
+          title="Remover archivo"
+        >
+          <i class="fas fa-times"></i>
+        </button>
+      }
+    </div>
+  }
+</div>

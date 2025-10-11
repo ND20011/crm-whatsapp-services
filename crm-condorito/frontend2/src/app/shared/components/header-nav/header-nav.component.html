@@ -1,0 +1,141 @@
+<!-- Header Navigation -->
+<header class="header-nav">
+  <!-- Main Header Bar -->
+  <div class="header-main">
+    <!-- Left Section: Menu Toggle + Breadcrumbs -->
+    <div class="header-left">
+      <!-- Menu Toggle Button (Always visible) -->
+      <button class="menu-toggle-btn" (click)="toggleSidebar()" [class.active]="sidebarService.isOpen()">
+        <i class="icon-menu"></i>
+      </button>
+
+      <!-- Breadcrumbs -->
+      <nav class="breadcrumbs" [class.mobile-hidden]="isMobile()">
+        <ol class="breadcrumb-list">
+          @for (crumb of breadcrumbs(); track $index) {
+            <li class="breadcrumb-item" [class.active]="$index === breadcrumbs().length - 1">
+              @if ($index < breadcrumbs().length - 1 && crumb.route) {
+                <a (click)="navigateTo(crumb.route)" class="breadcrumb-link">
+                  @if (crumb.icon) {
+                    <i class="breadcrumb-icon icon-{{ crumb.icon }}"></i>
+                  }
+                  <span>{{ crumb.label }}</span>
+                </a>
+                <i class="breadcrumb-separator icon-chevron-right"></i>
+              } @else {
+                @if (crumb.icon) {
+                  <i class="breadcrumb-icon icon-{{ crumb.icon }}"></i>
+                }
+                <span class="breadcrumb-current">{{ crumb.label }}</span>
+              }
+            </li>
+          }
+        </ol>
+      </nav>
+    </div>
+
+    <!-- Center Section: Page Title -->
+    <div class="header-center">
+      <h1 class="page-title">{{ pageTitle() }}</h1>
+      <div class="page-subtitle" [class.mobile-hidden]="isMobile()">
+        {{ getCompanyName() }} • {{ getCurrentDate() }}
+      </div>
+    </div>
+
+    <!-- Right Section: Quick Actions + User Menu -->
+    <div class="header-right">
+      <!-- Quick Actions -->
+      <div class="quick-actions" [class.mobile-hidden]="isMobile()">
+        @for (action of quickActions(); track action.id) {
+          <button 
+            class="quick-action-btn" 
+            (click)="executeQuickAction(action)"
+            [title]="action.label">
+            <i class="action-icon icon-{{ action.icon }}"></i>
+            @if (action.badge && action.badge !== '') {
+              <span class="action-badge" [class]="'badge-' + (action.badgeColor || 'primary')">
+                {{ action.badge }}
+              </span>
+            }
+          </button>
+        }
+      </div>
+
+      <!-- Notifications -->
+      <div class="notifications" [class.mobile-hidden]="isMobile()">
+        <button class="notification-btn" title="Notificaciones">
+          <i class="icon-bell"></i>
+          @if (notifications() > 0) {
+            <span class="notification-badge">{{ notifications() }}</span>
+          }
+        </button>
+      </div>
+
+      <!-- User Menu -->
+      <div class="user-menu" (click)="toggleUserMenu()">
+        <div class="user-avatar">
+          <span class="avatar-text">{{ getUserInitials() }}</span>
+        </div>
+        <div class="user-info" [class.mobile-hidden]="isMobile()">
+          <div class="user-name">{{ getCompanyName() }}</div>
+          <div class="user-role">{{ getClientCode() }}</div>
+        </div>
+        <i class="user-arrow icon-chevron-down" [class.mobile-hidden]="isMobile()"></i>
+
+        <!-- User Dropdown Menu -->
+        @if (isUserMenuOpen()) {
+          <div class="user-dropdown">
+            <div class="dropdown-header">
+              <div class="dropdown-avatar">
+                <span class="avatar-text">{{ getUserInitials() }}</span>
+              </div>
+              <div class="dropdown-info">
+                <div class="dropdown-name">{{ getCompanyName() }}</div>
+                <div class="dropdown-email">{{ getClientCode() }}@crm.com</div>
+              </div>
+            </div>
+            
+            <div class="dropdown-divider"></div>
+            
+            <ul class="dropdown-menu">
+              <li>
+                <button class="dropdown-item" (click)="goToProfile(); $event.stopPropagation()">
+                  <i class="icon-user"></i>
+                  <span>Mi Perfil</span>
+                </button>
+              </li>
+              <li>
+                <button class="dropdown-item" (click)="goToCompany(); $event.stopPropagation()">
+                  <i class="icon-company"></i>
+                  <span>Configuración</span>
+                </button>
+              </li>
+              <li>
+                <button class="dropdown-item" (click)="goToDashboard(); $event.stopPropagation()">
+                  <i class="icon-dashboard"></i>
+                  <span>Dashboard</span>
+                </button>
+              </li>
+            </ul>
+            
+            <div class="dropdown-divider"></div>
+            
+            <div class="dropdown-footer">
+              <button class="logout-btn" (click)="logout(); $event.stopPropagation()">
+                <i class="icon-logout"></i>
+                <span>Cerrar Sesión</span>
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+
+  
+</header>
+
+<!-- Overlay para cerrar menús en móvil -->
+@if (isUserMenuOpen()) {
+  <div class="dropdown-overlay" (click)="closeUserMenu()"></div>
+}

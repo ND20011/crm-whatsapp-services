@@ -1,0 +1,799 @@
+ql que lo {
+	"info": {
+		"_postman_id": "contact-mgmt-crm-condorito",
+		"name": "📱 Contact Management System - CRM Condorito",
+		"description": "Colección completa para probar el sistema de gestión de contactos implementado en ETAPA 3.\n\n## 🎯 **FUNCIONALIDADES INCLUIDAS:**\n- ✅ CRUD completo de contactos\n- ✅ Sistema de etiquetas (tags)\n- ✅ Búsqueda y filtros avanzados\n- ✅ Importación/exportación CSV\n- ✅ Gestión de comentarios\n- ✅ Paginación y ordenamiento\n\n## 🔑 **CONFIGURACIÓN:**\n1. Configurar variable `base_url` = `http://localhost:3000`\n2. Ejecutar **Login** para obtener JWT token\n3. El token se configurará automáticamente para todas las requests\n\n## 📋 **ORDEN RECOMENDADO DE TESTING:**\n1. **Authentication** → Login\n2. **Tags Management** → Crear etiquetas\n3. **Contacts CRUD** → Crear, listar, actualizar contactos\n4. **Contact Tags** → Asociar etiquetas a contactos\n5. **Import/Export** → Probar importación/exportación\n6. **Search & Filters** → Probar búsquedas avanzadas",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "🔐 Authentication",
+			"item": [
+				{
+					"name": "Login - Get JWT Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    if (response.success && response.tokens && response.tokens.accessToken) {",
+									"        pm.environment.set('jwt_token', response.tokens.accessToken);",
+									"        console.log('✅ JWT Token saved:', response.tokens.accessToken.substring(0, 50) + '...');",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"clientCode\": \"CLI001\",\n    \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/login",
+							"host": ["{{base_url}}"],
+							"path": ["api", "auth", "login"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "🏷️ Tags Management",
+			"item": [
+				{
+					"name": "Get All Tags",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/contacts/tags?search=&sortBy=created_at&sortOrder=DESC",
+							"host": ["{{base_url}}"],
+							"path": ["api", "contacts", "tags"],
+							"query": [
+								{
+									"key": "search",
+									"value": ""
+								},
+								{
+									"key": "sortBy",
+									"value": "created_at"
+								},
+								{
+									"key": "sortOrder",
+									"value": "DESC"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Tag - VIP Cliente",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const response = pm.response.json();",
+									"    if (response.success && response.data && response.data.id) {",
+									"        pm.environment.set('vip_tag_id', response.data.id);",
+									"        console.log('✅ VIP Tag ID saved:', response.data.id);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"VIP Cliente\",\n    \"color\": \"#FFD700\",\n    \"description\": \"Clientes VIP con descuentos especiales\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/contacts/tags",
+							"host": ["{{base_url}}"],
+							"path": ["api", "contacts", "tags"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Tag - Potencial",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const response = pm.response.json();",
+									"    if (response.success && response.data && response.data.id) {",
+									"        pm.environment.set('potential_tag_id', response.data.id);",
+									"        console.log('✅ Potential Tag ID saved:', response.data.id);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Potencial\",\n    \"color\": \"#28A745\",\n    \"description\": \"Clientes potenciales para seguimiento\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/contacts/tags",
+							"host": ["{{base_url}}"],
+							"path": ["api", "contacts", "tags"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Tag",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"VIP Cliente Premium\",\n    \"color\": \"#FF6B35\",\n    \"description\": \"Clientes VIP Premium con máximo nivel de descuentos\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/contacts/tags/{{vip_tag_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "contacts", "tags", "{{vip_tag_id}}"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Tag Contacts",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/contacts/tags/{{vip_tag_id}}/contacts?page=1&limit=10",
+							"host": ["{{base_url}}"],
+							"path": ["api", "contacts", "tags", "{{vip_tag_id}}", "contacts"],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "👥 Contacts CRUD",
+			"item": [
+				{
+					"name": "Get All Contacts",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/contacts?page=1&limit=20&search=&blocked=&tagId=&sortBy=created_at&sortOrder=DESC",
+							"host": ["{{base_url}}"],
+							"path": ["api", "contacts"],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "20"
+								},
+								{
+									"key": "search",
+									"value": ""
+								},
+								{
+									"key": "blocked",
+									"value": ""
+								},
+								{
+									"key": "tagId",
+									"value": ""
+								},
+								{
+									"key": "sortBy",
+									"value": "created_at"
+								},
+								{
+									"key": "sortOrder",
+									"value": "DESC"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Contact - Juan Pérez",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const response = pm.response.json();",
+									"    if (response.success && response.data && response.data.id) {",
+									"        pm.environment.set('contact_juan_id', response.data.id);",
+									"        console.log('✅ Juan Contact ID saved:', response.data.id);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"phone_number\": \"5491123456789\",\n    \"name\": \"Juan Pérez\",\n    \"custom_name\": \"Juancito\",\n    \"comments\": \"Cliente frecuente desde 2020. Siempre compra productos premium.\",\n    \"is_blocked\": false,\n    \"tags\": []\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/contacts",
+							"host": ["{{base_url}}"],
+							"path": ["api", "contacts"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Contact - María García",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const response = pm.response.json();",
+									"    if (response.success && response.data && response.data.id) {",
+									"        pm.environment.set('contact_maria_id', response.data.id);",
+									"        console.log('✅ María Contact ID saved:', response.data.id);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"phone_number\": \"5491987654321\",\n    \"name\": \"María García\",\n    \"custom_name\": \"Mari\",\n    \"comments\": \"Nueva cliente. Interesada en productos orgánicos.\",\n    \"is_blocked\": false\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/contacts",
+							"host": ["{{base_url}}"],
+							"path": ["api", "contacts"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Contact by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/contacts/{{contact_juan_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "contacts", "{{contact_juan_id}}"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Contact",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Juan Carlos Pérez\",\n    \"custom_name\": \"JC\",\n    \"comments\": \"Cliente VIP desde 2020. Siempre compra productos premium. Descuento especial aplicado.\",\n    \"tags\": [\"{{vip_tag_id}}\"]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/contacts/{{contact_juan_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "contacts", "{{contact_juan_id}}"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Contact",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/contacts/{{contact_maria_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "contacts", "{{contact_maria_id}}"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "🔗 Contact Tags",
+			"item": [
+				{
+					"name": "Add Tags to Contact",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"tags\": [\"{{vip_tag_id}}\", \"{{potential_tag_id}}\"]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/contacts/{{contact_juan_id}}/tags",
+							"host": ["{{base_url}}"],
+							"path": ["api", "contacts", "{{contact_juan_id}}", "tags"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Remove Tag from Contact",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/contacts/{{contact_juan_id}}/tags/{{potential_tag_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "contacts", "{{contact_juan_id}}", "tags", "{{potential_tag_id}}"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "🔍 Search & Filters",
+			"item": [
+				{
+					"name": "Search Contacts by Name",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/contacts?search=Juan&page=1&limit=10",
+							"host": ["{{base_url}}"],
+							"path": ["api", "contacts"],
+							"query": [
+								{
+									"key": "search",
+									"value": "Juan"
+								},
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Filter by Tag",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/contacts?tagId={{vip_tag_id}}&page=1&limit=10",
+							"host": ["{{base_url}}"],
+							"path": ["api", "contacts"],
+							"query": [
+								{
+									"key": "tagId",
+									"value": "{{vip_tag_id}}"
+								},
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Filter Blocked Contacts",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/contacts?blocked=true&page=1&limit=10",
+							"host": ["{{base_url}}"],
+							"path": ["api", "contacts"],
+							"query": [
+								{
+									"key": "blocked",
+									"value": "true"
+								},
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Sort by Name ASC",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/contacts?sortBy=name&sortOrder=ASC&page=1&limit=10",
+							"host": ["{{base_url}}"],
+							"path": ["api", "contacts"],
+							"query": [
+								{
+									"key": "sortBy",
+									"value": "name"
+								},
+								{
+									"key": "sortOrder",
+									"value": "ASC"
+								},
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "📥📤 Import/Export",
+			"item": [
+				{
+					"name": "Download CSV Template",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/contacts/export/template",
+							"host": ["{{base_url}}"],
+							"path": ["api", "contacts", "export", "template"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Preview CSV Import",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "csvFile",
+									"type": "file",
+									"src": "/path/to/your/contacts.csv"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/api/contacts/import/preview",
+							"host": ["{{base_url}}"],
+							"path": ["api", "contacts", "import", "preview"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Import Contacts from CSV",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "csvFile",
+									"type": "file",
+									"src": "/path/to/your/contacts.csv"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/api/contacts/import",
+							"host": ["{{base_url}}"],
+							"path": ["api", "contacts", "import"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Export All Contacts",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/contacts/export?format=csv",
+							"host": ["{{base_url}}"],
+							"path": ["api", "contacts", "export"],
+							"query": [
+								{
+									"key": "format",
+									"value": "csv"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Export VIP Contacts Only",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/contacts/export?format=csv&tagId={{vip_tag_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "contacts", "export"],
+							"query": [
+								{
+									"key": "format",
+									"value": "csv"
+								},
+								{
+									"key": "tagId",
+									"value": "{{vip_tag_id}}"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "🏥 Health Check",
+			"item": [
+				{
+					"name": "Contacts Module Health",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/contacts/health",
+							"host": ["{{base_url}}"],
+							"path": ["api", "contacts", "health"]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:3000",
+			"type": "string"
+		}
+	]
+}

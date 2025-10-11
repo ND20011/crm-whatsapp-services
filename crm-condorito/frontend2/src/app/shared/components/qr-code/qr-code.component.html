@@ -1,0 +1,123 @@
+<div class="qr-container" [class]="getSizeClass()">
+  <!-- QR Code Display -->
+  <div class="qr-display">
+    @if (isLoadingQR()) {
+      <div class="qr-loading">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Generando QR...</span>
+        </div>
+        <p class="loading-text">Generando código QR...</p>
+      </div>
+    } @else if (hasError()) {
+      <div class="qr-error">
+        <div class="error-icon">
+          <i class="fas fa-exclamation-triangle"></i>
+        </div>
+        <p class="error-message">{{ errorMessage() }}</p>
+        <button class="btn btn-sm btn-primary" (click)="refreshQR()">
+          <i class="fas fa-redo"></i>
+          Reintentar
+        </button>
+      </div>
+    } @else if (hasValidQR()) {
+      <div class="qr-image-container" [class.expiring]="isQRExpiringSoon()">
+        <img [src]="qrImageUrl()" alt="Código QR WhatsApp" class="qr-image">
+        
+        <!-- Overlay con controles -->
+        <div class="qr-overlay">
+          @if (showRefreshButton()) {
+            <button class="btn btn-outline-light btn-sm refresh-btn" 
+                    (click)="refreshQR()"
+                    [disabled]="isLoadingQR()">
+              <i class="fas fa-sync-alt" [class.fa-spin]="isLoadingQR()"></i>
+            </button>
+          }
+          
+          @if (autoRefresh() && timeUntilRefresh() > 0) {
+            <div class="countdown-badge" [class.warning]="isQRExpiringSoon()">
+              <i class="fas fa-clock"></i>
+              {{ getFormattedTimeUntilRefresh() }}
+            </div>
+          }
+        </div>
+
+        <!-- Indicador de expiración -->
+        @if (isQRExpiringSoon()) {
+          <div class="expiration-warning">
+            <i class="fas fa-exclamation-circle"></i>
+            Código expirando...
+          </div>
+        }
+      </div>
+    }
+  </div>
+
+  <!-- Información y controles -->
+  <div class="qr-info">
+    @if (showInstructions() && hasValidQR()) {
+      <div class="qr-instructions">
+        <h6 class="instructions-title">
+          <i class="fab fa-whatsapp"></i>
+          Cómo escanear
+        </h6>
+        <ol class="instructions-list">
+          <li>Abre WhatsApp en tu teléfono</li>
+          <li>Ve a <strong>Configuración</strong> > <strong>Dispositivos vinculados</strong></li>
+          <li>Toca <strong>"Vincular un dispositivo"</strong></li>
+          <li>Escanea este código QR</li>
+        </ol>
+      </div>
+    }
+
+    <!-- Estado y controles -->
+    <div class="qr-controls">
+      @if (lastRefresh()) {
+        <div class="refresh-info">
+          <span class="refresh-label">Actualizado:</span>
+          <span class="refresh-time">hace {{ getTimeSinceRefresh() }}</span>
+        </div>
+      }
+
+      @if (autoRefresh()) {
+        <div class="auto-refresh-info">
+          <i class="fas fa-sync-alt"></i>
+          <span>Auto-actualización activa</span>
+          @if (timeUntilRefresh() > 0) {
+            <span class="next-refresh">
+              (próxima en {{ getFormattedTimeUntilRefresh() }})
+            </span>
+          }
+        </div>
+      }
+
+      @if (showRefreshButton() && hasValidQR()) {
+        <button class="btn btn-outline-primary btn-sm manual-refresh" 
+                (click)="refreshQR()"
+                [disabled]="isLoadingQR()">
+          <i class="fas fa-sync-alt" [class.fa-spin]="isLoadingQR()"></i>
+          Actualizar ahora
+        </button>
+      }
+    </div>
+
+    <!-- Notas importantes -->
+    @if (hasValidQR()) {
+      <div class="qr-notes">
+        <div class="note-item">
+          <i class="fas fa-info-circle"></i>
+          <span>El código QR se actualiza automáticamente cada {{ refreshInterval() / 1000 / 60 }} minutos</span>
+        </div>
+        <div class="note-item">
+          <i class="fas fa-shield-alt"></i>
+          <span>Mantén este código privado y no lo compartas</span>
+        </div>
+        @if (isQRExpiringSoon()) {
+          <div class="note-item warning">
+            <i class="fas fa-clock"></i>
+            <span>Este código expirará pronto. Se generará uno nuevo automáticamente.</span>
+          </div>
+        }
+      </div>
+    }
+  </div>
+</div>
