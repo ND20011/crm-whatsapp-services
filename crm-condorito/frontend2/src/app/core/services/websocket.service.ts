@@ -103,8 +103,8 @@ export class WebSocketService {
         const user = this.authService.getCurrentUser();
         
         // Crear conexión Socket.io
-        this.socket = io(this.config.url, {
-          path: '/socket.io',
+        this.socket = io("https://crm.condorestudio.com", {
+          path: "/backend/socket.io/",
           auth: {
             token: token,
             clientId: user?.id,
@@ -293,26 +293,9 @@ export class WebSocketService {
     }
 
     // Solo reproducir sonido para mensajes entrantes (no enviados por nosotros)
-    if (messageData.fromMe === true) {
+    if (messageData.message.fromMe === true) {
       return false;
     }
-
-    // Solo reproducir sonido para mensajes de contactos (no del sistema)
-    if (messageData.senderType !== 'contact') {
-      return false;
-    }
-
-    // Verificar que sea un mensaje válido
-    if (!messageData.content && !messageData.message_type) {
-      return false;
-    }
-
-    console.log('🔊 Should play sound for message:', {
-      fromMe: messageData.fromMe,
-      senderType: messageData.senderType,
-      hasContent: !!messageData.content,
-      soundEnabled: this.soundSettingsService.isEnabled()
-    });
 
     return true;
   }
