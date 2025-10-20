@@ -134,6 +134,9 @@ class TaskReminder {
      */
     static async getPendingReminders() {
         try {
+            // Usar fecha actual de Buenos Aires
+            const buenosAiresTime = getBuenosAiresTime();
+            
             const query = `
                 SELECT tr.*, 
                        t.title as task_title,
@@ -148,12 +151,12 @@ class TaskReminder {
                 JOIN tasks t ON tr.task_id = t.id
                 LEFT JOIN contacts c ON t.related_contact_id = c.id
                 WHERE tr.status = 'pending'
-                  AND tr.reminder_datetime <= NOW()
+                  AND tr.reminder_datetime <= ?
                   AND t.status IN ('pending', 'in_progress')
                 ORDER BY tr.reminder_datetime ASC
             `;
 
-            const results = await executeQuery(query);
+            const results = await executeQuery(query, [buenosAiresTime]);
             
             return results.map(reminderData => new TaskReminder(reminderData));
 
@@ -279,7 +282,7 @@ class TaskReminder {
             const reminderDate = new Date(taskDueDate.getTime() - (minutesBefore * 60 * 1000));
 
             // No crear recordatorio si ya pasó la fecha
-            if (reminderDate <= new Date()) {
+            if (reminderDate <= getBuenosAiresTime()) {
                 console.log(`⚠️ No se creó recordatorio para tarea ${taskId}: fecha ya pasó`);
                 return null;
             }
@@ -387,4 +390,3 @@ class TaskReminder {
 }
 
 module.exports = TaskReminder;
-

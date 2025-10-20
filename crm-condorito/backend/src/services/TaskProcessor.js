@@ -5,6 +5,11 @@ const TaskService = require('./TaskService');
 // ============================================================================
 // TASK PROCESSOR - CRON JOBS PARA TAREAS Y RECORDATORIOS
 // ============================================================================
+function getBuenosAiresTime() {
+    const currentTime = new Date().toLocaleString("en-US", {timeZone: "America/Argentina/Buenos_Aires"});
+    return new Date(currentTime);
+}
+
 
 class TaskProcessor {
     constructor() {
@@ -18,7 +23,7 @@ class TaskProcessor {
             totalRemindersErrors: 0,
             totalTasksMarkedOverdue: 0,
             totalRecurringTasksGenerated: 0,
-            lastReset: new Date()
+            lastReset: getBuenosAiresTime()
         };
     }
 
@@ -133,7 +138,7 @@ class TaskProcessor {
             this.stats.totalRemindersProcessed += result.processed;
             this.stats.totalRemindersSuccess += result.success;
             this.stats.totalRemindersErrors += result.errors;
-            this.lastProcessTime = new Date();
+            this.lastProcessTime = getBuenosAiresTime();
 
             const processingTime = Date.now() - startTime;
             
@@ -233,7 +238,7 @@ class TaskProcessor {
                 totalRemindersErrors: 0,
                 totalTasksMarkedOverdue: 0,
                 totalRecurringTasksGenerated: 0,
-                lastReset: new Date()
+                lastReset: getBuenosAiresTime()
             };
 
             const processingTime = Date.now() - startTime;

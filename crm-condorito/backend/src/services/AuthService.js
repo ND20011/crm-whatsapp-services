@@ -266,11 +266,11 @@ class AuthService {
      */
     static validatePassword(password) {
         const errors = [];
-        
-        if (!password || password.length < 8) {
-            errors.push('La contraseña debe tener al menos 8 caracteres');
+       
+        if (!password || password.length < 6) {
+            errors.push('La contraseña debe tener al menos 6 caracteres');
         }
-        
+         /*
         if (!/[a-z]/.test(password)) {
             errors.push('La contraseña debe contener al menos una letra minúscula');
         }
@@ -286,7 +286,7 @@ class AuthService {
         if (password.length > 128) {
             errors.push('La contraseña no puede tener más de 128 caracteres');
         }
-        
+        */
         return {
             isValid: errors.length === 0,
             errors,

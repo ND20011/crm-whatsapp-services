@@ -5,6 +5,14 @@
 
 const { executeQuery } = require('../config/database-simple');
 
+/**
+ * Obtener hora actual de Buenos Aires, Argentina
+ */
+function getBuenosAiresTime() {
+    const currentTime = new Date().toLocaleString("en-US", {timeZone: "America/Argentina/Buenos_Aires"});
+    return new Date(currentTime);
+}
+
 class AutoMessageService {
 
     /**
@@ -44,15 +52,15 @@ class AutoMessageService {
                 return null;
             }
 
-            // 4. Calcular fecha de envío (convertir horas decimales a milisegundos)
-            const scheduledAt = new Date();
+            // 4. Calcular fecha de envío usando hora de Argentina
+            const scheduledAt = getBuenosAiresTime();
             const delayInMilliseconds = tag.auto_message_delay_hours * 60 * 60 * 1000; // horas -> milisegundos
             scheduledAt.setTime(scheduledAt.getTime() + delayInMilliseconds);
             
             console.log(`⏰ Cálculo de delay:`);
             console.log(`   📊 Delay configurado: ${tag.auto_message_delay_hours} horas`);
             console.log(`   🔢 Delay en milisegundos: ${delayInMilliseconds}`);
-            console.log(`   📅 Fecha actual: ${new Date().toLocaleString()}`);
+            console.log(`   📅 Fecha actual (Argentina): ${getBuenosAiresTime().toLocaleString()}`);
             console.log(`   📅 Fecha programada: ${scheduledAt.toLocaleString()}`);
 
             // 5. Preparar contenido del mensaje

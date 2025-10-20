@@ -83,9 +83,9 @@ export class ProfileComponent implements OnInit, OnDestroy {
 
     // Formulario de cambio de contraseña
     this.passwordForm = this.fb.group({
-      current_password: ['', [Validators.required, Validators.minLength(6)]],
-      new_password: ['', [Validators.required, Validators.minLength(6), Validators.maxLength(50)]],
-      confirm_password: ['', [Validators.required]]
+      currentPassword: ['', [Validators.required, Validators.minLength(6)]],
+      newPassword: ['', [Validators.required, Validators.minLength(6), Validators.maxLength(50)]],
+      confirmPassword: ['', [Validators.required]]
     }, { validators: this.passwordMatchValidator });
   }
 
@@ -93,8 +93,8 @@ export class ProfileComponent implements OnInit, OnDestroy {
    * Validador personalizado para confirmar contraseña
    */
   private passwordMatchValidator(form: FormGroup) {
-    const newPassword = form.get('new_password');
-    const confirmPassword = form.get('confirm_password');
+    const newPassword = form.get('newPassword');
+    const confirmPassword = form.get('confirmPassword');
     
     if (newPassword && confirmPassword && newPassword.value && confirmPassword.value) {
       if (newPassword.value !== confirmPassword.value) {
@@ -425,9 +425,9 @@ export class ProfileComponent implements OnInit, OnDestroy {
       company_name: 'Nombre de empresa',
       email: 'Email',
       phone: 'Teléfono',
-      current_password: 'Contraseña actual',
-      new_password: 'Nueva contraseña',
-      confirm_password: 'Confirmar contraseña'
+      currentPassword: 'Contraseña actual',
+      newPassword: 'Nueva contraseña',
+      confirmPassword: 'Confirmar contraseña'
     };
     return labels[fieldName] || fieldName;
   }

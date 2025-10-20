@@ -213,7 +213,7 @@ class TaskService {
             // Filtro de fecha próxima (próximos X días)
             if (filters.upcoming_days) {
                 const days = parseInt(filters.upcoming_days);
-                processedFilters.due_date_from = new Date();
+                processedFilters.due_date_from = getBuenosAiresTime();
                 processedFilters.due_date_to = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
                 delete processedFilters.upcoming_days;
             }
@@ -282,7 +282,7 @@ class TaskService {
                         : 0,
                     urgent_tasks: upcomingTasks.filter(t => t.priority === 'urgent').length,
                     tasks_due_today: upcomingTasks.filter(t => {
-                        const today = new Date().toDateString();
+                        const today = getBuenosAiresTime().toDateString();
                         return new Date(t.due_date).toDateString() === today;
                     }).length
                 }
@@ -414,7 +414,7 @@ class TaskService {
                     const originalDiff = new Date(originalTask.due_date) - new Date(reminder.reminder_datetime);
                     const newReminderDate = new Date(newDueDate.getTime() - originalDiff);
 
-                    if (newReminderDate > new Date()) {
+                    if (newReminderDate > getBuenosAiresTime()) {
                         await executeQuery(
                             'UPDATE task_reminders SET reminder_datetime = ? WHERE id = ?',
                             [newReminderDate, reminder.id]

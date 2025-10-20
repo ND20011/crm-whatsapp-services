@@ -12,7 +12,6 @@ const dbConfig = {
     password: process.env.DB_PASSWORD || '',
     database: process.env.DB_NAME || 'crm_condorito_db',
     charset: 'utf8mb4',
-    timezone: '-03:00' // Argentina timezone (UTC-3)
 };
 
 // Crear el pool de conexiones simple

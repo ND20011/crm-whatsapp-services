@@ -12,10 +12,25 @@ const app = express();
 const server = createServer(app);
 const io = new Server(server, {
     cors: {
-        origin: process.env.FRONTEND_URL || "http://localhost:4200",
-        methods: ["GET", "POST"]
-    }
+        origin: [
+            process.env.FRONTEND_URL || "http://localhost:4200",
+            "https://crm.condorestudio.com",
+            "http://crm.condorestudio.com",
+            "https://crm.condorestudio.com/back",
+            "http://crm.condorestudio.com/back"
+        ],
+        methods: ["GET", "POST"],
+        credentials: true
+    },
+    allowEIO3: true, // Compatibilidad con versiones anteriores
+    transports: ['websocket', 'polling'],
+     path: '/socket.io/',
+    pingTimeout: 60000,
+    pingInterval: 25000,
+    upgradeTimeout: 30000,
+    maxHttpBufferSize: 1e6
 });
+
 
 // ============================================================================
 // MIDDLEWARES BÁSICOS
@@ -134,6 +149,7 @@ app.use('/api/contacts', require('./routes/contacts'));
 app.use('/api/files', require('./routes/files'));
 app.use('/api/ai', require('./routes/ai'));
 app.use('/api/backoffice', require('./routes/backoffice'));
+app.use('/api/admin', require('./routes/admin'));
 app.use('/api/tasks', require('./routes/tasks'));
 
 // ============================================================================

@@ -371,7 +371,7 @@ class ScheduledMessageService {
         }
 
         // Reemplazar variables del sistema
-        const now = new Date();
+        const now = getBuenosAiresTime();
         personalizedMessage = personalizedMessage.replace(/{FECHA}/g, now.toLocaleDateString('es-ES'));
         personalizedMessage = personalizedMessage.replace(/{HORA}/g, now.toLocaleTimeString('es-ES'));
         personalizedMessage = personalizedMessage.replace(/{FECHA_HORA}/g, now.toLocaleString('es-ES'));
@@ -548,10 +548,10 @@ class ScheduledMessageService {
             throw new Error('Mensaje programado no encontrado');
         }
 
-        // Si la fecha programada ya pasó, actualizar a la próxima ejecución
+        // Si la fecha programada ya pasó, actualizar a la próxima ejecución (usando hora de Argentina)
         let nextExecution = scheduledMessage.scheduled_at;
         
-        if (new Date(scheduledMessage.scheduled_at) < new Date()) {
+        if (new Date(scheduledMessage.scheduled_at) < getBuenosAiresTime()) {
             if (scheduledMessage.is_recurring) {
                 nextExecution = scheduledMessage.calculateNextExecution();
             } else {
@@ -577,7 +577,7 @@ class ScheduledMessageService {
         }
 
         // Crear copia con nueva fecha (24 horas después)
-        const newScheduledAt = new Date();
+        const newScheduledAt = getBuenosAiresTime();
         newScheduledAt.setDate(newScheduledAt.getDate() + 1);
 
         const duplicateData = {

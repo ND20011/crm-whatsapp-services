@@ -197,40 +197,40 @@
             <form [formGroup]="passwordForm" (ngSubmit)="changePassword()" class="password-form">
               <!-- Current Password -->
               <div class="form-group">
-                <label for="current_password" class="form-label">
+                <label for="currentPassword" class="form-label">
                   <i class="fas fa-key me-2"></i>
                   Contraseña Actual *
                 </label>
                 <input
                   type="password"
-                  id="current_password"
-                  formControlName="current_password"
+                  id="currentPassword"
+                  formControlName="currentPassword"
                   class="form-control"
-                  [class.is-invalid]="hasFieldError(passwordForm, 'current_password')"
+                  [class.is-invalid]="hasFieldError(passwordForm, 'currentPassword')"
                   placeholder="Ingresa tu contraseña actual">
-                @if (hasFieldError(passwordForm, 'current_password')) {
+                @if (hasFieldError(passwordForm, 'currentPassword')) {
                   <div class="invalid-feedback">
-                    {{ getFieldError(passwordForm, 'current_password') }}
+                    {{ getFieldError(passwordForm, 'currentPassword') }}
                   </div>
                 }
               </div>
 
               <!-- New Password -->
               <div class="form-group">
-                <label for="new_password" class="form-label">
+                <label for="newPassword" class="form-label">
                   <i class="fas fa-lock me-2"></i>
                   Nueva Contraseña *
                 </label>
                 <input
                   type="password"
-                  id="new_password"
-                  formControlName="new_password"
+                  id="newPassword"
+                  formControlName="newPassword"
                   class="form-control"
-                  [class.is-invalid]="hasFieldError(passwordForm, 'new_password')"
+                  [class.is-invalid]="hasFieldError(passwordForm, 'newPassword')"
                   placeholder="Ingresa tu nueva contraseña">
-                @if (hasFieldError(passwordForm, 'new_password')) {
+                @if (hasFieldError(passwordForm, 'newPassword')) {
                   <div class="invalid-feedback">
-                    {{ getFieldError(passwordForm, 'new_password') }}
+                    {{ getFieldError(passwordForm, 'newPassword') }}
                   </div>
                 }
                 <div class="form-text">
@@ -241,20 +241,20 @@
 
               <!-- Confirm Password -->
               <div class="form-group">
-                <label for="confirm_password" class="form-label">
+                <label for="confirmPassword" class="form-label">
                   <i class="fas fa-check-double me-2"></i>
                   Confirmar Nueva Contraseña *
                 </label>
                 <input
                   type="password"
-                  id="confirm_password"
-                  formControlName="confirm_password"
+                  id="confirmPassword"
+                  formControlName="confirmPassword"
                   class="form-control"
-                  [class.is-invalid]="hasFieldError(passwordForm, 'confirm_password')"
+                  [class.is-invalid]="hasFieldError(passwordForm, 'confirmPassword')"
                   placeholder="Confirma tu nueva contraseña">
-                @if (hasFieldError(passwordForm, 'confirm_password')) {
+                @if (hasFieldError(passwordForm, 'confirmPassword')) {
                   <div class="invalid-feedback">
-                    {{ getFieldError(passwordForm, 'confirm_password') }}
+                    {{ getFieldError(passwordForm, 'confirmPassword') }}
                   </div>
                 }
               </div>

@@ -8,6 +8,14 @@ const { executeQuery } = require('../config/database-simple');
 // SCHEDULED MESSAGE CONTROLLER - CRM CONDORITO
 // ============================================================================
 
+/**
+ * Obtener hora actual de Buenos Aires, Argentina
+ */
+function getBuenosAiresTime() {
+    const currentTime = new Date().toLocaleString("en-US", {timeZone: "America/Argentina/Buenos_Aires"});
+    return new Date(currentTime);
+}
+
 class ScheduledMessageController {
 
     /**
@@ -120,9 +128,9 @@ class ScheduledMessageController {
                 });
             }
 
-            // Validar fecha en el futuro
+            // Validar fecha en el futuro (usando hora de Argentina)
             const scheduledDate = new Date(messageData.scheduled_at);
-            const now = new Date();
+            const now = getBuenosAiresTime();
             
             if (isNaN(scheduledDate.getTime())) {
                 return res.status(400).json({
@@ -570,9 +578,9 @@ class ScheduledMessageController {
  * Validar datos del mensaje programado
  */
 async function validateMessageData(data) {
-    // Validar fecha programada no sea en el pasado
+    // Validar fecha programada no sea en el pasado (usando hora de Argentina)
     const scheduledDate = new Date(data.scheduled_at);
-    const now = new Date();
+    const now = getBuenosAiresTime();
     
     if (scheduledDate <= now) {
         return 'La fecha programada debe ser en el futuro';

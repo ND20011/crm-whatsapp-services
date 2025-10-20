@@ -1,5 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { HttpClient } from '@angular/common/http';
 import { ApiService } from '../../../core/services/api.service';
 import { APP_CONFIG } from '../../../core/config/app.config';
@@ -16,9 +17,9 @@ export interface UpdateProfileRequest {
 }
 
 export interface ChangePasswordRequest {
-  current_password: string;
-  new_password: string;
-  confirm_password: string;
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
 }
 
 export interface ProfileResponse {
@@ -63,35 +64,36 @@ export class ProfileService {
    * Obtener datos completos del perfil del usuario
    */
   getProfile(): Observable<ProfileResponse> {
-    return this.apiService.get<ProfileResponse>('/api/profile');
+    return this.apiService.get<ProfileResponse>('/api/auth/profile');
   }
 
   /**
    * Actualizar datos del perfil
    */
   updateProfile(profileData: UpdateProfileRequest): Observable<ProfileResponse> {
-    return this.apiService.put<ProfileResponse>('/api/profile', profileData);
+    return this.apiService.put<ProfileResponse>('/api/auth/profile', profileData);
   }
 
   /**
    * Cambiar contraseña del usuario
    */
   changePassword(passwordData: ChangePasswordRequest): Observable<PasswordChangeResponse> {
-    return this.apiService.post<PasswordChangeResponse>('/api/profile/change-password', passwordData);
+    return this.apiService.post<PasswordChangeResponse>('/api/auth/change-password', passwordData);
   }
+ 
 
-  /**
-   * Obtener estadísticas del perfil
-   */
   getProfileStats(): Observable<ProfileStatsResponse> {
-    return this.apiService.get<ProfileStatsResponse>('/api/profile/stats');
+    return this.apiService.get<ProfileStatsResponse>('/api/auth/profile');
   }
 
   /**
    * Eliminar cuenta (soft delete)
+   * Nota: Por ahora redirige al logout hasta implementar deactivación
    */
   deactivateAccount(): Observable<ProfileResponse> {
-    return this.apiService.post<ProfileResponse>('/api/profile/deactivate', {});
+    // TODO: Implementar endpoint de deactivación en el backend
+    console.warn('⚠️ Endpoint de deactivación no implementado, redirigiendo a logout');
+    return this.apiService.post<ProfileResponse>('/api/auth/logout', {});
   }
 
   /**

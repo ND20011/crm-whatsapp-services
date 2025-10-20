@@ -254,7 +254,7 @@ class TaskReminderService {
             }
 
             // Validar que la fecha del recordatorio sea futura
-            if (reminderData.reminder_datetime <= new Date()) {
+            if (reminderData.reminder_datetime <= getBuenosAiresTime()) {
                 throw new Error('La fecha del recordatorio debe ser futura');
             }
 

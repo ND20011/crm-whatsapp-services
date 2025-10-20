@@ -225,9 +225,9 @@ class AuthController {
                 currentPassword: Joi.string().required().messages({
                     'string.empty': 'La contraseña actual es requerida'
                 }),
-                newPassword: Joi.string().required().min(8).messages({
+                newPassword: Joi.string().required().min(6).messages({
                     'string.empty': 'La nueva contraseña es requerida',
-                    'string.min': 'La nueva contraseña debe tener al menos 8 caracteres'
+                    'string.min': 'La nueva contraseña debe tener al menos 6 caracteres'
                 }),
                 confirmPassword: Joi.string().required().valid(Joi.ref('newPassword')).messages({
                     'string.empty': 'La confirmación de contraseña es requerida',

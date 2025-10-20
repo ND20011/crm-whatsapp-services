@@ -354,10 +354,10 @@ class Task {
                 UPDATE tasks 
                 SET status = 'overdue', updated_at = CURRENT_TIMESTAMP
                 WHERE status = 'pending' 
-                  AND due_date < NOW()
+                  AND due_date < ?
             `;
 
-            const result = await executeQuery(query);
+            const result = await executeQuery(query, [getBuenosAiresTime()]);
             
             if (result.affectedRows > 0) {
                 console.log(`✅ ${result.affectedRows} tareas marcadas como vencidas`);
@@ -383,12 +383,12 @@ class Task {
                 FROM tasks t
                 LEFT JOIN contacts c ON t.related_contact_id = c.id
                 WHERE t.reminder_datetime IS NOT NULL
-                  AND t.reminder_datetime <= NOW()
+                  AND t.reminder_datetime <= ?
                   AND t.status IN ('pending', 'in_progress')
                 ORDER BY t.reminder_datetime ASC
             `;
 
-            const results = await executeQuery(query);
+            const results = await executeQuery(query, [getBuenosAiresTime()]);
             
             return results.map(taskData => {
                 // Parsear JSON fields

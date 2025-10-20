@@ -5,6 +5,12 @@ const ScheduledMessageService = require('./ScheduledMessageService');
 // SCHEDULED MESSAGE PROCESSOR - CRON JOBS
 // ============================================================================
 
+function getBuenosAiresTime() {
+    const currentTime = new Date().toLocaleString("en-US", { timeZone: "America/Argentina/Buenos_Aires" });
+    return new Date(currentTime);
+}
+
+
 class ScheduledMessageProcessor {
     constructor() {
         this.cronJobs = new Map();
@@ -14,7 +20,7 @@ class ScheduledMessageProcessor {
             totalProcessed: 0,
             totalSuccess: 0,
             totalErrors: 0,
-            lastReset: new Date()
+            lastReset: getBuenosAiresTime()
         };
     }
 
@@ -26,10 +32,10 @@ class ScheduledMessageProcessor {
 
         // Procesar cada minuto
         this.scheduleMainProcessor();
-        
+
         // Estadísticas diarias
         this.scheduleDailyCleanup();
-        
+
         // Procesar inmediatamente al iniciar (para testing)
         setTimeout(() => {
             this.processMessages();
@@ -81,13 +87,13 @@ class ScheduledMessageProcessor {
         }
 
         this.isProcessing = true;
-        this.lastProcessTime = new Date();
+        this.lastProcessTime = getBuenosAiresTime();
 
         try {
             console.log('🔄 Iniciando procesamiento de mensajes programados...');
-            
+
             const result = await ScheduledMessageService.processScheduledMessages();
-            
+
             // Actualizar estadísticas
             this.stats.totalProcessed += result.processed;
             this.stats.totalSuccess += result.success;
@@ -116,10 +122,10 @@ class ScheduledMessageProcessor {
 
             // Limpiar registros de ejecución antiguos (más de 30 días)
             await this.cleanOldExecutionRecords();
-            
+
             // Limpiar mensajes completados muy antiguos (más de 90 días)
             await this.cleanOldCompletedMessages();
-            
+
             // Resetear estadísticas
             this.resetDailyStats();
 
@@ -136,15 +142,15 @@ class ScheduledMessageProcessor {
     async cleanOldExecutionRecords() {
         try {
             const { executeQuery } = require('../config/database-simple');
-            
+
             // Eliminar registros de ejecución más antiguos que 30 días
             const deleteExecutionsQuery = `
                 DELETE FROM scheduled_message_executions 
                 WHERE execution_date < DATE_SUB(NOW(), INTERVAL 30 DAY)
             `;
-            
+
             const result = await executeQuery(deleteExecutionsQuery);
-            
+
             if (result.affectedRows > 0) {
                 console.log(`🗑️ Eliminados ${result.affectedRows} registros de ejecución antiguos`);
             }
@@ -155,9 +161,9 @@ class ScheduledMessageProcessor {
                 LEFT JOIN scheduled_message_executions sme ON smr.execution_id = sme.id
                 WHERE sme.id IS NULL
             `;
-            
+
             const recipientResult = await executeQuery(deleteOrphanRecipientsQuery);
-            
+
             if (recipientResult.affectedRows > 0) {
                 console.log(`🗑️ Eliminados ${recipientResult.affectedRows} registros de destinatarios huérfanos`);
             }
@@ -173,7 +179,7 @@ class ScheduledMessageProcessor {
     async cleanOldCompletedMessages() {
         try {
             const { executeQuery } = require('../config/database-simple');
-            
+
             // Mover mensajes muy antiguos a estado "archived" en lugar de eliminarlos
             const archiveQuery = `
                 UPDATE scheduled_messages 
@@ -182,9 +188,9 @@ class ScheduledMessageProcessor {
                   AND last_execution < DATE_SUB(NOW(), INTERVAL 90 DAY)
                   AND status != 'archived'
             `;
-            
+
             const result = await executeQuery(archiveQuery);
-            
+
             if (result.affectedRows > 0) {
                 console.log(`📦 Archivados ${result.affectedRows} mensajes completados antiguos`);
             }
@@ -202,7 +208,7 @@ class ScheduledMessageProcessor {
             totalProcessed: 0,
             totalSuccess: 0,
             totalErrors: 0,
-            lastReset: new Date()
+            lastReset: getBuenosAiresTime()
         };
         console.log('📊 Estadísticas diarias reseteadas');
     }
@@ -227,7 +233,7 @@ class ScheduledMessageProcessor {
         if (!this.stats.lastReset) {
             return 0;
         }
-        return Math.floor((new Date() - this.stats.lastReset) / 1000);
+        return Math.floor((getBuenosAiresTime() - this.stats.lastReset) / 1000);
     }
 
     /**
@@ -235,12 +241,12 @@ class ScheduledMessageProcessor {
      */
     stop() {
         console.log('🛑 Deteniendo procesador de mensajes programados...');
-        
+
         this.cronJobs.forEach((job, name) => {
             job.stop();
             console.log(`🛑 Cron job '${name}' detenido`);
         });
-        
+
         this.cronJobs.clear();
         console.log('✅ Procesador de mensajes programados detenido');
     }
@@ -269,8 +275,8 @@ class ScheduledMessageProcessor {
      * Verificar salud del procesador
      */
     healthCheck() {
-        const now = new Date();
-        const timeSinceLastProcess = this.lastProcessTime ? 
+        const now = getBuenosAiresTime();
+        const timeSinceLastProcess = this.lastProcessTime ?
             (now - this.lastProcessTime) / 1000 : null;
 
         const isHealthy = {
@@ -285,9 +291,9 @@ class ScheduledMessageProcessor {
         }
 
         // Verificar si hay muchos errores
-        const errorRate = this.stats.totalProcessed > 0 ? 
+        const errorRate = this.stats.totalProcessed > 0 ?
             (this.stats.totalErrors / this.stats.totalProcessed) : 0;
-        
+
         if (errorRate > 0.5) {
             isHealthy.status = 'unhealthy';
             isHealthy.issues.push(`Tasa de errores alta: ${(errorRate * 100).toFixed(1)}%`);
