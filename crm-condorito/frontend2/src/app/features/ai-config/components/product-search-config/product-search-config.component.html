@@ -1,0 +1,520 @@
+<div class="product-search-container">
+  
+  <!-- Professional Header -->
+  <div class="main-header">
+    <div class="header-content">
+      <div class="header-left">
+        <div class="header-icon">
+          <i class="fas fa-search-plus"></i>
+        </div>
+        <div class="header-text">
+          <h1 class="header-title">Búsqueda Inteligente de Productos</h1>
+          <p class="header-subtitle">Conecta tu catálogo para respuestas automáticas con IA</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button 
+          class="btn btn-refresh" 
+          (click)="loadConfiguration()" 
+          [disabled]="isLoading"
+          title="Recargar configuración">
+          <i class="fas fa-sync-alt" [class.fa-spin]="isLoading"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Status Messages -->
+  <div class="messages-container" *ngIf="successMessage || errorMessage">
+    <div class="message success" *ngIf="successMessage">
+      <i class="fas fa-check-circle"></i>
+      <span>{{ successMessage }}</span>
+      <button class="close-btn" (click)="successMessage = ''">&times;</button>
+    </div>
+    <div class="message error" *ngIf="errorMessage">
+      <i class="fas fa-exclamation-circle"></i>
+      <span>{{ errorMessage }}</span>
+      <button class="close-btn" (click)="errorMessage = ''">&times;</button>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div class="loading-state" *ngIf="isLoading">
+    <div class="loading-card">
+      <div class="loading-spinner">
+        <div class="spinner"></div>
+      </div>
+      <h3>Cargando configuración</h3>
+      <p>Obteniendo datos de búsqueda de productos...</p>
+    </div>
+  </div>
+
+  <!-- Main Configuration Card -->
+  <div class="main-card" *ngIf="!isLoading">
+    
+    <!-- Card Header with Toggle -->
+    <div class="card-header">
+      <div class="header-left">
+        <div class="card-icon">
+          <i class="fas fa-cogs"></i>
+        </div>
+        <div class="card-info">
+          <h2>Configuración de Búsqueda</h2>
+          <p>Activa y configura la búsqueda de productos</p>
+        </div>
+      </div>
+      
+      <!-- Main Toggle -->
+      <div class="main-toggle">
+        <input 
+          type="checkbox" 
+          id="mainToggle" 
+          class="toggle-input"
+          [checked]="showConfigFields"
+          (change)="onToggleChange($event)">
+        <label for="mainToggle" class="toggle-label">
+          <div class="toggle-switch">
+            <div class="toggle-slider"></div>
+          </div>
+          <span class="toggle-text">
+            <span *ngIf="showConfigFields">Habilitado</span>
+            <span *ngIf="!showConfigFields">Deshabilitado</span>
+          </span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Configuration Form -->
+    <form [formGroup]="configForm" (ngSubmit)="onSave()" *ngIf="showConfigFields">
+      <div class="card-body">
+        
+        <!-- Basic Configuration -->
+        <div class="config-section">
+          <div class="section-title">
+            <i class="fas fa-link"></i>
+            <span>Conexión API</span>
+            <div class="section-status" [class.complete]="isStep1Valid()">
+              <i class="fas fa-check"></i>
+            </div>
+          </div>
+          
+          <div class="form-grid">
+            <div class="form-field span-2">
+              <label class="field-label">
+                <i class="fas fa-globe"></i>
+                URL de tu API <span class="required">*</span>
+              </label>
+              <input 
+                type="url" 
+                class="field-input"
+                [class.error]="hasFieldError('product_endpoint_url')"
+                formControlName="product_endpoint_url"
+                placeholder="https://api.mitienda.com/productos/buscar">
+              <div class="field-error" *ngIf="hasFieldError('product_endpoint_url')">
+                {{ getFieldError('product_endpoint_url') }}
+              </div>
+            </div>
+            
+            <div class="form-field">
+              <label class="field-label">
+                <i class="fas fa-exchange-alt"></i>
+                Método
+              </label>
+              <select class="field-select" formControlName="product_endpoint_method">
+                <option value="GET">GET</option>
+                <option value="POST">POST</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Parameters Configuration -->
+        <div class="config-section">
+          <div class="section-title">
+            <i class="fas fa-search"></i>
+            <span>Parámetros</span>
+            <div class="section-status" [class.complete]="isStep2Valid()">
+              <i class="fas fa-check"></i>
+            </div>
+          </div>
+          
+          <div class="form-grid">
+            <div class="form-field">
+              <label class="field-label">
+                Parámetro de Búsqueda <span class="required">*</span>
+              </label>
+              <input 
+                type="text" 
+                class="field-input"
+                [class.error]="hasFieldError('product_search_param_name')"
+                formControlName="product_search_param_name"
+                placeholder="q, search, query">
+              <div class="field-hint">Nombre del parámetro que recibe el término</div>
+            </div>
+            
+            <div class="form-field">
+              <label class="field-label">
+                Ruta de Respuesta <span class="required">*</span>
+              </label>
+              <input 
+                type="text" 
+                class="field-input"
+                [class.error]="hasFieldError('product_response_path')"
+                formControlName="product_response_path"
+                placeholder="data, results, products">
+              <div class="field-hint">Ruta JSON donde están los productos</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Explicacion de uso de templates - SIEMPRE VISIBLE -->
+        <div class="config-section">
+          <div class="section-title">
+            <i class="fas fa-info-circle"></i>
+            <span>Como usar los templates de links</span>
+          </div>
+          
+          <div class="explanation-box">
+            <div class="explanation-section">
+              <h5>Variables disponibles:</h5>
+              <ul>
+                <li><code>{{ '{' }}PRODUCT_ID{{ '}' }}</code> - Se reemplaza con el ID del producto encontrado</li>
+                <li><code>{{ '{' }}SEARCH_TERM{{ '}' }}</code> - Se reemplaza con el termino buscado por el usuario</li>
+              </ul>
+            </div>
+
+            <div class="explanation-section">
+              <h5>Ejemplos de templates:</h5>
+              <div class="example-item">
+                <strong>Link a producto especifico:</strong><br>
+                <code>https://mitienda.com/producto?id={{ '{' }}PRODUCT_ID{{ '}' }}</code><br>
+                <small>Genera: https://mitienda.com/producto?id=12345</small>
+              </div>
+              
+              <div class="example-item">
+                <strong>Link a busqueda general:</strong><br>
+                <code>https://mitienda.com/buscar?q={{ '{' }}SEARCH_TERM{{ '}' }}</code><br>
+                <small>Genera: https://mitienda.com/buscar?q=celulares</small>
+              </div>
+              
+              <div class="example-item">
+                <strong>Link estatico:</strong><br>
+                <code>https://mitienda.com/productos-destacados</code><br>
+                <small>Siempre lleva a la misma pagina</small>
+              </div>
+            </div>
+
+            <div class="explanation-section">
+              <h5>Como funciona:</h5>
+              <ol>
+                <li>Cuando la IA encuentra productos, usa el template configurado</li>
+                <li>Si hay {{ '{' }}PRODUCT_ID{{ '}' }}, genera un link por cada producto</li>
+                <li>Si hay {{ '{' }}SEARCH_TERM{{ '}' }}, genera un link de busqueda general</li>
+                <li>El link aparece al final de la respuesta de la IA</li>
+              </ol>
+            </div>
+          </div>
+        </div>
+
+        <!-- Advanced Configuration (Collapsible) -->
+        <div class="config-section">
+          <div class="section-title clickable" (click)="toggleAdvancedSettings()">
+            <i class="fas fa-cogs"></i>
+            <span>Configuración Avanzada</span>
+            <i class="fas fa-chevron-down toggle-icon" [class.rotated]="showAdvancedSettings"></i>
+          </div>
+          
+          <div class="advanced-content" [class.expanded]="showAdvancedSettings">
+            
+            <!-- Headers -->
+            <div class="form-field full-width">
+              <label class="field-label">
+                <i class="fas fa-code"></i>
+                Headers HTTP (JSON)
+              </label>
+              <textarea 
+                class="code-input"
+                [class.error]="hasFieldError('product_endpoint_headers')"
+                formControlName="product_endpoint_headers"
+                rows="3"
+                placeholder='{"Authorization": "Bearer token", "Content-Type": "application/json"}'></textarea>
+            </div>
+
+            <!-- Body for POST -->
+            <div class="form-field full-width" *ngIf="configForm.get('product_endpoint_method')?.value === 'POST'">
+              <label class="field-label">
+                <i class="fas fa-file-code"></i>
+                Body de la Petición (JSON)
+              </label>
+              <textarea 
+                class="code-input"
+                [class.error]="hasFieldError('product_endpoint_body')"
+                formControlName="product_endpoint_body"
+                rows="3"
+                placeholder='{"filters": {"active": true}}'></textarea>
+              <div class="field-hint">El parámetro de búsqueda se agregará automáticamente</div>
+            </div>
+
+            <!-- Performance Settings -->
+            <div class="performance-row">
+              <div class="form-field">
+                <label class="field-label">Máx. Resultados</label>
+                <input 
+                  type="number" 
+                  class="field-input"
+                  formControlName="product_max_results"
+                  min="1" max="100">
+              </div>
+              
+              <div class="form-field">
+                <label class="field-label">Cache (seg)</label>
+                <input 
+                  type="number" 
+                  class="field-input"
+                  formControlName="product_cache_ttl"
+                  min="60" max="3600">
+              </div>
+              
+              <div class="form-field">
+                <label class="field-label">Timeout (ms)</label>
+                <input 
+                  type="number" 
+                  class="field-input"
+                  formControlName="product_timeout"
+                  min="1000" max="30000">
+              </div>
+            </div>
+
+            <!-- Product Links -->
+            <div class="performance-row">
+              <div class="form-field">
+                <label class="field-label">Links Habilitados</label>
+                <input 
+                  type="checkbox" 
+                  class="field-input"
+                  formControlName="product_link_enabled">
+              </div>
+              
+              <div class="form-field">
+                <label class="field-label">Texto del Link</label>
+                <input 
+                  type="text" 
+                  class="field-input"
+                  formControlName="product_link_text"
+                  placeholder="Ver producto">
+              </div>
+            </div>
+
+            <div class="form-field full-width">
+              <label class="field-label">Template del Link</label>
+              <input 
+                type="text" 
+                class="field-input"
+                formControlName="product_link_template"
+                placeholder="https://tienda.com/producto?id={{ '{' }}PRODUCT_ID{{ '}' }}">
+              <div class="field-hint">
+                URL de tu tienda donde aparecera el producto o busqueda
+              </div>
+            </div>
+
+            <div class="form-field full-width">
+              <label class="field-label">Campo ID</label>
+              <input 
+                type="text" 
+                class="field-input"
+                formControlName="product_link_id_field"
+                placeholder="id">
+              <div class="field-hint">
+                Campo del JSON que contiene el ID unico del producto
+              </div>
+            </div>
+
+            <!-- Explicacion de uso -->
+            <div class="form-field full-width">
+              <div class="explanation-box">
+                <h4><i class="fas fa-info-circle"></i> Como usar los templates</h4>
+                
+                <div class="explanation-section">
+                  <h5>Variables disponibles:</h5>
+                  <ul>
+                    <li><code>{{ '{' }}PRODUCT_ID{{ '}' }}</code> - Se reemplaza con el ID del producto encontrado</li>
+                    <li><code>{{ '{' }}SEARCH_TERM{{ '}' }}</code> - Se reemplaza con el termino buscado por el usuario</li>
+                  </ul>
+                </div>
+
+                <div class="explanation-section">
+                  <h5>Ejemplos de templates:</h5>
+                  <div class="example-item">
+                    <strong>Link a producto especifico:</strong><br>
+                    <code>https://mitienda.com/producto?id={{ '{' }}PRODUCT_ID{{ '}' }}</code><br>
+                    <small>Genera: https://mitienda.com/producto?id=12345</small>
+                  </div>
+                  
+                  <div class="example-item">
+                    <strong>Link a busqueda general:</strong><br>
+                    <code>https://mitienda.com/buscar?q={{ '{' }}SEARCH_TERM{{ '}' }}</code><br>
+                    <small>Genera: https://mitienda.com/buscar?q=celulares</small>
+                  </div>
+                  
+                  <div class="example-item">
+                    <strong>Link estatico:</strong><br>
+                    <code>https://mitienda.com/productos-destacados</code><br>
+                    <small>Siempre lleva a la misma pagina</small>
+                  </div>
+                </div>
+
+                <div class="explanation-section">
+                  <h5>Como funciona:</h5>
+                  <ol>
+                    <li>Cuando la IA encuentra productos, usa el template configurado</li>
+                    <li>Si hay {{ '{' }}PRODUCT_ID{{ '}' }}, genera un link por cada producto</li>
+                    <li>Si hay {{ '{' }}SEARCH_TERM{{ '}' }}, genera un link de busqueda general</li>
+                    <li>El link aparece al final de la respuesta de la IA</li>
+                  </ol>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Card Footer with Actions -->
+      <div class="card-footer">
+        <div class="footer-left">
+          <button 
+            type="button" 
+            class="btn btn-secondary"
+            (click)="applyExampleConfig()">
+            <i class="fas fa-magic"></i>
+            Ejemplo
+          </button>
+          
+          <button 
+            type="button" 
+            class="btn btn-outline"
+            (click)="toggleTestSection()">
+            <i class="fas fa-flask"></i>
+            Probar
+          </button>
+        </div>
+        
+        <button 
+          type="submit" 
+          class="btn btn-primary"
+          [disabled]="isSaving || !configForm.valid">
+          <span class="btn-loading" *ngIf="isSaving">
+            <div class="spinner-sm"></div>
+          </span>
+          <i class="fas fa-save" *ngIf="!isSaving"></i>
+          <span *ngIf="isSaving">Guardando...</span>
+          <span *ngIf="!isSaving">Guardar</span>
+        </button>
+      </div>
+
+    </form>
+
+    <!-- Quick Setup for Disabled State -->
+    <div class="quick-setup" *ngIf="!showConfigFields">
+      <div class="setup-content">
+        <div class="setup-icon">
+          <i class="fas fa-rocket"></i>
+        </div>
+        <div class="setup-text">
+          <h3>¡Configura tu búsqueda de productos!</h3>
+          <p>Activa el toggle para comenzar la configuración</p>
+        </div>
+        <button 
+          class="btn btn-primary"
+          (click)="applyExampleConfig()">
+          <i class="fas fa-magic"></i>
+          Configuración Rápida
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Test Section (Compact) -->
+  <div class="test-card" *ngIf="showConfigFields && showTestSection">
+    <div class="test-header">
+      <div class="test-info">
+        <i class="fas fa-flask"></i>
+        <span>Probar Configuración</span>
+      </div>
+      <button class="test-close" (click)="toggleTestSection()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    
+    <div class="test-body">
+      <!-- Compact Search -->
+      <div class="search-container">
+        <div class="search-box">
+          <input 
+            type="text" 
+            class="search-input"
+            [(ngModel)]="testTerm"
+            placeholder="Buscar productos..."
+            (keyup.enter)="onTestSearch()"
+            [disabled]="isTesting">
+          <button 
+            class="search-btn"
+            (click)="onTestSearch()"
+            [disabled]="isTesting || !testTerm.trim()">
+            <span class="btn-loading" *ngIf="isTesting">
+              <div class="spinner-sm"></div>
+            </span>
+            <i class="fas fa-search" *ngIf="!isTesting"></i>
+          </button>
+        </div>
+        
+        <!-- Quick Suggestions -->
+        <div class="suggestions">
+          <span class="suggestion" (click)="testTerm = 'iPhone'">iPhone</span>
+          <span class="suggestion" (click)="testTerm = 'laptop'">Laptop</span>
+          <span class="suggestion" (click)="testTerm = 'zapatillas'">Zapatillas</span>
+        </div>
+      </div>
+
+      <!-- Compact Results -->
+      <div class="test-results" *ngIf="testResult">
+        <!-- Status -->
+        <div class="result-status" [class.success]="testResult && testResult.searchResult && testResult.searchResult.success" [class.error]="testResult && testResult.searchResult && !testResult.searchResult.success">
+          <div class="status-icon">
+            <i class="fas fa-check-circle" *ngIf="testResult && testResult.searchResult && testResult.searchResult.success"></i>
+            <i class="fas fa-times-circle" *ngIf="testResult && testResult.searchResult && !testResult.searchResult.success"></i>
+          </div>
+          <div class="status-info">
+            <strong>
+              <span *ngIf="testResult && testResult.searchResult && testResult.searchResult.success">Exito</span>
+              <span *ngIf="testResult && testResult.searchResult && !testResult.searchResult.success">Error</span>
+            </strong>
+            <span>{{ testResult?.searchResult?.products?.length || 0 }} productos en {{ testResult?.responseTime }}ms</span>
+          </div>
+        </div>
+
+        <!-- Products (Compact List) -->
+        <div class="products-list" *ngIf="testResult && testResult.searchResult && testResult.searchResult.success && testResult.searchResult.products && testResult.searchResult.products.length > 0">
+          <div class="product-item" *ngFor="let product of testResult.searchResult.products.slice(0, 3)">
+            <div class="product-info">
+              <strong>{{ product.name || 'Sin nombre' }}</strong>
+              <span>{{ product.price || 'N/A' }} - {{ product.category || 'Sin categoria' }}</span>
+            </div>
+            <div class="product-id">#{{ product.id || 'N/A' }}</div>
+          </div>
+          <div class="more-results" *ngIf="testResult.searchResult.products.length > 3">
+            +{{ testResult.searchResult.products.length - 3 }} productos mas
+          </div>
+        </div>
+
+        <!-- Error -->
+        <div class="error-result" *ngIf="testResult && testResult.searchResult && !testResult.searchResult.success">
+          <i class="fas fa-exclamation-triangle"></i>
+          <span>{{ testResult?.searchResult?.error || 'Error desconocido' }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>

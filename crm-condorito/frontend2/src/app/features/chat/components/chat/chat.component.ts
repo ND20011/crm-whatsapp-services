@@ -2,7 +2,8 @@ import { Component, inject, signal, OnInit, OnDestroy, ViewChild, ElementRef, Af
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { interval, Subscription, debounceTime, distinctUntilChanged } from 'rxjs';
+import { Subscription, Observable, interval } from 'rxjs';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { ChatService } from '../../services/chat.service';
 import { AuthService } from '../../../auth/services/auth.service';
 import { DebounceService } from '../../../../core/services/debounce.service';
@@ -11,20 +12,22 @@ import { FileUploadComponent } from '../../../../shared/components/file-upload/f
 import { FilePreviewComponent } from '../../../../shared/components/file-preview/file-preview.component';
 import { TagSelectorComponent } from '../../../../shared/components/tag-selector/tag-selector.component';
 import { MediaUrlPipe } from '../../../../shared/pipes/media-url.pipe';
-import { 
-  Conversation, 
-  Message, 
-  User, 
+import {
+  Conversation,
+  Message,
+  User,
   SendMessageRequest,
   SendImageRequest,
   SendDocumentRequest,
-  ChatFile 
+  ChatFile
 } from '../../../../core/models/api.models';
 import { ContactsService } from '../../../contacts/services/contacts.service';
 import { ContactTag, Contact } from '../../../contacts/models/contact.models';
 import { APP_CONFIG } from '../../../../core/config/app.config';
 import { TemplatesService } from '../../../templates/services/templates.service';
 import { MessageTemplate } from '../../../../core/models/template.models';
+import { TaskService } from '../../../tasks/services/task.service';
+import { TaskPriority, TaskCategory, ReminderType } from '../../../tasks/models/task.models';
 
 /**
  * Componente principal del Chat
@@ -45,29 +48,42 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
   private whatsappRealtimeService = inject(WhatsAppRealtimeService);
   private contactsService = inject(ContactsService);
   private templatesService = inject(TemplatesService);
+  private taskService = inject(TaskService);
   private router = inject(Router);
   private formBuilder = inject(FormBuilder);
 
   @ViewChild('messagesContainer') messagesContainer!: ElementRef;
+  @ViewChild('messageTextarea') messageTextarea!: ElementRef;
 
   // Signals
   public isLoading = signal<boolean>(true);
   public isLoadingMessages = signal<boolean>(false);
   public isSendingMessage = signal<boolean>(false);
-  public conversations = signal<Conversation[]>([]);
-  public filteredConversations = signal<Conversation[]>([]);
+  public allConversations = signal<Conversation[]>([]); // Todas las conversaciones del servidor
+  public displayedConversations = signal<Conversation[]>([]); // Conversaciones mostradas
+  public filteredConversations = signal<Conversation[]>([]); // Conversaciones filtradas
   public messages = signal<Message[]>([]);
   public activeConversation = signal<Conversation | null>(null);
   public currentUser = signal<User | null>(null);
   public searchQuery = signal<string>('');
   public errorMessage = signal<string>('');
   public successMessage = signal<string>('');
-  
+
+  // Paginación virtual
+  public displayedCount = signal<number>(50); // Mostrar inicialmente 50
+  public loadIncrement = 5; // Cargar de a 5 al hacer scroll
+
+  // Exponer Math para el template
+  public Math = Math;
+
   // File handling signals
   public selectedFiles = signal<ChatFile[]>([]);
   public showFileUpload = signal<boolean>(false);
   public isSendingFile = signal<boolean>(false);
   public isGeneratingAI = signal<boolean>(false);
+
+  // Mobile menu signal
+  public showMobileMenu = signal<boolean>(false);
 
   // WebSocket signals
   public connectionState = signal<WebSocketConnectionState>(WebSocketConnectionState.DISCONNECTED);
@@ -98,9 +114,11 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
   public showDescriptionModal = signal<boolean>(false);
   public showEditContactNameModal = signal<boolean>(false);
   public showDeleteConfirmModal = signal<boolean>(false);
+  public showScheduleMeetingModal = signal<boolean>(false);
   public currentContactForAction = signal<Conversation | null>(null);
   public currentContact = signal<Contact | null>(null);
-  
+  public isSchedulingMeeting = signal<boolean>(false);
+
   // Image modal signals
   public showImageModal = signal<boolean>(false);
   public selectedImageMessage = signal<Message | null>(null);
@@ -125,13 +143,14 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
   public descriptionForm: FormGroup;
   public editContactNameForm: FormGroup;
   public analysisForm: FormGroup;
+  public meetingForm: FormGroup;
 
   // Subscriptions
   private refreshSubscription?: Subscription;
   private websocketSubscription?: Subscription;
   private messageSubscription?: Subscription;
   private conversationSubscription?: Subscription;
-  
+
   // Debounced search
   private searchDebouncer = this.debounceService.createSearchDebouncer(
     (query: string) => this.chatService.searchConversations(query, {
@@ -141,7 +160,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
   );
   private searchSubscription?: Subscription;
   private shouldScrollToBottom = false;
-  
+
   // Nuevas propiedades para gestión inteligente del scroll
   private isUserScrolledUp = false;
   private scrollThreshold = 100; // pixels desde el final para considerar "al final"
@@ -170,6 +189,14 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
       customQuestion: ['', [Validators.required, Validators.minLength(10)]]
     });
 
+    // Inicializar formulario de reunión
+    this.meetingForm = this.formBuilder.group({
+      title: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(100)]],
+      meetingDateTime: ['', [Validators.required]],
+      description: ['', [Validators.maxLength(300)]],
+      enableReminder: [true] // Por defecto activado
+    });
+
     // Setup search with debounce
     this.searchSubscription = this.searchForm.get('search')?.valueChanges
       .pipe(
@@ -177,8 +204,8 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
         distinctUntilChanged()
       )
       .subscribe(query => {
-        this.searchQuery.set(query);
-        this.applyFilters(); // Usar filtros locales en lugar de llamada al servidor
+        this.searchQuery.set(query as string);
+        this.applyFiltersAndPagination(); // Usar filtros locales en lugar de llamada al servidor
       });
   }
 
@@ -190,6 +217,12 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.startAutoRefresh();
     this.checkMobileView();
     this.setupResizeListener();
+    this.setupClickOutsideListener();
+
+    // Inicializar auto-resize del textarea después de que se renderice
+    setTimeout(() => {
+      this.autoResizeTextarea();
+    }, 100);
   }
 
   ngOnDestroy(): void {
@@ -201,7 +234,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
 
     // Cancelar operaciones de debounce
     this.searchDebouncer.cancel();
-    
+
 
     // Desconectar WebSocket
     this.whatsappRealtimeService.disconnect();
@@ -218,22 +251,23 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
   }
 
   /**
-   * Cargar lista de conversaciones
+   * Cargar todas las conversaciones del servidor
    */
   loadConversations(): void {
     this.isLoading.set(true);
     this.clearMessages();
 
+    const searchQuery = this.searchQuery();
+
     this.chatService.getConversations({
-      limit: APP_CONFIG.ui.itemsPerPage,
-      offset: 0,
-      archived: false
-    }).subscribe({
+      archived: false,
+      search: searchQuery || undefined
+    }, false).subscribe({
       next: (response) => {
         if (response.success && response.conversations) {
-          this.conversations.set(response.conversations);
-          this.applyFilters(); // Aplicar filtros después de cargar
-          this.loadConversationTags(); // Cargar etiquetas para las conversaciones
+          this.allConversations.set(response.conversations);
+          this.applyFiltersAndPagination();
+          this.loadConversationTags();
         }
       },
       error: (error) => {
@@ -247,31 +281,114 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
   }
 
   /**
-   * Buscar conversaciones (con debouncing)
+   * Aplicar filtros y paginación virtual
+   */
+  private applyFiltersAndPagination(): void {
+    const allConversations = this.allConversations();
+    const selectedTag = this.selectedTagFilter();
+    const searchQuery = this.searchQuery().toLowerCase().trim();
+    const tagFilteredPhones = this.filteredPhoneNumbers();
+
+    let filtered = allConversations;
+
+    // Filtrar por etiqueta si hay una seleccionada
+    if (selectedTag && tagFilteredPhones.length > 0) {
+      filtered = filtered.filter((conversation: Conversation) => {
+        return tagFilteredPhones.includes(conversation.contact_phone);
+      });
+    }
+
+    // Filtrar por búsqueda si hay una query
+    if (searchQuery) {
+      filtered = filtered.filter((conversation: Conversation) => {
+        // Búsqueda en nombre del contacto
+        const nameMatch = conversation.contact_name?.toLowerCase().includes(searchQuery) || false;
+
+        // Búsqueda en número de teléfono (sin espacios ni caracteres especiales)
+        const cleanPhone = conversation.contact_phone.replace(/[\s\-\(\)\+]/g, '');
+        const cleanQuery = searchQuery.replace(/[\s\-\(\)\+]/g, '');
+        const phoneMatch = cleanPhone.includes(cleanQuery);
+
+        // Búsqueda en el último mensaje
+        const lastMessageMatch = conversation.last_message?.toLowerCase().includes(searchQuery) || false;
+
+        return nameMatch || phoneMatch || lastMessageMatch;
+      });
+    }
+
+    this.filteredConversations.set(filtered);
+
+    // Aplicar paginación virtual
+    this.updateDisplayedConversations();
+  }
+
+  /**
+   * Actualizar las conversaciones mostradas según la paginación virtual
+   */
+  private updateDisplayedConversations(): void {
+    const filtered = this.filteredConversations();
+    const count = this.displayedCount();
+    const displayed = filtered.slice(0, count);
+    this.displayedConversations.set(displayed);
+  }
+
+  /**
+   * Cargar más conversaciones (scroll infinito)
+   */
+  loadMoreConversations(): void {
+    const currentCount = this.displayedCount();
+    const totalFiltered = this.filteredConversations().length;
+
+    if (currentCount < totalFiltered) {
+      const newCount = Math.min(currentCount + this.loadIncrement, totalFiltered);
+      this.displayedCount.set(newCount);
+      this.updateDisplayedConversations();
+    }
+  }
+
+  /**
+   * Verificar si hay más conversaciones para cargar
+   */
+  hasMoreToLoad(): boolean {
+    return this.displayedCount() < this.filteredConversations().length;
+  }
+
+  /**
+   * Buscar conversaciones (con debouncing mejorado)
    */
   searchConversations(query: string): void {
-    if (!query.trim()) {
-      this.loadConversations();
-      return;
-    }
+    this.searchQuery.set(query);
 
     // Cancelar búsqueda anterior si existe
     if (this.searchSubscription) {
       this.searchSubscription.unsubscribe();
     }
 
-    // Usar debounced search
-    this.searchSubscription = this.searchDebouncer.search(query).subscribe({
-      next: (response) => {
-        if (response.success && response.conversations) {
-          this.conversations.set(response.conversations);
-        }
+    // Resetear contador de mostrados
+    this.displayedCount.set(50);
+
+    // Si no hay query, cargar todas las conversaciones
+    if (!query.trim()) {
+      this.loadConversations();
+      return;
+    }
+
+    // Usar debouncing para búsqueda
+    const searchDebouncer = this.debounceService.debounce(
+      'search-conversations',
+      (searchTerm: string) => {
+        console.log('🔍 Buscando conversaciones:', searchTerm);
+        this.loadConversations();
+        return new Observable(observer => {
+          observer.next(true);
+          observer.complete();
+        });
       },
-      error: (error) => {
-        console.error('Error searching conversations:', error);
-        this.errorMessage.set('Error al buscar conversaciones');
-      }
-    });
+      { debounceTime: 300 }
+    );
+
+    // Ejecutar la búsqueda
+    this.searchSubscription = searchDebouncer.execute(query).subscribe();
   }
 
   /**
@@ -279,16 +396,16 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
    */
   selectConversation(conversation: Conversation): void {
     this.activeConversation.set(conversation);
-    
+
     // Resetear estados de scroll y mensajes no leídos
     this.hasUnreadMessages.set(false);
     this.unreadMessagesCount.set(0);
     this.isUserScrolledUp = false;
     this.isAtBottom.set(true);
-    
+
     this.loadMessages(conversation.id);
     this.markAsRead(conversation.id);
-    
+
     // Forzar scroll al final después de un delay (backup)
     setTimeout(() => {
       this.shouldScrollToBottom = true;
@@ -313,7 +430,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
       next: (response) => {
         if (response.success && response.messages) {
           console.log(`📨 Mensajes cargados para conversación ${conversationId}:`, response.messages.length);
-          
+
           // Log específico para mensajes de imagen
           const imageMessages = response.messages.filter(m => m.message_type === 'image');
           if (imageMessages.length > 0) {
@@ -324,7 +441,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
               message_type: m.message_type
             })));
           }
-          
+
           // Los mensajes ya vienen en orden cronológico correcto (ASC)
           this.messages.set(response.messages);
           this.shouldScrollToBottom = true;
@@ -363,10 +480,13 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
           if (response.success) {
             this.messageForm.reset();
             // ✅ Sin mensaje de éxito molesto - el usuario ve el mensaje en el chat
-            
+
+            // Resetear altura del textarea
+            this.autoResizeTextarea();
+
             // NO recargar mensajes - el WebSocket se encargará de mostrar el nuevo mensaje
             // this.loadMessages(conversation.id); // ❌ ELIMINADO - causaba scroll jump
-            
+
             // Actualizar la conversación en la lista
             this.updateConversationInList(conversation.id);
           } else {
@@ -403,13 +523,13 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
    * Actualizar conversación en la lista
    */
   private updateConversationInList(conversationId: number): void {
-    const conversations = this.conversations();
-    const updatedConversations = conversations.map(conv => 
-      conv.id === conversationId 
+    const conversations = this.allConversations();
+    const updatedConversations = conversations.map((conv: Conversation) =>
+      conv.id === conversationId
         ? { ...conv, unread_count: 0, last_message_at: new Date().toISOString() }
         : conv
     );
-    this.conversations.set(updatedConversations);
+    this.allConversations.set(updatedConversations);
   }
 
   /**
@@ -420,11 +540,11 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
       next: (response) => {
         if (response.success) {
           // Actualizar el contador de no leídos en la conversación activa
-          const currentConversations = this.conversations();
-          const updatedConversations = currentConversations.map(conv =>
+          const currentConversations = this.allConversations();
+          const updatedConversations = currentConversations.map((conv: Conversation) =>
             conv.id === conversationId ? { ...conv, unread_count: 0, unread_messages: '0' } : conv
           );
-          this.conversations.set(updatedConversations);
+          this.allConversations.set(updatedConversations);
 
           // Actualizar la conversación activa si es la misma
           if (this.activeConversation()?.id === conversationId) {
@@ -453,18 +573,18 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
       next: (response) => {
         if (response.success) {
           // Actualizar el estado del bot en la conversación activa
-          const updatedConversation = { 
-            ...conversation, 
+          const updatedConversation = {
+            ...conversation,
             bot_enabled: this.isBotEnabled(conversation) ? 0 : 1
           };
           this.activeConversation.set(updatedConversation);
-          
+
           // Actualizar también en la lista
-          const conversations = this.conversations();
-          const updatedConversations = conversations.map(conv => 
+          const conversations = this.allConversations();
+          const updatedConversations = conversations.map((conv: Conversation) =>
             conv.id === conversation.id ? updatedConversation : conv
           );
-          this.conversations.set(updatedConversations);
+          this.allConversations.set(updatedConversations);
 
           const status = this.isBotEnabled(conversation) ? 'desactivado' : 'activado';
           this.successMessage.set(`Bot ${status} para esta conversación`);
@@ -509,7 +629,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
   private shouldAutoScroll(): boolean {
     const container = this.messagesContainer?.nativeElement;
     if (!container) return true;
-    
+
     const distanceFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
     return distanceFromBottom <= this.scrollThreshold;
   }
@@ -520,11 +640,11 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
   private updateScrollState(): void {
     const container = this.messagesContainer?.nativeElement;
     if (!container) return;
-    
+
     const isAtBottom = this.shouldAutoScroll();
     this.isAtBottom.set(isAtBottom);
     this.isUserScrolledUp = !isAtBottom;
-    
+
     // Si el usuario vuelve al final, marcar mensajes como leídos
     if (isAtBottom && this.hasUnreadMessages()) {
       this.hasUnreadMessages.set(false);
@@ -539,7 +659,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
     if (!force && !this.shouldAutoScroll()) {
       return;
     }
-    
+
     requestAnimationFrame(() => {
       const container = this.messagesContainer?.nativeElement;
       if (container) {
@@ -547,7 +667,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
           top: container.scrollHeight,
           behavior: 'smooth'
         });
-        
+
         // Actualizar estado después del scroll
         setTimeout(() => {
           this.updateScrollState();
@@ -563,7 +683,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
     try {
       if (this.messagesContainer) {
         const element = this.messagesContainer.nativeElement;
-        
+
         // Usar setTimeout para asegurar que el DOM se haya renderizado
         setTimeout(() => {
           element.scrollTo({
@@ -571,7 +691,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
             behavior: 'smooth'
           });
           console.log(`📍 Scroll automático al final - scrollTop: ${element.scrollTop}, scrollHeight: ${element.scrollHeight}`);
-          
+
           // Actualizar estado después del scroll
           setTimeout(() => {
             this.updateScrollState();
@@ -630,14 +750,14 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
     const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
 
     if (diffInHours < 24) {
-      return date.toLocaleTimeString('es-ES', { 
-        hour: '2-digit', 
-        minute: '2-digit' 
+      return date.toLocaleTimeString('es-ES', {
+        hour: '2-digit',
+        minute: '2-digit'
       });
     } else {
-      return date.toLocaleDateString('es-ES', { 
-        day: '2-digit', 
-        month: '2-digit' 
+      return date.toLocaleDateString('es-ES', {
+        day: '2-digit',
+        month: '2-digit'
       });
     }
   }
@@ -689,9 +809,94 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
    * Manejar tecla Enter en el textarea
    */
   onKeyDown(event: KeyboardEvent): void {
-    if (event.ctrlKey && event.key === 'Enter') {
-      event.preventDefault();
-      this.sendMessageOrFiles();
+    if (event.key === 'Enter') {
+      if (event.shiftKey) {
+        // Shift + Enter: Permitir salto de línea (comportamiento por defecto)
+        return;
+      } else {
+        // Enter solo: Enviar mensaje
+        event.preventDefault();
+        this.sendMessageOrFiles();
+      }
+    }
+  }
+
+  /**
+   * Manejar input en el textarea para auto-resize
+   */
+  onTextareaInput(event: Event): void {
+    this.autoResizeTextarea();
+  }
+
+  /**
+   * Auto-resize del textarea hasta 5 líneas máximo
+   */
+  private autoResizeTextarea(): void {
+    const textarea = this.messageTextarea?.nativeElement;
+    if (!textarea) return;
+
+    // Reset height to auto to get the correct scrollHeight
+    textarea.style.height = 'auto';
+
+    // Calculate the height for 5 lines (line-height * 5)
+    const lineHeight = parseInt(getComputedStyle(textarea).lineHeight) || 24;
+    const maxHeight = lineHeight * 7; // 5 líneas máximo
+    const scrollHeight = textarea.scrollHeight;
+
+    // Set height to scrollHeight or maxHeight, whichever is smaller
+    const newHeight = Math.min(scrollHeight, maxHeight);
+    textarea.style.height = newHeight + 'px';
+
+    // Enable/disable scroll based on whether we hit the max height
+    textarea.style.overflowY = scrollHeight > maxHeight ? 'auto' : 'hidden';
+  }
+
+  /**
+   * Manejar paste en el textarea (solo imágenes en desktop)
+   */
+  onPaste(event: ClipboardEvent): void {
+    // Solo en desktop (no móvil)
+    if (this.isMobile()) return;
+
+    const items = event.clipboardData?.items;
+    if (!items) return;
+
+    // Buscar imágenes en el portapapeles
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+
+      if (item.type.startsWith('image/')) {
+        event.preventDefault(); // Prevenir el paste normal del texto
+
+        const file = item.getAsFile();
+        if (file) {
+          console.log('🖼️ Imagen detectada en portapapeles:', {
+            name: file.name || 'imagen_pegada.png',
+            type: file.type,
+            size: file.size
+          });
+
+          // Crear ChatFile desde la imagen pegada
+          const chatFile: ChatFile = {
+            file: file,
+            name: file.name || 'imagen_pegada.png',
+            type: 'image',
+            size: file.size.toString()
+          };
+
+          // Agregar a archivos seleccionados
+          const currentFiles = this.selectedFiles();
+          this.selectedFiles.set([...currentFiles, chatFile]);
+
+          // Mostrar mensaje de confirmación
+          this.successMessage.set('Imagen pegada desde portapapeles');
+          setTimeout(() => this.successMessage.set(''), 3000);
+
+          // Cerrar menú móvil si está abierto
+          this.closeMobileMenu();
+        }
+        break; // Solo procesar la primera imagen encontrada
+      }
     }
   }
 
@@ -716,6 +921,22 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
     if (!this.showFileUpload()) {
       this.clearSelectedFiles();
     }
+    // Cerrar menú móvil si está abierto
+    this.showMobileMenu.set(false);
+  }
+
+  /**
+   * Mostrar/ocultar menú móvil de opciones (+)
+   */
+  toggleMobileMenu(): void {
+    this.showMobileMenu.set(!this.showMobileMenu());
+  }
+
+  /**
+   * Cerrar menú móvil
+   */
+  closeMobileMenu(): void {
+    this.showMobileMenu.set(false);
   }
 
   /**
@@ -765,7 +986,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
    */
   onCaptionChange(data: { file: ChatFile; caption: string }): void {
     const files = this.selectedFiles();
-    const updatedFiles = files.map(f => 
+    const updatedFiles = files.map(f =>
       f === data.file ? { ...f, caption: data.caption } : f
     );
     this.selectedFiles.set(updatedFiles);
@@ -796,7 +1017,10 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
       this.isSendingFile.set(false);
       this.clearSelectedFiles();
       // ✅ Sin mensaje de éxito molesto - el usuario ve los archivos en el chat
-      
+
+      // Resetear altura del textarea
+      this.autoResizeTextarea();
+
       // NO recargar mensajes - el WebSocket se encargará de mostrar los nuevos mensajes
       // this.loadMessages(conversation.id); // ❌ ELIMINADO - causaba scroll jump
       this.updateConversationInList(conversation.id);
@@ -899,7 +1123,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
       next: (state) => {
         this.connectionState.set(state);
         this.isConnectedToWebSocket.set(state === WebSocketConnectionState.CONNECTED);
-        
+
         if (state === WebSocketConnectionState.CONNECTED) {
           console.log('✅ WebSocket conectado - Chat en tiempo real activo');
           this.subscribeToRealtimeEvents();
@@ -976,7 +1200,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
     if (this.activeConversation()?.id === conversationId) {
       const currentMessages = this.messages();
       this.messages.set([...currentMessages, newMessage]);
-      
+
       // Lógica inteligente de scroll
       if (isMyMessage) {
         // Siempre hacer scroll para mensajes propios
@@ -993,7 +1217,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
           this.hasUnreadMessages.set(true);
         }
       }
-      
+
       // Marcar como leído automáticamente si la conversación está activa y el usuario está al final
       if (this.shouldAutoScroll()) {
         this.markConversationAsRead(conversationId);
@@ -1015,25 +1239,25 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
    * Actualizar conversación desde WebSocket
    */
   private updateConversationFromWebSocket(updatedConversation: Conversation): void {
-    const currentConversations = this.conversations();
+    const currentConversations = this.allConversations();
     const updatedConversations = currentConversations.map(conv =>
       conv.id === updatedConversation.id ? updatedConversation : conv
     );
 
     // Si es una conversación nueva, agregarla al inicio
-    if (!currentConversations.find(conv => conv.id === updatedConversation.id)) {
+    if (!currentConversations.find((conv: Conversation) => conv.id === updatedConversation.id)) {
       updatedConversations.unshift(updatedConversation);
     }
 
     // Ordenar por último mensaje
-    updatedConversations.sort((a, b) => 
+    updatedConversations.sort((a: Conversation, b: Conversation) =>
       new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime()
     );
 
-    this.conversations.set(updatedConversations);
+    this.allConversations.set(updatedConversations);
 
     // CRÍTICO: Aplicar filtros para actualizar la lista filtrada en tiempo real
-    this.applyFilters();
+    this.applyFiltersAndPagination();
 
     // Actualizar conversación activa si es la misma
     if (this.activeConversation()?.id === updatedConversation.id) {
@@ -1072,23 +1296,23 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
    */
   private handleConversationDeleted(data: any): void {
     const deletedConversationId = data.conversationId;
-    
+
     console.log('🗑️ Procesando eliminación de conversación:', deletedConversationId);
-    
+
     // Actualizar la lista de conversaciones
-    const conversations = this.conversations();
-    const updatedConversations = conversations.filter(conv => conv.id !== deletedConversationId);
-    
-    this.conversations.set(updatedConversations);
-    this.applyFilters();
-    
+    const conversations = this.allConversations();
+    const updatedConversations = conversations.filter((conv: Conversation) => conv.id !== deletedConversationId);
+
+    this.allConversations.set(updatedConversations);
+    this.applyFiltersAndPagination();
+
     // Si era la conversación activa, limpiar
     if (this.activeConversation()?.id === deletedConversationId) {
       this.activeConversation.set(null);
       this.messages.set([]);
       console.log('🧹 Conversación activa eliminada, limpiando vista');
     }
-    
+
     // Mostrar mensaje informativo
     this.successMessage.set('Conversación eliminada');
     setTimeout(() => this.successMessage.set(''), 3000);
@@ -1155,25 +1379,26 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
    */
   filterByTag(tag: ContactTag | null): void {
     this.selectedTagFilter.set(tag);
-    
+    this.displayedCount.set(50); // Reset contador
+
     if (tag) {
       // Cargar números de teléfono que tienen esta etiqueta
       this.contactsService.getContactsByTags([tag.id]).subscribe({
         next: (response) => {
           if (response.success && response.data) {
             this.filteredPhoneNumbers.set(response.data.phoneNumbers);
-            this.applyFilters();
+            this.applyFiltersAndPagination();
           }
         },
         error: (error) => {
           console.error('Error loading contacts by tag:', error);
           this.filteredPhoneNumbers.set([]);
-          this.applyFilters();
+          this.applyFiltersAndPagination();
         }
       });
     } else {
       this.filteredPhoneNumbers.set([]);
-      this.applyFilters();
+      this.applyFiltersAndPagination();
     }
   }
 
@@ -1183,7 +1408,8 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
   clearTagFilter(): void {
     this.selectedTagFilter.set(null);
     this.filteredPhoneNumbers.set([]);
-    this.applyFilters();
+    this.displayedCount.set(50);
+    this.applyFiltersAndPagination();
   }
 
   /**
@@ -1192,7 +1418,8 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
   clearSearch(): void {
     this.searchForm.get('search')?.setValue('');
     this.searchQuery.set('');
-    this.applyFilters();
+    this.displayedCount.set(50);
+    this.loadConversations();
   }
 
   /**
@@ -1200,10 +1427,10 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
    */
   isValidPhoneNumber(query: string): boolean {
     if (!query || query.trim().length < 8) return false;
-    
+
     // Limpiar el número de espacios, guiones, paréntesis, etc.
     const cleanQuery = query.replace(/[\s\-\(\)\+]/g, '');
-    
+
     // Verificar que contenga solo números (y opcionalmente + al inicio)
     const phoneRegex = /^\+?[0-9]{8,15}$/;
     return phoneRegex.test(cleanQuery);
@@ -1214,7 +1441,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
    */
   getCleanPhoneNumber(query: string): string {
     let cleanNumber = query.replace(/[\s\-\(\)]/g, '');
-    
+
     // Si no empieza con +, agregar +54 (Argentina) por defecto
     if (!cleanNumber.startsWith('+')) {
       // Si empieza con 54, agregar solo el +
@@ -1225,7 +1452,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
         cleanNumber = '+54' + cleanNumber;
       }
     }
-    
+
     return cleanNumber;
   }
 
@@ -1233,10 +1460,10 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
    * Verificar si un número ya existe en las conversaciones
    */
   phoneExistsInConversations(phoneNumber: string): boolean {
-    const conversations = this.conversations();
+    const conversations = this.allConversations();
     const cleanSearchPhone = phoneNumber.replace(/[\s\-\(\)\+]/g, '');
-    
-    return conversations.some(conv => {
+
+    return conversations.some((conv: Conversation) => {
       const cleanConvPhone = conv.contact_phone.replace(/[\s\-\(\)\+]/g, '');
       return cleanConvPhone.includes(cleanSearchPhone) || cleanSearchPhone.includes(cleanConvPhone);
     });
@@ -1248,9 +1475,9 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
   createNewConversation(): void {
     const query = this.searchQuery().trim();
     if (!this.isValidPhoneNumber(query)) return;
-    
+
     const phoneNumber = this.getCleanPhoneNumber(query);
-    
+
     // Crear conversación temporal
     const newConversation: Conversation = {
       id: 0, // Temporal
@@ -1268,18 +1495,18 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
       total_messages: 0,
       unread_messages: '0'
     };
-    
+
     // Seleccionar la conversación (esto creará la conversación en el backend cuando se envíe el primer mensaje)
     this.selectConversation(newConversation);
-    
+
     // Limpiar búsqueda
     this.clearSearch();
-    
+
     // Cerrar sidebar en móvil
     if (this.isMobile()) {
       this.closeSidebar();
     }
-    
+
     // Mostrar mensaje informativo
     this.successMessage.set(`Nueva conversación iniciada con ${phoneNumber}`);
     setTimeout(() => this.successMessage.set(''), 3000);
@@ -1290,13 +1517,13 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
    */
   shouldShowCreateConversation(): boolean {
     const query = this.searchQuery().trim();
-    
+
     // Debe ser un número válido
     if (!this.isValidPhoneNumber(query)) return false;
-    
+
     // No debe existir ya en las conversaciones
     if (this.phoneExistsInConversations(query)) return false;
-    
+
     // No debe haber resultados de búsqueda (o muy pocos)
     return this.filteredConversations().length === 0;
   }
@@ -1307,7 +1534,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
   getFormattedPhoneForDisplay(): string {
     const query = this.searchQuery().trim();
     if (!this.isValidPhoneNumber(query)) return '';
-    
+
     return this.getCleanPhoneNumber(query);
   }
 
@@ -1317,40 +1544,93 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
   toggleTagFilterSection(): void {
     this.isTagFilterExpanded.set(!this.isTagFilterExpanded());
   }
-
-  /**
-   * Cargar etiquetas para las conversaciones visibles
-   */
+  /** * Cargar etiquetas para las conversaciones visibles */
   loadConversationTags(): void {
-    const conversations = this.conversations();
+    const conversations = this.allConversations();
     if (conversations.length === 0) return;
+    // Obtener números de teléfono únicos 
+    const phoneNumbers = [...new Set(conversations.map((c: Conversation) => c.contact_phone))];
+    // Cargar todos los contactos con paginación 
+    this.loadAllContactsWithTags(phoneNumbers);
+  }
 
-    // Obtener números de teléfono únicos
-    const phoneNumbers = [...new Set(conversations.map(c => c.contact_phone))];
-    
-    // Cargar etiquetas para estos contactos
-    this.contactsService.getContacts({ 
-      search: '', 
-      limit: phoneNumbers.length * 2 // Buffer para asegurar que encontremos todos
-    }).subscribe({
-      next: (response) => {
-        if (response.success && response.data) {
-          const tagsMap = new Map<string, ContactTag[]>();
-          
-          // Crear mapa de teléfono -> etiquetas
-          response.data.forEach(contact => {
-            if (phoneNumbers.includes(contact.phone_number)) {
-              tagsMap.set(contact.phone_number, contact.tags || []);
+  /** * Cargar todos los contactos usando paginación para obtener las etiquetas */
+  private loadAllContactsWithTags(phoneNumbers: string[]): void {
+    // Si hay pocos números de teléfono, usar búsqueda optimizada
+    console.log(phoneNumbers.length);
+
+    if (phoneNumbers.length <= 99) {
+      this.loadContactsTagsOptimized(phoneNumbers);
+    } else {
+      // Si hay muchos números, usar paginación completa 
+      this.loadContactsTagsWithPagination(phoneNumbers);
+    }
+  }
+
+  /** * Método optimizado para pocos contactos - búsquedas paralelas específicas */
+  private loadContactsTagsOptimized(phoneNumbers: string[]): void {
+    const tagsMap = new Map<string, ContactTag[]>();
+    let completedRequests = 0; const totalRequests = phoneNumbers.length;
+    if (totalRequests === 0) { this.conversationTags.set(tagsMap); return; }
+    // Hacer búsquedas paralelas por cada número de teléfono 
+    phoneNumbers.forEach(phoneNumber => {
+      this.contactsService.getContacts({
+        search: phoneNumber, limit: 5
+        // Límite pequeño ya que buscamos número específico 
+      }).subscribe({
+        next: (response) => {
+          if (response.success && response.data) {
+            // Buscar contacto exacto 
+            const contact = response.data.find(c => c.phone_number === phoneNumber);
+            if (contact) { tagsMap.set(phoneNumber, contact.tags || []); }
+          } completedRequests++;
+          if (completedRequests === totalRequests) {
+            this.conversationTags.set(tagsMap);
+            console.log(`Loaded tags for ${tagsMap.size} contacts using optimized search`);
+          }
+        }, error: (error) => { console.error(`Error loading contact ${phoneNumber}:`, error); completedRequests++; if (completedRequests === totalRequests) { this.conversationTags.set(tagsMap); } }
+      });
+    });
+  }
+
+  /** * Método para muchos contactos - paginación completa */
+  private loadContactsTagsWithPagination(phoneNumbers: string[]): void {
+    const tagsMap = new Map<string, ContactTag[]>();
+    // Función recursiva para obtener todas las páginas
+    const loadPage = (page: number = 1): void => {
+      console.log(page);
+
+      this.contactsService.getContacts({
+        search: '', page: page, limit: 100
+        // Usar límite estándar 
+      }).subscribe({
+        next: (response) => {
+          if (response.success && response.data) {
+            // Procesar contactos de esta página 
+            response.data.forEach(contact => {
+              if (phoneNumbers.includes(contact.phone_number)) { tagsMap.set(contact.phone_number, contact.tags || []); }
+            });
+            // Verificar si hay más páginas 
+            
+            
+            if (response.pagination.pages && page < response.pagination.pages) {
+              // Cargar siguiente página
+              loadPage(page + 1);
+            } else {
+              // Ya tenemos todas las páginas, actualizar el mapa 
+              this.conversationTags.set(tagsMap);
+              console.log(`Loaded tags for ${tagsMap.size} contacts from ${page} pages`);
             }
-          });
-          
+          }
+        }, error: (error) => {
+          console.error(`Error loading contacts page ${page}:`, error);
+          // En caso de error, al menos actualizar con lo que tenemos 
           this.conversationTags.set(tagsMap);
         }
-      },
-      error: (error) => {
-        console.error('Error loading conversation tags:', error);
-      }
-    });
+      });
+    };
+    // Iniciar carga desde la primera página
+    loadPage(1);
   }
 
   /**
@@ -1358,45 +1638,6 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
    */
   getTagsForConversation(phoneNumber: string): ContactTag[] {
     return this.conversationTags().get(phoneNumber) || [];
-  }
-
-  /**
-   * Aplicar filtros a las conversaciones
-   */
-  private applyFilters(): void {
-    const allConversations = this.conversations();
-    const selectedTag = this.selectedTagFilter();
-    const searchQuery = this.searchQuery().toLowerCase().trim();
-    const tagFilteredPhones = this.filteredPhoneNumbers();
-
-    let filtered = allConversations;
-
-    // Filtrar por etiqueta si hay una seleccionada
-    if (selectedTag && tagFilteredPhones.length > 0) {
-      filtered = filtered.filter(conversation => {
-        return tagFilteredPhones.includes(conversation.contact_phone);
-      });
-    }
-
-    // Filtrar por búsqueda si hay una query
-    if (searchQuery) {
-      filtered = filtered.filter(conversation => {
-        // Búsqueda en nombre del contacto
-        const nameMatch = conversation.contact_name?.toLowerCase().includes(searchQuery) || false;
-        
-        // Búsqueda en número de teléfono (sin espacios ni caracteres especiales)
-        const cleanPhone = conversation.contact_phone.replace(/[\s\-\(\)\+]/g, '');
-        const cleanQuery = searchQuery.replace(/[\s\-\(\)\+]/g, '');
-        const phoneMatch = cleanPhone.includes(cleanQuery);
-        
-        // Búsqueda en el último mensaje
-        const lastMessageMatch = conversation.last_message?.toLowerCase().includes(searchQuery) || false;
-        
-        return nameMatch || phoneMatch || lastMessageMatch;
-      });
-    }
-
-    this.filteredConversations.set(filtered);
   }
 
   /**
@@ -1458,33 +1699,33 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
    */
   loadContactByPhone(phoneNumber: string): void {
     console.log('🔍 Buscando contacto por teléfono:', phoneNumber);
-    
+
     // Primero intentamos obtener el contacto existente
     this.contactsService.getContacts({ search: phoneNumber, limit: 50 }).subscribe({
       next: (response) => {
         console.log('📞 Respuesta de búsqueda de contactos:', response);
-        
+
         if (response.success && response.data && response.data.length > 0) {
           // Buscar coincidencia exacta por número de teléfono
           const contact = response.data.find(c => {
             const cleanContactPhone = c.phone_number.replace(/[\s\-\(\)\+]/g, '');
             const cleanSearchPhone = phoneNumber.replace(/[\s\-\(\)\+]/g, '');
-            return cleanContactPhone === cleanSearchPhone || 
-                   cleanContactPhone.includes(cleanSearchPhone) ||
-                   cleanSearchPhone.includes(cleanContactPhone);
+            return cleanContactPhone === cleanSearchPhone ||
+              cleanContactPhone.includes(cleanSearchPhone) ||
+              cleanSearchPhone.includes(cleanContactPhone);
           });
-          
+
           if (contact) {
             console.log('✅ Contacto encontrado:', contact);
             this.currentContact.set(contact);
-            
+
             // Pre-llenar formularios según el modal activo
             if (this.showDescriptionModal()) {
               this.descriptionForm.patchValue({
                 description: contact.comments || ''
               });
             }
-            
+
             if (this.showEditContactNameModal()) {
               this.editContactNameForm.patchValue({
                 contactName: contact.name || ''
@@ -1524,7 +1765,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
-    
+
     console.log('📝 Contacto temporal creado:', tempContact);
     this.currentContact.set(tempContact);
   }
@@ -1581,9 +1822,9 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
   /**
    * Crear nueva etiqueta y asignarla al contacto actual
    */
-  createNewTag(tagData: {name: string, color: string}): void {
+  createNewTag(tagData: { name: string, color: string }): void {
     console.log('🏷️ Creating new tag:', tagData);
-    
+
     const contact = this.currentContact();
     if (!contact) {
       console.error('❌ No contact selected for tag creation');
@@ -1599,20 +1840,20 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
       next: (response) => {
         if (response.success && response.data) {
           console.log('✅ Nueva etiqueta creada:', response.data);
-          
+
           // Agregar la nueva etiqueta a las etiquetas actuales del contacto
           const currentTags = contact.tags || [];
           const updatedTags = [...currentTags, response.data];
-          
+
           // Guardar las etiquetas actualizadas (incluyendo la nueva)
           this.saveContactTags(updatedTags);
-          
+
           // Recargar las etiquetas disponibles para que aparezca en la lista
           this.loadAvailableTags();
-          
+
           // Cerrar el modal ya que la etiqueta fue creada y asignada exitosamente
           this.closeTagModal();
-          
+
           console.log('✅ Nueva etiqueta asignada al contacto y modal cerrado');
         } else {
           console.error('❌ Error en la respuesta al crear etiqueta:', response.message);
@@ -1642,7 +1883,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
   saveContactDescription(): void {
     const contact = this.currentContact();
     const description = this.descriptionForm.value.description?.trim();
-    
+
     if (!contact) return;
 
     if (contact.id === 0) {
@@ -1685,13 +1926,13 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
   openEditContactNameModal(conversation: Conversation): void {
     this.currentContactForAction.set(conversation);
     this.loadContactByPhone(conversation.contact_phone);
-    
+
     // Pre-llenar el formulario con el nombre actual
     const currentName = conversation.contact_name || '';
     this.editContactNameForm.patchValue({
       contactName: currentName
     });
-    
+
     this.showEditContactNameModal.set(true);
     this.closeContactMenu();
   }
@@ -1707,6 +1948,109 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
   }
 
   /**
+   * Abrir modal para agendar reunión
+   */
+  openScheduleMeetingModal(conversation: Conversation): void {
+    console.log('📅 Abriendo modal de reunión para:', conversation.contact_phone);
+
+    this.currentContactForAction.set(conversation);
+    this.loadContactByPhone(conversation.contact_phone);
+
+    // Pre-llenar el formulario con datos por defecto
+    const contactName = conversation.contact_name || 'Cliente';
+    this.meetingForm.patchValue({
+      title: `Reunión con ${contactName}`,
+      meetingDateTime: '',
+      description: '',
+      enableReminder: true
+    });
+
+    this.showScheduleMeetingModal.set(true);
+    this.closeContactMenu();
+  }
+
+  /**
+   * Cerrar modal de agendar reunión
+   */
+  closeScheduleMeetingModal(): void {
+    this.showScheduleMeetingModal.set(false);
+    this.currentContactForAction.set(null);
+    this.currentContact.set(null);
+    this.meetingForm.reset();
+    this.isSchedulingMeeting.set(false);
+  }
+
+  /**
+   * Obtener fecha mínima para el input datetime-local (ahora + 1 hora)
+   */
+  getMinDateTime(): string {
+    const now = new Date();
+    now.setHours(now.getHours() + 1); // Mínimo 1 hora desde ahora
+    return now.toISOString().slice(0, 16);
+  }
+
+  /**
+   * Agendar reunión - crear tarea automáticamente
+   */
+  scheduleMeeting(): void {
+    if (!this.meetingForm.valid) {
+      console.log('❌ Formulario de reunión inválido');
+      return;
+    }
+
+    const conversation = this.currentContactForAction();
+    if (!conversation) {
+      console.log('❌ No hay conversación seleccionada');
+      return;
+    }
+
+    this.isSchedulingMeeting.set(true);
+
+    const formData = this.meetingForm.value;
+    const meetingDate = new Date(formData.meetingDateTime);
+
+    // Crear la tarea de reunión
+    const taskData = {
+      title: formData.title,
+      description: formData.description || `Reunión agendada con ${conversation.contact_name || conversation.contact_phone}`,
+      priority: 'high' as TaskPriority, // Reuniones son alta prioridad
+      category: 'meeting' as TaskCategory, // Categoría específica para reuniones
+      due_date: meetingDate.toISOString(),
+      related_phone: conversation.contact_phone,
+      estimated_duration: 60, // 60 minutos por defecto
+      create_reminder: formData.enableReminder,
+      auto_reminder_minutes_before: 10, // 10 minutos antes
+      reminder_type: 'whatsapp' as ReminderType, // Por WhatsApp
+      reminder_phone: conversation.contact_phone, // Al teléfono del contacto
+      reminder_message: `Recordatorio: Tienes una reunión programada "${formData.title}" en 10 minutos.`
+    };
+
+    console.log('📅 Creando tarea de reunión:', taskData);
+
+    this.taskService.createTask(taskData).subscribe({
+      next: (response) => {
+        console.log('✅ Tarea de reunión creada:', response);
+        if (response.success) {
+          this.successMessage.set('Reunión agendada exitosamente');
+          this.closeScheduleMeetingModal();
+          setTimeout(() => this.successMessage.set(''), 3000);
+        } else {
+          this.errorMessage.set(response.message || 'Error al agendar la reunión');
+          setTimeout(() => this.errorMessage.set(''), 5000);
+        }
+      },
+      error: (error) => {
+        console.error('❌ Error al crear tarea de reunión:', error);
+        this.errorMessage.set('Error al agendar la reunión');
+        setTimeout(() => this.errorMessage.set(''), 5000);
+      },
+      complete: () => {
+        this.isSchedulingMeeting.set(false);
+      }
+    });
+  }
+
+  /**
    * Guardar nuevo nombre del contacto
    */
   saveContactName(): void {
@@ -1714,17 +2058,17 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
       console.log('❌ Formulario inválido');
       return;
     }
-    
+
     const conversation = this.currentContactForAction();
     const contact = this.currentContact();
     const newName = this.editContactNameForm.value.contactName.trim();
-    
+
     console.log('💾 Guardando nombre del contacto:', {
       conversation: conversation?.contact_phone,
       contact: contact?.id,
       newName
     });
-    
+
     if (!conversation) {
       console.log('❌ No hay conversación seleccionada');
       return;
@@ -1791,17 +2135,17 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
    * Actualizar el nombre en la lista de conversaciones
    */
   private updateConversationName(phoneNumber: string, newName: string): void {
-    const conversations = this.conversations();
-    const updatedConversations = conversations.map(conv => {
+    const conversations = this.allConversations();
+    const updatedConversations = conversations.map((conv: Conversation) => {
       if (conv.contact_phone === phoneNumber) {
         return { ...conv, contact_name: newName };
       }
       return conv;
     });
-    
-    this.conversations.set(updatedConversations);
-    this.applyFilters();
-    
+
+    this.allConversations.set(updatedConversations);
+    this.applyFiltersAndPagination();
+
     // Actualizar conversación activa si es la misma
     const activeConv = this.activeConversation();
     if (activeConv && activeConv.contact_phone === phoneNumber) {
@@ -1844,20 +2188,20 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
         console.log('✅ Respuesta eliminar conversación:', response);
         if (response.success) {
           console.log('✅ Conversación eliminada exitosamente del backend');
-          
+
           // Actualizar el frontend
-          const conversations = this.conversations();
-          const updatedConversations = conversations.filter(conv => conv.id !== conversation.id);
-          
-          this.conversations.set(updatedConversations);
-          this.applyFilters();
-          
+          const conversations = this.allConversations();
+          const updatedConversations = conversations.filter((conv: Conversation) => conv.id !== conversation.id);
+
+          this.allConversations.set(updatedConversations);
+          this.applyFiltersAndPagination();
+
           // Si era la conversación activa, limpiar
           if (this.activeConversation()?.id === conversation.id) {
             this.activeConversation.set(null);
             this.messages.set([]);
           }
-          
+
           this.closeDeleteConfirmModal();
           this.successMessage.set('Conversación eliminada exitosamente');
           setTimeout(() => this.successMessage.set(''), 3000);
@@ -1922,7 +2266,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
       complete: img.complete,
       error: event
     });
-    
+
     // Opcional: Reemplazar con imagen de placeholder
     // img.src = 'assets/images/image-error-placeholder.png';
   }
@@ -1932,11 +2276,11 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
    */
   formatFileSize(bytes: number): string {
     if (bytes === 0) return '0 Bytes';
-    
+
     const k = 1024;
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    
+
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   }
 
@@ -1945,7 +2289,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
    */
   getDocumentIcon(fileName: string): string {
     const extension = fileName.toLowerCase().split('.').pop() || '';
-    
+
     const iconMap: { [key: string]: string } = {
       'pdf': 'fas fa-file-pdf',
       'doc': 'fas fa-file-word',
@@ -1966,7 +2310,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
       'js': 'fas fa-file-code',
       'ts': 'fas fa-file-code'
     };
-    
+
     return iconMap[extension] || 'fas fa-file';
   }
 
@@ -1988,7 +2332,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
       'image/png': 'PNG',
       'image/gif': 'GIF'
     };
-    
+
     return typeMap[mimetype] || mimetype.split('/')[1]?.toUpperCase() || 'Archivo';
   }
 
@@ -2036,6 +2380,8 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
   openTemplateModal(): void {
     this.showTemplateModal.set(true);
     this.loadTemplates();
+    // Cerrar menú móvil si está abierto
+    this.showMobileMenu.set(false);
   }
 
   /**
@@ -2052,7 +2398,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
    */
   private loadTemplates(): void {
     this.isLoadingTemplates.set(true);
-    
+
     this.templatesService.getTemplates({ is_active: true, limit: 50 }).subscribe({
       next: (response) => {
         if (response.success) {
@@ -2077,7 +2423,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
    */
   filterTemplates(): void {
     const query = this.templateSearchQuery.toLowerCase();
-    const filtered = this.availableTemplates().filter(template => 
+    const filtered = this.availableTemplates().filter(template =>
       template.name.toLowerCase().includes(query) ||
       template.content.toLowerCase().includes(query) ||
       template.category.toLowerCase().includes(query)
@@ -2092,7 +2438,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.selectedTemplate.set(template);
     const variables = this.getTemplateVariables(template.content);
     this.templateVariables.set(variables);
-    
+
     if (variables.length > 0) {
       // Crear formulario para variables
       const formControls: { [key: string]: any } = {};
@@ -2100,15 +2446,15 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
         formControls[variable] = [''];  // Sin validación requerida
       });
       this.templateVariablesForm = this.formBuilder.group(formControls);
-      
+
       // Escuchar cambios para actualizar preview
       this.templateVariablesForm.valueChanges.subscribe(() => {
         this.updateTemplatePreview();
       });
-      
+
       // Inicializar preview
       this.updateTemplatePreview();
-      
+
       this.closeTemplateModal();
       this.showVariablesModal.set(true);
     } else {
@@ -2138,7 +2484,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
     if (template) {
       let content = template.content;
       const variables = this.templateVariablesForm.value;
-      
+
       // Procesar variables manualmente
       Object.keys(variables).forEach(key => {
         const value = variables[key] || '';  // Si está vacío, usar cadena vacía
@@ -2146,7 +2492,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
         content = content.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), value);
         content = content.replace(new RegExp(`\\{${key}\\}`, 'g'), value);
       });
-      
+
       // Si no hay variables en el formulario, procesar las variables detectadas
       if (Object.keys(variables).length === 0) {
         const detectedVariables = this.getTemplateVariables(content);
@@ -2156,7 +2502,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
           content = content.replace(new RegExp(`\\{${variable}\\}`, 'g'), `[${variable}]`);
         });
       }
-      
+
       this.templatePreview.set(content);
     }
   }
@@ -2174,11 +2520,11 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
   sendTemplateMessage(): void {
     const conversation = this.activeConversation();
     const template = this.selectedTemplate();
-    
+
     if (!conversation || !template) return;
 
     const finalMessage = this.templatePreview() || template.content;
-    
+
     this.isSendingMessage.set(true);
     this.clearMessages();
 
@@ -2192,17 +2538,17 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
       next: (response) => {
         if (response.success) {
           // ✅ Sin mensaje de éxito molesto - el usuario ve el template en el chat
-          
+
           // Incrementar uso del template
           this.templatesService.useTemplate(template.id, {
             phone_number: conversation.contact_phone,
             variables: this.templateVariablesForm.value
           }).subscribe();
-          
+
           // NO recargar mensajes - el WebSocket se encargará de mostrar el nuevo mensaje
           // this.loadMessages(conversation.id); // ❌ ELIMINADO - causaba scroll jump
           this.updateConversationInList(conversation.id);
-          
+
           // Cerrar modales
           this.closeVariablesModal();
         } else {
@@ -2212,7 +2558,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
       error: (error) => {
         console.error('Error sending template:', error);
         let errorMsg = 'Error al enviar el template';
-        
+
         if (error.error?.message) {
           errorMsg = error.error.message;
         } else if (error.status === 400) {
@@ -2220,7 +2566,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
         } else if (error.message) {
           errorMsg = error.message;
         }
-        
+
         this.errorMessage.set(errorMsg);
       },
       complete: () => {
@@ -2235,7 +2581,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
    */
   getTemplateVariables(content: string): string[] {
     const variables = new Set<string>();
-    
+
     // Buscar variables con formato {variable}
     const singleBraceMatches = content.match(/\{([^{}]+)\}/g);
     if (singleBraceMatches) {
@@ -2244,7 +2590,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
         variables.add(variable);
       });
     }
-    
+
     // Buscar variables con formato {{variable}}
     const doubleBraceMatches = content.match(/\{\{([^{}]+)\}\}/g);
     if (doubleBraceMatches) {
@@ -2253,7 +2599,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
         variables.add(variable);
       });
     }
-    
+
     return Array.from(variables);
   }
 
@@ -2270,7 +2616,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
   canGenerateAISuggestion(): boolean {
     const conversation = this.activeConversation();
     const messages = this.messages();
-    
+
     // Debe haber una conversación activa y al menos un mensaje
     return !!(conversation && messages.length > 0);
   }
@@ -2283,9 +2629,12 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
       return;
     }
 
+    // Cerrar menú móvil si está abierto
+    this.showMobileMenu.set(false);
+
     const conversation = this.activeConversation();
     const messages = this.messages();
-    
+
     if (!conversation || messages.length === 0) {
       this.errorMessage.set('No hay conversación activa o mensajes para generar una sugerencia');
       return;
@@ -2314,7 +2663,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
           this.messageForm.patchValue({
             message: response.data.suggestedResponse
           });
-          
+
           this.successMessage.set('Respuesta generada por IA. Revísala antes de enviar.');
           console.log('✅ Respuesta IA generada:', response.data.suggestedResponse.substring(0, 100) + '...');
         } else {
@@ -2324,7 +2673,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
       error: (error) => {
         console.error('❌ Error generating AI suggestion:', error);
         let errorMsg = 'Error al generar respuesta sugerida';
-        
+
         if (error.error?.message) {
           errorMsg = error.error.message;
         } else if (error.status === 400) {
@@ -2332,7 +2681,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
         } else if (error.message) {
           errorMsg = error.message;
         }
-        
+
         this.errorMessage.set(errorMsg);
       },
       complete: () => {
@@ -2348,7 +2697,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
   checkMobileView(): void {
     const isMobileView = window.innerWidth <= 768;
     this.isMobile.set(isMobileView);
-    
+
     // En móvil, el sidebar está cerrado por defecto
     if (isMobileView) {
       this.showSidebar.set(false);
@@ -2359,10 +2708,78 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
 
   /**
    * Configurar listener para cambios de tamaño de ventana
+   * MEJORADO: Incluye manejo especial para teclado virtual en móvil
    */
   setupResizeListener(): void {
-    window.addEventListener('resize', () => {
-      this.checkMobileView();
+    let initialViewportHeight = window.innerHeight;
+    let isKeyboardOpen = false;
+
+    const handleResize = () => {
+      const currentHeight = window.innerHeight;
+      const heightDifference = initialViewportHeight - currentHeight;
+
+      // Detectar si el teclado virtual está abierto (diferencia > 150px en móvil)
+      const wasKeyboardOpen = isKeyboardOpen;
+      isKeyboardOpen = this.isMobile() && heightDifference > 150;
+
+      // Solo actualizar vista móvil si no es cambio de teclado
+      if (!isKeyboardOpen && !wasKeyboardOpen) {
+        this.checkMobileView();
+      }
+
+      // MEJORA: Evitar cerrar sidebar cuando se abre/cierra el teclado
+      if (this.isMobile() && this.showSidebar()) {
+        // Si el teclado se abre y el sidebar está abierto, mantenerlo abierto
+        if (isKeyboardOpen && !wasKeyboardOpen) {
+          console.log('🔍 Teclado abierto - manteniendo sidebar abierto');
+          // No hacer nada, mantener sidebar abierto
+        }
+        // Si el teclado se cierra, también mantener sidebar abierto
+        else if (!isKeyboardOpen && wasKeyboardOpen) {
+          console.log('🔍 Teclado cerrado - manteniendo sidebar abierto');
+          // No hacer nada, mantener sidebar abierto
+        }
+      }
+    };
+
+    // Usar tanto 'resize' como 'orientationchange' para mejor cobertura
+    window.addEventListener('resize', handleResize);
+    window.addEventListener('orientationchange', () => {
+      setTimeout(() => {
+        initialViewportHeight = window.innerHeight;
+        this.checkMobileView();
+      }, 500); // Delay para orientationchange
+    });
+
+    // MEJORA: Listener específico para Visual Viewport API (mejor detección de teclado)
+    if ('visualViewport' in window) {
+      window.visualViewport?.addEventListener('resize', () => {
+        const currentHeight = window.visualViewport?.height || window.innerHeight;
+        const heightDifference = initialViewportHeight - currentHeight;
+
+        const wasKeyboardOpen = isKeyboardOpen;
+        isKeyboardOpen = this.isMobile() && heightDifference > 150;
+
+        // Mantener sidebar abierto durante cambios de teclado virtual
+        if (this.isMobile() && this.showSidebar() && (isKeyboardOpen !== wasKeyboardOpen)) {
+          console.log('🔍 Visual Viewport cambió - manteniendo sidebar abierto');
+          // No cerrar sidebar por cambios de teclado virtual
+        }
+      });
+    }
+  }
+
+  /**
+   * Configurar listener para cerrar menú móvil al hacer clic fuera
+   */
+  private setupClickOutsideListener(): void {
+    document.addEventListener('click', (event) => {
+      const target = event.target as HTMLElement;
+      const mobileMenuContainer = target.closest('.mobile-menu-container');
+
+      if (!mobileMenuContainer && this.showMobileMenu()) {
+        this.showMobileMenu.set(false);
+      }
     });
   }
 
@@ -2396,7 +2813,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
   exportChatToPDF(conversation: Conversation): void {
     this.showContactMenu.set(null); // Cerrar menú
     console.log('🔄 Exportando chat a PDF para:', conversation.contact_name || conversation.contact_phone);
-    
+
     // TODO: Implementar exportación a PDF
     // Por ahora mostrar mensaje
     alert('Funcionalidad de exportar PDF en desarrollo...');
@@ -2456,7 +2873,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
    */
   askCustomQuestion(): void {
     if (!this.analysisForm.valid) return;
-    
+
     const question = this.analysisForm.get('customQuestion')?.value;
     this.performAnalysis(question);
   }
@@ -2476,7 +2893,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
       next: (response) => {
         if (response.success && response.messages) {
           const messages = response.messages;
-          
+
           // Preparar historial para análisis
           const conversationHistory = messages.map((msg: any) => ({
             content: msg.content,
@@ -2498,13 +2915,13 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
             error: (error) => {
               console.error('❌ Error in analysis:', error);
               let errorMsg = 'Error al analizar la conversación';
-              
+
               if (error.error?.message) {
                 errorMsg = error.error.message;
               } else if (error.status === 400) {
                 errorMsg = 'La IA no está habilitada para este cliente o se agotó la cuota';
               }
-              
+
               this.analysisResult.set(errorMsg);
             },
             complete: () => {

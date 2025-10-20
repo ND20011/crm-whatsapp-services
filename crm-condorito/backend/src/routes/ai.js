@@ -142,4 +142,59 @@ router.post('/suggest-response', AIConfigController.suggestResponse);
  */
 router.post('/analyze-conversation', AIConfigController.analyzeConversation);
 
+// ============================================================================
+// RUTAS PARA BÚSQUEDA DE PRODUCTOS
+// ============================================================================
+
+/**
+ * @route   GET /api/ai/product-search-config
+ * @desc    Obtener configuración de búsqueda de productos
+ * @access  Private
+ */
+router.get('/product-search-config', AIConfigController.getProductSearchConfig);
+
+/**
+ * @route   PUT /api/ai/product-search-config
+ * @desc    Actualizar configuración de búsqueda de productos
+ * @access  Private
+ * @body    {
+ *   product_search_enabled: boolean,
+ *   product_endpoint_url: string,
+ *   product_endpoint_method: string (GET|POST),
+ *   product_endpoint_body: string (JSON),
+ *   product_endpoint_headers: string (JSON),
+ *   product_search_param_name: string,
+ *   product_response_path: string,
+ *   product_max_results: number,
+ *   product_cache_ttl: number,
+ *   product_timeout: number
+ * }
+ */
+router.put('/product-search-config', AIConfigController.updateProductSearchConfig);
+
+/**
+ * @route   POST /api/ai/test-product-search
+ * @desc    Probar configuración de búsqueda de productos
+ * @access  Private
+ * @body    {
+ *   searchTerm: string,
+ *   testConfig?: object (opcional, usa config actual si no se proporciona)
+ * }
+ */
+router.post('/test-product-search', AIConfigController.testProductSearch);
+
+/**
+ * @route   GET /api/ai/product-search-stats
+ * @desc    Obtener estadísticas del cache de búsqueda de productos
+ * @access  Private
+ */
+router.get('/product-search-stats', AIConfigController.getProductSearchStats);
+
+/**
+ * @route   DELETE /api/ai/product-search-cache
+ * @desc    Limpiar cache de búsqueda de productos del cliente
+ * @access  Private
+ */
+router.delete('/product-search-cache', AIConfigController.clearProductSearchCache);
+
 module.exports = router;

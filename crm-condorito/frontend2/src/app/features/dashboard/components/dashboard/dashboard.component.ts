@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit, OnDestroy } from '@angular/core';
+import { Component, inject, signal, OnInit, OnDestroy, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { interval, Subscription } from 'rxjs';
@@ -10,6 +10,8 @@ import { WhatsAppConnectionModalComponent } from '../../../../shared/components/
 import { PushNotificationManagerComponent } from '../../../../shared/components/push-notification-manager/push-notification-manager.component';
 import { MessageStats, BotStatus, User, WhatsAppState } from '../../../../core/models/api.models';
 import { APP_CONFIG } from '../../../../core/config/app.config';
+import { TaskService } from '../../../tasks/services/task.service';
+import { Task, TASK_STATUSES, TASK_PRIORITIES, TASK_CATEGORIES } from '../../../tasks/models/task.models';
 
 /**
  * Componente principal del Dashboard
@@ -20,13 +22,14 @@ import { APP_CONFIG } from '../../../../core/config/app.config';
   standalone: true,
   imports: [CommonModule, WhatsAppConnectionModalComponent, PushNotificationManagerComponent],
   templateUrl: './dashboard.component.html',
-  styleUrl: './dashboard.component.scss'
+  styleUrls: ['./dashboard.component.scss', './dashboard-tasks.component.scss']
 })
 export class DashboardComponent implements OnInit, OnDestroy {
   private authService = inject(AuthService);
   private dashboardService = inject(DashboardService);
   private whatsappService = inject(WhatsAppService);
   private whatsappRealtimeService = inject(WhatsAppRealtimeService);
+  private taskService = inject(TaskService);
   private router = inject(Router);
 
   // Signals
@@ -54,6 +57,30 @@ export class DashboardComponent implements OnInit, OnDestroy {
   // Signal para controlar el desplegable de push notifications
   public showPushNotifications = signal<boolean>(false);
 
+  // Signals para tareas del día
+  public todayTasks = signal<Task[]>([]);
+  public isLoadingTasks = signal<boolean>(false);
+  public showTasksTable = signal<boolean>(true);
+
+  // Computed para tareas activas (igual que TaskDashboard)
+  public getTodayActiveTasks = computed(() => {
+    return this.todayTasks().filter(task => 
+      task.status === 'pending' || task.status === 'in_progress' || task.status === 'overdue'
+    ).sort((a, b) => {
+      // Ordenar por prioridad (urgent -> high -> medium -> low) y luego por fecha de vencimiento
+      const priorityOrder: { [key: string]: number } = { urgent: 4, high: 3, medium: 2, low: 1 };
+      const priorityDiff = (priorityOrder[b.priority] || 0) - (priorityOrder[a.priority] || 0);
+      
+      if (priorityDiff !== 0) return priorityDiff;
+      
+      if (a.due_date && b.due_date) {
+        return new Date(a.due_date).getTime() - new Date(b.due_date).getTime();
+      }
+      
+      return 0;
+    });
+  });
+
   // Subscriptions
   private refreshSubscription?: Subscription;
   private websocketSubscription?: Subscription;
@@ -61,9 +88,12 @@ export class DashboardComponent implements OnInit, OnDestroy {
   private whatsappRefreshSubscription?: Subscription;
 
   ngOnInit(): void {
+    console.log('🚀 Dashboard: Inicializando componente...');
     this.currentUser.set(this.authService.getCurrentUser());
     this.loadDashboardData();
     this.loadWhatsAppStatus();
+    console.log('📋 Dashboard: Cargando tareas del día...');
+    this.loadTodayTasks();
     this.initializeWebSocket();
     this.startAutoRefresh();
     this.startWhatsAppAutoRefresh();
@@ -1061,5 +1091,237 @@ export class DashboardComponent implements OnInit, OnDestroy {
     if (tokenPercentage > 90) return 'critical';
     if (tokenPercentage > 75) return 'warning';
     return 'normal';
+  }
+
+  // ============================================================================
+  // MÉTODOS PARA TAREAS DEL DÍA
+  // ============================================================================
+
+  /**
+   * Cargar tareas del día
+   */
+  loadTodayTasks(): void {
+    console.log('🔄 Dashboard: Cargando tareas del día...');
+    this.isLoadingTasks.set(true);
+    
+    // Obtener fecha de hoy (igual que en TaskDashboardComponent)
+    const today = new Date();
+    const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
+
+    console.log('📅 Dashboard: Rango de fechas:', {
+      startOfDay: startOfDay.toISOString().split('T')[0],
+      endOfDay: endOfDay.toISOString().split('T')[0]
+    });
+
+    // Usar los mismos parámetros que TaskDashboardComponent (SIN filtro de estado)
+    this.taskService.getTasks({
+      due_date_from: startOfDay.toISOString().split('T')[0],
+      due_date_to: endOfDay.toISOString().split('T')[0],
+      limit: 100, // Mismo límite que TaskDashboard
+      sort_by: 'due_date',
+      sort_order: 'asc'
+    }).subscribe({
+      next: (response) => {
+        console.log('📊 Dashboard: Respuesta de tareas:', response);
+        if (response.success) {
+          console.log(`✅ Dashboard: ${response.data?.length || 0} tareas cargadas`);
+          this.todayTasks.set(response.data || []);
+        } else {
+          console.warn('⚠️ Dashboard: Respuesta sin éxito:', response);
+          this.todayTasks.set([]);
+        }
+      },
+      error: (error) => {
+        console.error('❌ Dashboard: Error cargando tareas del día:', error);
+        this.todayTasks.set([]);
+      },
+      complete: () => {
+        this.isLoadingTasks.set(false);
+        console.log('🏁 Dashboard: Carga de tareas completada');
+      }
+    });
+  }
+
+  /**
+   * Alternar visibilidad de la tabla de tareas
+   */
+  toggleTasksTable(): void {
+    this.showTasksTable.set(!this.showTasksTable());
+  }
+
+  /**
+   * Iniciar tarea
+   */
+  startTask(task: Task): void {
+    this.taskService.updateTask(task.id!, { 
+      id: task.id!, 
+      status: 'in_progress' 
+    }).subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.loadTodayTasks(); // Recargar tareas
+          this.successMessage.set('Tarea iniciada correctamente');
+          this.clearMessagesAfterDelay();
+        }
+      },
+      error: (error) => {
+        console.error('Error iniciando tarea:', error);
+        this.errorMessage.set('Error al iniciar la tarea');
+        this.clearMessagesAfterDelay();
+      }
+    });
+  }
+
+  /**
+   * Completar tarea
+   */
+  completeTask(task: Task): void {
+    this.taskService.markTaskComplete(task.id!).subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.loadTodayTasks(); // Recargar tareas
+          this.successMessage.set('Tarea completada correctamente');
+          this.clearMessagesAfterDelay();
+        }
+      },
+      error: (error) => {
+        console.error('Error completando tarea:', error);
+        this.errorMessage.set('Error al completar la tarea');
+        this.clearMessagesAfterDelay();
+      }
+    });
+  }
+
+  /**
+   * Cancelar tarea
+   */
+  cancelTask(task: Task): void {
+    if (!confirm(`¿Estás seguro de que quieres cancelar la tarea "${task.title}"?`)) {
+      return;
+    }
+
+    this.taskService.cancelTask(task.id!, 'Cancelada desde el dashboard').subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.loadTodayTasks(); // Recargar tareas
+          this.successMessage.set('Tarea cancelada correctamente');
+          this.clearMessagesAfterDelay();
+        }
+      },
+      error: (error) => {
+        console.error('Error cancelando tarea:', error);
+        this.errorMessage.set('Error al cancelar la tarea');
+        this.clearMessagesAfterDelay();
+      }
+    });
+  }
+
+  /**
+   * Ir a la página de tareas
+   */
+  goToTasks(): void {
+    this.router.navigate(['/tasks']);
+  }
+
+  /**
+   * Formatear fecha para mostrar
+   */
+  formatTaskDate(dateString: string): string {
+    const date = new Date(dateString);
+    const now = new Date();
+    
+    // Si es hoy, mostrar solo la hora
+    if (date.toDateString() === now.toDateString()) {
+      return date.toLocaleTimeString('es-ES', { 
+        hour: '2-digit', 
+        minute: '2-digit' 
+      });
+    }
+    
+    // Si es otra fecha, mostrar fecha completa
+    return date.toLocaleDateString('es-ES', {
+      day: '2-digit',
+      month: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  }
+
+  /**
+   * Obtener etiqueta de estado
+   */
+  getTaskStatusLabel(status: string): string {
+    const statusObj = TASK_STATUSES.find(s => s.value === status);
+    return statusObj ? statusObj.label : status;
+  }
+
+  /**
+   * Obtener etiqueta de prioridad
+   */
+  getTaskPriorityLabel(priority: string): string {
+    const priorityObj = TASK_PRIORITIES.find(p => p.value === priority);
+    return priorityObj ? priorityObj.label : priority;
+  }
+
+  /**
+   * Obtener etiqueta de categoría
+   */
+  getTaskCategoryLabel(category: string): string {
+    const categoryObj = TASK_CATEGORIES.find(c => c.value === category);
+    return categoryObj ? categoryObj.label : category;
+  }
+
+  /**
+   * Obtener icono de estado
+   */
+  getTaskStatusIcon(status: string): string {
+    const icons: { [key: string]: string } = {
+      'pending': 'fa-clock',
+      'in_progress': 'fa-play',
+      'completed': 'fa-check',
+      'cancelled': 'fa-times',
+      'overdue': 'fa-exclamation-triangle'
+    };
+    return icons[status] || 'fa-question';
+  }
+
+  /**
+   * Obtener icono de prioridad
+   */
+  getTaskPriorityIcon(priority: string): string {
+    const icons: { [key: string]: string } = {
+      'low': 'fa-arrow-down',
+      'medium': 'fa-minus',
+      'high': 'fa-arrow-up',
+      'urgent': 'fa-exclamation'
+    };
+    return icons[priority] || 'fa-minus';
+  }
+
+  /**
+   * Obtener icono de categoría
+   */
+  getTaskCategoryIcon(category: string): string {
+    const icons: { [key: string]: string } = {
+      'task': 'fa-tasks',
+      'meeting': 'fa-users',
+      'call': 'fa-phone',
+      'email': 'fa-envelope',
+      'reminder': 'fa-bell',
+      'follow_up': 'fa-redo',
+      'other': 'fa-tag'
+    };
+    return icons[category] || 'fa-tag';
+  }
+
+  /**
+   * Verificar si la tarea está vencida
+   */
+  isTaskOverdue(task: Task): boolean {
+    if (!task.due_date) return false;
+    const now = new Date();
+    const dueDate = new Date(task.due_date);
+    return dueDate < now && task.status !== 'completed';
   }
 }

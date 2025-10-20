@@ -104,6 +104,7 @@ export interface AppConfig {
   files: {
     maxSize: number;
     allowedImageTypes: string[];
+    allowedVideoTypes: string[];
     allowedDocumentTypes: string[];
     previewMaxWidth: number;
     previewMaxHeight: number;
@@ -112,7 +113,7 @@ export interface AppConfig {
 
 export const APP_CONFIG: AppConfig = {
   api: {
-    baseUrl: (window as any)['env']?.['apiUrl'] || 'https://localhost:3000',
+    baseUrl: (window as any)['env']?.['apiUrl'] || 'http://localhost:3000',
     timeout: 30000,
     endpoints: {
       auth: {
@@ -211,6 +212,25 @@ export const APP_CONFIG: AppConfig = {
   files: {
     maxSize: 16 * 1024 * 1024, // 16MB en bytes
     allowedImageTypes: ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'],
+    allowedVideoTypes: [
+      'video/mp4', 
+      'video/webm', 
+      'video/ogg', 
+      'video/avi', 
+      'video/x-msvideo',
+      'video/mov',
+      'video/quicktime',
+      'video/x-quicktime',
+      'video/wmv',
+      'video/x-ms-wmv',
+      'video/flv',
+      'video/x-flv',
+      'video/mkv',
+      'video/x-matroska',
+      'video/3gpp',
+      'video/3gpp2',
+      'video/m4v'
+    ],
     allowedDocumentTypes: [
       'application/pdf',
       'application/msword',

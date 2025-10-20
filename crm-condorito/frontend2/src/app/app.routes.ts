@@ -121,6 +121,40 @@ export const routes: Routes = [
       {
         path: 'ai-config',
         loadComponent: () => import('./features/ai-config/components/ai-config/ai-config.component').then(m => m.AIConfigComponent)
+      },
+      {
+        path: 'tasks',
+        children: [
+          {
+            path: 'dashboard',
+            loadComponent: () => import('./features/tasks/components/task-dashboard/task-dashboard.component').then(m => m.TaskDashboardComponent)
+          },
+          {
+            path: 'list',
+            loadComponent: () => import('./features/tasks/components/task-list/task-list.component').then(m => m.TaskListComponent)
+          },
+          {
+            path: 'create',
+            loadComponent: () => import('./features/tasks/components/task-form/task-form.component').then(m => m.TaskFormComponent)
+          },
+          {
+            path: 'edit/:id',
+            loadComponent: () => import('./features/tasks/components/task-form/task-form.component').then(m => m.TaskFormComponent)
+          },
+          {
+            path: 'view/:id',
+            loadComponent: () => import('./features/tasks/components/task-detail/task-detail.component').then(m => m.TaskDetailComponent)
+          },
+          {
+            path: 'calendar',
+            loadComponent: () => import('./features/tasks/components/task-calendar/task-calendar.component').then(m => m.TaskCalendarComponent)
+          },
+          {
+            path: '',
+            redirectTo: 'dashboard',
+            pathMatch: 'full'
+          }
+        ]
       }
     ]
   },

@@ -523,22 +523,31 @@ $mobile-breakpoint: 768px;
 
 .icon-logo::before { content: 'C'; }
 .icon-menu::before { content: '≡'; }
-.icon-dashboard::before { content: '⚏'; }
+.icon-dashboard::before { content: '📊'; }
 .icon-chat::before { content: '💬'; }
 .icon-broadcast::before { content: '📢'; }
+.icon-schedule::before { content: '⏰'; }
+.icon-add_alarm::before { content: '⏰'; }
 .icon-contacts::before { content: '👥'; }
 .icon-template::before { content: '📝'; }
-.icon-whatsapp::before { content: 'W'; }
-.icon-settings::before { content: '⚙'; }
-.icon-list::before { content: '☰'; }
-.icon-tags::before { content: '#'; }
-.icon-add::before { content: '+'; }
-.icon-status::before { content: '●'; }
-.icon-qr::before { content: '⚏'; }
+.icon-whatsapp::before { content: '💬'; }
+.icon-settings::before { content: '⚙️'; }
+.icon-list::before { content: '📋'; }
+.icon-tags::before { content: '🏷️'; }
+.icon-add::before { content: '➕'; }
+.icon-status::before { content: '🔘'; }
+.icon-qr::before { content: '📱'; }
 .icon-user::before { content: '👤'; }
 .icon-company::before { content: '🏢'; }
-.icon-logout::before { content: '→'; }
+.icon-brain::before { content: '🧠'; }
+.icon-logout::before { content: '🚪'; }
 .icon-chevron-down::before { content: '▼'; }
+
+// Iconos de tareas
+.icon-kanban::before { content: '📋'; }
+.icon-list-check::before { content: '✅'; }
+.icon-plus-circle::before { content: '➕'; }
+.icon-calendar-event::before { content: '📅'; }
 
 // ============================================================================
 // ANIMATIONS

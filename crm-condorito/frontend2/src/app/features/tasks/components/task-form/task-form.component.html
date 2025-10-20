@@ -1,0 +1,613 @@
+<div class="task-form-container">
+  <!-- ============================================================================ -->
+  <!-- HEADER SECTION -->
+  <!-- ============================================================================ -->
+  <header class="task-header">
+    <div class="header-top">
+      <div class="header-title">
+        <div class="title-icon">
+          <i class="fas" [class]="isEditMode() ? 'fa-edit' : 'fa-plus-circle'"></i>
+        </div>
+        <div class="title-text">
+          <h1>{{ isEditMode() ? 'Editar Tarea' : 'Nueva Tarea' }}</h1>
+          <p class="subtitle">{{ isEditMode() ? 'Modifica los detalles de la tarea' : 'Crea una nueva tarea o recordatorio' }}</p>
+        </div>
+      </div>
+      
+      <div class="header-actions">
+        <button class="action-btn btn-secondary" routerLink="/tasks/list">
+          <i class="fas fa-arrow-left"></i>
+          Volver a Lista
+        </button>
+        <button class="action-btn btn-info" routerLink="/tasks/dashboard">
+          <i class="fas fa-chart-line"></i>
+          Dashboard
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ============================================================================ -->
+  <!-- MAIN CONTENT -->
+  <!-- ============================================================================ -->
+  <main class="task-main">
+    @if (isLoading()) {
+      <div class="loading-state">
+        <div class="state-icon">
+          <i class="fas fa-spinner fa-spin"></i>
+        </div>
+        <h3 class="state-title">{{ isEditMode() ? 'Cargando Tarea' : 'Preparando Formulario' }}</h3>
+        <p class="state-message">Un momento por favor...</p>
+      </div>
+    } @else if (error()) {
+      <div class="error-state">
+        <div class="state-icon">
+          <i class="fas fa-exclamation-triangle"></i>
+        </div>
+        <h3 class="state-title">Error</h3>
+        <p class="state-message">{{ error() }}</p>
+        <button class="action-btn btn-primary" (click)="loadTask()">
+          <i class="fas fa-refresh"></i>
+          Reintentar
+        </button>
+      </div>
+    } @else {
+      <!-- ============================================================================ -->
+      <!-- TASK FORM -->
+      <!-- ============================================================================ -->
+      <div class="form-container">
+        <form [formGroup]="taskForm" (ngSubmit)="onSubmit()" class="task-form">
+          
+          <!-- ============================================================================ -->
+          <!-- BASIC INFORMATION SECTION -->
+          <!-- ============================================================================ -->
+          <div class="form-section">
+            <div class="section-header">
+              <h3 class="section-title">
+                <i class="fas fa-info-circle"></i>
+                Información Básica
+              </h3>
+              <p class="section-description">Datos principales de la tarea</p>
+            </div>
+            
+            <div class="section-content">
+              <div class="form-grid">
+                <!-- Title -->
+                <div class="form-group full-width">
+                  <label class="form-label required">
+                    <i class="fas fa-heading"></i>
+                    Título de la Tarea
+                  </label>
+                  <input 
+                    type="text" 
+                    formControlName="title" 
+                    class="form-input"
+                    [class.error]="taskForm.get('title')?.invalid && taskForm.get('title')?.touched"
+                    placeholder="Ej: Llamar al cliente Juan Pérez"
+                  />
+                  @if (taskForm.get('title')?.invalid && taskForm.get('title')?.touched) {
+                    <div class="form-error">
+                      <i class="fas fa-exclamation-circle"></i>
+                      El título es obligatorio
+                    </div>
+                  }
+                </div>
+
+                <!-- Description -->
+                <div class="form-group full-width">
+                  <label class="form-label">
+                    <i class="fas fa-align-left"></i>
+                    Descripción
+                  </label>
+                  <textarea 
+                    formControlName="description" 
+                    class="form-textarea"
+                    placeholder="Describe los detalles de la tarea..."
+                    rows="4"
+                  ></textarea>
+                  <div class="form-help">Opcional: Agrega detalles adicionales sobre la tarea</div>
+                </div>
+
+                <!-- Priority -->
+                <div class="form-group">
+                  <label class="form-label required">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Prioridad
+                  </label>
+                  <select 
+                    formControlName="priority" 
+                    class="form-select"
+                    [class.error]="taskForm.get('priority')?.invalid && taskForm.get('priority')?.touched"
+                  >
+                    <option value="">Seleccionar prioridad</option>
+                    @for (priority of TASK_PRIORITIES; track priority.value) {
+                      <option [value]="priority.value">{{ priority.label }}</option>
+                    }
+                  </select>
+                  @if (taskForm.get('priority')?.invalid && taskForm.get('priority')?.touched) {
+                    <div class="form-error">
+                      <i class="fas fa-exclamation-circle"></i>
+                      Selecciona una prioridad
+                    </div>
+                  }
+                </div>
+
+                <!-- Category -->
+                <div class="form-group">
+                  <label class="form-label required">
+                    <i class="fas fa-tags"></i>
+                    Categoría
+                  </label>
+                  <select 
+                    formControlName="category" 
+                    class="form-select"
+                    [class.error]="taskForm.get('category')?.invalid && taskForm.get('category')?.touched"
+                  >
+                    <option value="">Seleccionar categoría</option>
+                    @for (category of TASK_CATEGORIES; track category.value) {
+                      <option [value]="category.value">{{ category.label }}</option>
+                    }
+                  </select>
+                  @if (taskForm.get('category')?.invalid && taskForm.get('category')?.touched) {
+                    <div class="form-error">
+                      <i class="fas fa-exclamation-circle"></i>
+                      Selecciona una categoría
+                    </div>
+                  }
+                </div>
+
+                <!-- Status (only in edit mode) -->
+                @if (isEditMode()) {
+                  <div class="form-group">
+                    <label class="form-label">
+                      <i class="fas fa-flag"></i>
+                      Estado
+                    </label>
+                    <select formControlName="status" class="form-select">
+                      @for (status of TASK_STATUSES; track status.value) {
+                        <option [value]="status.value">{{ status.label }}</option>
+                      }
+                    </select>
+                  </div>
+                }
+
+                <!-- Progress (only in edit mode) -->
+                @if (isEditMode()) {
+                  <div class="form-group">
+                    <label class="form-label">
+                      <i class="fas fa-percentage"></i>
+                      Progreso ({{ taskForm.get('completion_percentage')?.value || 0 }}%)
+                    </label>
+                    <input 
+                      type="range" 
+                      formControlName="completion_percentage" 
+                      class="form-range"
+                      min="0" 
+                      max="100" 
+                      step="5"
+                    />
+                    <div class="range-labels">
+                      <span>0%</span>
+                      <span>50%</span>
+                      <span>100%</span>
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
+
+          <!-- ============================================================================ -->
+          <!-- DATE AND TIME SECTION -->
+          <!-- ============================================================================ -->
+          <div class="form-section">
+            <div class="section-header">
+              <h3 class="section-title">
+                <i class="fas fa-calendar-alt"></i>
+                Fecha y Hora
+              </h3>
+              <p class="section-description">Cuándo debe completarse la tarea</p>
+            </div>
+            
+            <div class="section-content">
+              <div class="form-grid">
+                <!-- Due Date -->
+                <div class="form-group">
+                  <label class="form-label required">
+                    <i class="fas fa-calendar"></i>
+                    Fecha de Vencimiento
+                  </label>
+                  <input 
+                    type="datetime-local" 
+                    formControlName="due_date" 
+                    class="form-input"
+                    [class.error]="taskForm.get('due_date')?.invalid && taskForm.get('due_date')?.touched"
+                  />
+                  @if (taskForm.get('due_date')?.invalid && taskForm.get('due_date')?.touched) {
+                    <div class="form-error">
+                      <i class="fas fa-exclamation-circle"></i>
+                      La fecha de vencimiento es obligatoria
+                    </div>
+                  }
+                </div>
+
+                <!-- Estimated Duration -->
+                <div class="form-group">
+                  <label class="form-label">
+                    <i class="fas fa-clock"></i>
+                    Duración Estimada
+                  </label>
+                  <div class="input-group">
+                    <input 
+                      type="number" 
+                      formControlName="estimated_duration" 
+                      class="form-input"
+                      placeholder="60"
+                      min="1"
+                    />
+                    <span class="input-suffix">minutos</span>
+                  </div>
+                  <div class="form-help">Tiempo estimado para completar la tarea</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ============================================================================ -->
+          <!-- CONTACT SECTION -->
+          <!-- ============================================================================ -->
+          <div class="form-section">
+            <div class="section-header">
+              <h3 class="section-title">
+                <i class="fas fa-user"></i>
+                Contacto Relacionado
+              </h3>
+              <p class="section-description">Asocia la tarea con un contacto (opcional)</p>
+            </div>
+            
+            <div class="section-content">
+              <div class="form-grid">
+                <!-- Related Contact with Search -->
+                <div class="form-group">
+                  <label class="form-label">
+                    <i class="fas fa-address-book"></i>
+                    Contacto
+                  </label>
+                  <div class="contact-search-container">
+                    <div class="search-input-wrapper">
+                      <i class="fas fa-search search-icon"></i>
+                      <input 
+                        type="text" 
+                        formControlName="contact_search" 
+                        class="form-input contact-search-input"
+                        placeholder="Buscar contacto por nombre o teléfono..."
+                        (focus)="onContactSearchFocus()"
+                        (blur)="onContactSearchBlur()"
+                      />
+                      @if (selectedContact()) {
+                        <div class="selected-contact-indicator">
+                          <i class="fas fa-check-circle"></i>
+                        </div>
+                        <button 
+                          type="button" 
+                          class="clear-contact-btn"
+                          (click)="clearContact()"
+                          title="Limpiar contacto seleccionado"
+                        >
+                          <i class="fas fa-times"></i>
+                        </button>
+                      }
+                    </div>
+                    
+                    <!-- Contact Dropdown -->
+                    @if (showContactDropdown() && filteredContacts().length > 0) {
+                      <div class="contact-dropdown">
+                        <div class="dropdown-header">
+                          <i class="fas fa-users"></i>
+                          <span>Contactos encontrados ({{ filteredContacts().length }})</span>
+                        </div>
+                        <div class="dropdown-content">
+                          @for (contact of filteredContacts(); track contact.id) {
+                            <div 
+                              class="contact-option"
+                              [class.selected]="selectedContact()?.id === contact.id"
+                              (click)="selectContact(contact)"
+                            >
+                              <div class="contact-avatar">
+                                <i class="fas fa-user"></i>
+                              </div>
+                              <div class="contact-info">
+                                <div class="contact-name">
+                                  <span class="name-text">{{ getContactDisplayName(contact) }}</span>
+                                  @if (selectedContact()?.id === contact.id) {
+                                    <i class="fas fa-check contact-selected-icon"></i>
+                                  }
+                                </div>
+                                @if (contact.phone_number) {
+                                  <div class="contact-phone">
+                                    <i class="fas fa-phone"></i>
+                                    {{ contact.phone_number }}
+                                  </div>
+                                }
+                                @if (contact.custom_name && contact.name && contact.custom_name !== contact.name) {
+                                  <div class="contact-alias">
+                                    <i class="fas fa-tag"></i>
+                                    También conocido como: {{ contact.name }}
+                                  </div>
+                                }
+                              </div>
+                              <div class="contact-actions">
+                                <i class="fas fa-chevron-right"></i>
+                              </div>
+                            </div>
+                          }
+                        </div>
+                      </div>
+                    }
+                    
+                    @if (showContactDropdown() && filteredContacts().length === 0 && contactSearchTerm()) {
+                      <div class="contact-dropdown">
+                        <div class="no-contacts">
+                          <div class="no-contacts-icon">
+                            <i class="fas fa-search"></i>
+                          </div>
+                          <div class="no-contacts-text">
+                            <h4>No se encontraron contactos</h4>
+                            <p>Intenta con otro término de búsqueda</p>
+                          </div>
+                        </div>
+                      </div>
+                    }
+                  </div>
+                  <div class="form-help">
+                    <i class="fas fa-info-circle"></i>
+                    Busca y selecciona un contacto para asociar con la tarea
+                  </div>
+                </div>
+
+                <!-- Related Phone -->
+                <div class="form-group">
+                  <label class="form-label">
+                    <i class="fas fa-phone"></i>
+                    Teléfono Alternativo
+                  </label>
+                  <input 
+                    type="tel" 
+                    formControlName="related_phone" 
+                    class="form-input"
+                    placeholder="+54 9 11 1234-5678"
+                  />
+                  <div class="form-help">
+                    Se completa automáticamente al seleccionar un contacto, o puedes escribir uno diferente
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ============================================================================ -->
+          <!-- REMINDER SECTION -->
+          <!-- ============================================================================ -->
+          <div class="form-section">
+            <div class="section-header">
+              <h3 class="section-title">
+                <i class="fas fa-bell"></i>
+                Recordatorio
+              </h3>
+              <p class="section-description">Configura un recordatorio automático</p>
+            </div>
+            
+            <div class="section-content">
+              <div class="form-grid">
+                <!-- Create Reminder Toggle -->
+                <div class="form-group full-width">
+                  <label class="form-checkbox">
+                    <input 
+                      type="checkbox" 
+                      formControlName="create_reminder"
+                      (change)="onCreateReminderChange($event)"
+                    />
+                    <span class="checkbox-label">
+                      <i class="fas fa-bell"></i>
+                      Crear recordatorio automático
+                    </span>
+                  </label>
+                </div>
+
+                @if (showReminder()) {
+                  <!-- Reminder Time -->
+                  <div class="form-group">
+                    <label class="form-label">
+                      <i class="fas fa-clock"></i>
+                      Recordar con
+                    </label>
+                    <div class="input-group">
+                      <input 
+                        type="number" 
+                        formControlName="auto_reminder_minutes_before" 
+                        class="form-input"
+                        placeholder="30"
+                        min="1"
+                      />
+                      <span class="input-suffix">minutos de anticipación</span>
+                    </div>
+                  </div>
+
+                  <!-- Reminder Type -->
+                  <div class="form-group">
+                    <label class="form-label">
+                      <i class="fas fa-paper-plane"></i>
+                      Tipo de Recordatorio
+                    </label>
+                    <select formControlName="reminder_type" class="form-select">
+                      @for (type of REMINDER_TYPES; track type.value) {
+                        <option [value]="type.value">{{ type.label }}</option>
+                      }
+                    </select>
+                  </div>
+
+                  <!-- Reminder Phone -->
+                  <div class="form-group">
+                    <label class="form-label">
+                      <i class="fas fa-mobile-alt"></i>
+                      Teléfono para Recordatorio
+                    </label>
+                    <input 
+                      type="tel" 
+                      formControlName="reminder_phone" 
+                      class="form-input"
+                      placeholder="+54 9 11 1234-5678"
+                    />
+                    <div class="form-help">
+                      Opcional: Si no especificas, se enviará al teléfono del usuario del CRM
+                    </div>
+                  </div>
+
+                  <!-- Reminder Message -->
+                  <div class="form-group full-width">
+                    <label class="form-label">
+                      <i class="fas fa-comment"></i>
+                      Mensaje del Recordatorio
+                    </label>
+                    <textarea 
+                      formControlName="reminder_message" 
+                      class="form-textarea"
+                      placeholder="Recordatorio: tienes pendiente la tarea..."
+                      rows="3"
+                    ></textarea>
+                    <div class="form-help">Mensaje que se enviará como recordatorio</div>
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
+
+          <!-- ============================================================================ -->
+          <!-- RECURRENCE SECTION -->
+          <!-- ============================================================================ -->
+          <div class="form-section">
+            <div class="section-header">
+              <h3 class="section-title">
+                <i class="fas fa-repeat"></i>
+                Recurrencia
+              </h3>
+              <p class="section-description">Configura si la tarea se repite</p>
+            </div>
+            
+            <div class="section-content">
+              <div class="form-grid">
+                <!-- Is Recurring Toggle -->
+                <div class="form-group full-width">
+                  <label class="form-checkbox">
+                    <input 
+                      type="checkbox" 
+                      formControlName="is_recurring"
+                      (change)="onRecurrenceChange($event)"
+                    />
+                    <span class="checkbox-label">
+                      <i class="fas fa-repeat"></i>
+                      Esta tarea se repite
+                    </span>
+                  </label>
+                </div>
+
+                @if (showRecurrence()) {
+                  <!-- Recurrence Type -->
+                  <div class="form-group">
+                    <label class="form-label">
+                      <i class="fas fa-calendar-week"></i>
+                      Frecuencia
+                    </label>
+                    <select formControlName="recurrence_type" class="form-select">
+                      <option value="daily">Diariamente</option>
+                      <option value="weekly">Semanalmente</option>
+                      <option value="monthly">Mensualmente</option>
+                      <option value="yearly">Anualmente</option>
+                    </select>
+                  </div>
+
+                  <!-- Recurrence Interval -->
+                  <div class="form-group">
+                    <label class="form-label">
+                      <i class="fas fa-hashtag"></i>
+                      Cada
+                    </label>
+                    <div class="input-group">
+                      <input 
+                        type="number" 
+                        formControlName="recurrence_interval" 
+                        class="form-input"
+                        placeholder="1"
+                        min="1"
+                      />
+                      <span class="input-suffix">{{ getRecurrenceIntervalLabel() }}</span>
+                    </div>
+                  </div>
+
+                  <!-- Recurrence End -->
+                  <div class="form-group">
+                    <label class="form-label">
+                      <i class="fas fa-calendar-times"></i>
+                      Termina el
+                    </label>
+                    <input 
+                      type="date" 
+                      formControlName="recurrence_end_date" 
+                      class="form-input"
+                    />
+                    <div class="form-help">Opcional: fecha límite para la recurrencia</div>
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
+
+          <!-- ============================================================================ -->
+          <!-- FORM ACTIONS -->
+          <!-- ============================================================================ -->
+          <div class="form-actions">
+            <div class="actions-left">
+              @if (isEditMode()) {
+                <button 
+                  type="button" 
+                  class="action-btn btn-danger"
+                  (click)="deleteTask()"
+                  [disabled]="isSubmitting()"
+                >
+                  <i class="fas fa-trash"></i>
+                  Eliminar Tarea
+                </button>
+              }
+            </div>
+            
+            <div class="actions-right">
+              <button 
+                type="button" 
+                class="action-btn btn-secondary"
+                routerLink="/tasks/list"
+                [disabled]="isSubmitting()"
+              >
+                <i class="fas fa-times"></i>
+                Cancelar
+              </button>
+              
+              <button 
+                type="submit" 
+                class="action-btn btn-primary"
+                [disabled]="taskForm.invalid || isSubmitting()"
+              >
+                @if (isSubmitting()) {
+                  <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                  {{ isEditMode() ? 'Actualizando...' : 'Creando...' }}
+                } @else {
+                  <i class="fas" [class]="isEditMode() ? 'fa-save' : 'fa-plus'"></i>
+                  {{ isEditMode() ? 'Actualizar Tarea' : 'Crear Tarea' }}
+                }
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    }
+  </main>
+</div>

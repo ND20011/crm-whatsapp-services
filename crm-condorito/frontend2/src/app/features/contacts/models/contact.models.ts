@@ -107,10 +107,7 @@ export interface TagsResponse {
 export interface ContactsResponse {
   success: boolean;
   data: Contact[];
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
+  pagination: any;
 }
 
 /**

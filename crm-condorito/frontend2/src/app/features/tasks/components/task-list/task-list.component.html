@@ -1,0 +1,618 @@
+<div class="task-list-container">
+  <!-- ============================================================================ -->
+  <!-- HEADER SECTION -->
+  <!-- ============================================================================ -->
+  <header class="task-header">
+    <div class="header-top">
+      <div class="header-title">
+        <div class="title-icon">
+          <i class="fas fa-list-check"></i>
+        </div>
+        <div class="title-text">
+          <h1>Lista de Tareas</h1>
+          <p class="subtitle">{{ totalItems() }} tareas en total</p>
+        </div>
+      </div>
+      
+      <div class="header-actions">
+        <button class="action-btn btn-secondary" routerLink="/tasks/dashboard">
+          <i class="fas fa-chart-line"></i>
+          Dashboard
+        </button>
+        <button class="action-btn btn-info" routerLink="/tasks/calendar">
+          <i class="fas fa-calendar-alt"></i>
+          Vista Calendario
+        </button>
+        <button class="action-btn btn-primary" routerLink="/tasks/create">
+          <i class="fas fa-plus-circle"></i>
+          Nueva Tarea
+        </button>
+      </div>
+    </div>
+
+    <!-- FILTERS SECTION -->
+    <div class="filters-section">
+      <!-- Search Row - Always on top -->
+      <div class="search-row">
+        <div class="search-container">
+          <input
+            type="text"
+            [ngModel]="searchQuery()"
+            (ngModelChange)="onSearchChange($event)"
+            placeholder="Buscar por título, descripción o contacto..."
+            class="search-input"
+          />
+          <i class="fas fa-search search-icon"></i>
+        </div>
+        <div class="search-actions">
+          <!-- View Mode Toggle -->
+          <div class="view-mode-toggle">
+            <button 
+              class="view-mode-btn"
+              [class.active]="viewMode() === 'grid'"
+              (click)="setViewMode('grid')"
+              title="Vista en tarjetas">
+              <i class="fas fa-th"></i>
+            </button>
+            <button 
+              class="view-mode-btn"
+              [class.active]="viewMode() === 'list'"
+              (click)="setViewMode('list')"
+              title="Vista en lista">
+              <i class="fas fa-list"></i>
+            </button>
+          </div>
+          <button class="toggle-filters-btn" (click)="toggleFilters()" title="Mostrar/Ocultar Filtros">
+            <i class="fas" [class.fa-filter]="!showFilters()" [class.fa-filter-circle-xmark]="showFilters()"></i>
+            <span class="filter-text">{{ showFilters() ? 'Ocultar' : 'Filtros' }}</span>
+          </button>
+          <button class="clear-filters-btn" (click)="clearFilters()">
+            <i class="fas fa-times"></i>
+            <span class="clear-text">Limpiar</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Filters Grid - Responsive layout -->
+      @if (showFilters()) {
+        <div class="filters-grid">
+          <!-- Status Section -->
+          <div class="filter-section status-section">
+            <h4 class="section-title">
+              <i class="fas fa-flag"></i>
+              Estado
+            </h4>
+          <div class="section-content">
+            <div class="filter-group">
+              <label class="filter-label">Estados</label>
+              <div class="checkbox-group">
+                @for (status of TASK_STATUSES; track status.value) {
+                  <label class="checkbox-item">
+                    <input 
+                      type="checkbox" 
+                      [checked]="selectedStatuses().includes(status.value)"
+                      (change)="toggleStatus(status.value)"
+                    />
+                    <span class="checkbox-label">{{ status.label }}</span>
+                  </label>
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Priority Section -->
+        <div class="filter-section priority-section">
+          <h4 class="section-title">
+            <i class="fas fa-exclamation-triangle"></i>
+            Prioridad
+          </h4>
+          <div class="section-content">
+            <div class="filter-group">
+              <label class="filter-label">Prioridades</label>
+              <div class="checkbox-group">
+                @for (priority of TASK_PRIORITIES; track priority.value) {
+                  <label class="checkbox-item">
+                    <input 
+                      type="checkbox" 
+                      [checked]="selectedPriorities().includes(priority.value)"
+                      (change)="togglePriority(priority.value)"
+                    />
+                    <span class="checkbox-label">{{ priority.label }}</span>
+                  </label>
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Category Section -->
+        <div class="filter-section category-section">
+          <h4 class="section-title">
+            <i class="fas fa-tags"></i>
+            Categoría
+          </h4>
+          <div class="section-content">
+            <div class="filter-group">
+              <label class="filter-label">Categorías</label>
+              <div class="checkbox-group">
+                @for (category of TASK_CATEGORIES; track category.value) {
+                  <label class="checkbox-item">
+                    <input 
+                      type="checkbox" 
+                      [checked]="selectedCategories().includes(category.value)"
+                      (change)="toggleCategory(category.value)"
+                    />
+                    <span class="checkbox-label">{{ category.label }}</span>
+                  </label>
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Date Range Section -->
+        <div class="filter-section date-section">
+          <h4 class="section-title">
+            <i class="fas fa-calendar-alt"></i>
+            Fecha de Vencimiento
+          </h4>
+          <div class="section-content">
+            <div class="date-range-row">
+              <div class="filter-group">
+                <label class="filter-label">Desde</label>
+                <input
+                  type="date"
+                  [ngModel]="dueDateFrom()"
+                  (ngModelChange)="dueDateFrom.set($event); applyFilters()"
+                  class="date-input"
+                />
+              </div>
+              <div class="filter-group">
+                <label class="filter-label">Hasta</label>
+                <input
+                  type="date"
+                  [ngModel]="dueDateTo()"
+                  (ngModelChange)="dueDateTo.set($event); applyFilters()"
+                  class="date-input"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sort Section -->
+        <div class="filter-section sort-section">
+          <h4 class="section-title">
+            <i class="fas fa-sort"></i>
+            Ordenamiento
+          </h4>
+          <div class="section-content">
+            <div class="controls-row">
+              <div class="filter-group">
+                <label class="filter-label">Ordenar por</label>
+                <select [ngModel]="sortBy()" (ngModelChange)="sortBy.set($event); loadTasks()" class="filter-select">
+                  <option value="due_date">Fecha de Vencimiento</option>
+                  <option value="created_at">Fecha de Creación</option>
+                  <option value="priority">Prioridad</option>
+                  <option value="title">Título</option>
+                </select>
+              </div>
+
+              <div class="filter-group">
+                <label class="filter-label">Orden</label>
+                <select [ngModel]="sortOrder()" (ngModelChange)="sortOrder.set($event); loadTasks()" class="filter-select">
+                  <option value="asc">Ascendente</option>
+                  <option value="desc">Descendente</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+        </div>
+      }
+    </div>
+  </header>
+
+  <!-- ============================================================================ -->
+  <!-- MAIN CONTENT -->
+  <!-- ============================================================================ -->
+  <main class="task-main">
+    @if (isLoading()) {
+      <div class="loading-state">
+        <div class="state-icon">
+          <i class="fas fa-spinner fa-spin"></i>
+        </div>
+        <h3 class="state-title">Cargando Tareas</h3>
+        <p class="state-message">Obteniendo la información más reciente...</p>
+      </div>
+    } @else if (error()) {
+      <div class="error-state">
+        <div class="state-icon">
+          <i class="fas fa-exclamation-triangle"></i>
+        </div>
+        <h3 class="state-title">Error al Cargar</h3>
+        <p class="state-message">{{ error() }}</p>
+        <button class="action-btn btn-primary" (click)="loadTasks()">
+          <i class="fas fa-refresh"></i>
+          Reintentar
+        </button>
+      </div>
+    } @else if (tasks().length === 0 && searchQuery()) {
+      <div class="empty-state">
+        <div class="state-icon">
+          <i class="fas fa-search-minus"></i>
+        </div>
+        <h3 class="state-title">Sin Resultados</h3>
+        <p class="state-message">No se encontraron tareas que coincidan con "{{ searchQuery() }}"</p>
+        <button class="action-btn btn-secondary" (click)="clearFilters()">
+          <i class="fas fa-times"></i>
+          Limpiar Filtros
+        </button>
+      </div>
+    } @else if (tasks().length === 0) {
+      <div class="empty-state">
+        <div class="state-icon">
+          <i class="fas fa-tasks"></i>
+        </div>
+        <h3 class="state-title">Sin Tareas</h3>
+        <p class="state-message">Aún no tienes tareas registradas. ¡Comienza creando tu primera tarea!</p>
+        <div class="empty-state-actions">
+          <button class="action-btn btn-primary" routerLink="/tasks/create">
+            <i class="fas fa-plus-circle"></i>
+            Crear Primera Tarea
+          </button>
+        </div>
+      </div>
+    } @else {
+      <!-- ============================================================================ -->
+      <!-- BULK ACTIONS BAR -->
+      <!-- ============================================================================ -->
+      @if (selectedTasks().length > 0) {
+        <div class="bulk-actions-bar">
+          <div class="bulk-info">
+            <span class="bulk-count">{{ selectedTasks().length }} tarea(s) seleccionada(s)</span>
+          </div>
+          <div class="bulk-actions">
+            <button class="bulk-btn btn-complete" (click)="performBulkAction('complete')">
+              <i class="fas fa-check"></i>
+              Completar
+            </button>
+            <button class="bulk-btn btn-cancel" (click)="performBulkAction('cancel')">
+              <i class="fas fa-times"></i>
+              Cancelar
+            </button>
+            <button class="bulk-btn btn-delete" (click)="performBulkAction('delete')">
+              <i class="fas fa-trash"></i>
+              Eliminar
+            </button>
+          </div>
+        </div>
+      }
+
+      <!-- ============================================================================ -->
+      <!-- TASKS CONTENT -->
+      <!-- ============================================================================ -->
+      <div class="tasks-content">
+        <!-- Tasks Header -->
+        <div class="tasks-header">
+          <div class="tasks-info">
+            <h3 class="tasks-count">{{ filteredTasksCount() }} tareas encontradas</h3>
+            <p class="tasks-pagination-info">{{ paginationInfo() }}</p>
+          </div>
+          <div class="tasks-controls">
+            <label class="items-per-page-label">Mostrar:</label>
+            <select 
+              class="items-per-page-select" 
+              [value]="itemsPerPage()"
+              (change)="handleItemsPerPageChange($event)">
+              <option value="5">5</option>
+              <option value="10">10</option>
+              <option value="25">25</option>
+              <option value="50">50</option>
+            </select>
+            <span class="items-per-page-text">por página</span>
+          </div>
+        </div>
+
+        <!-- ============================================================================ -->
+        <!-- GRID VIEW -->
+        <!-- ============================================================================ -->
+        @if (viewMode() === 'grid') {
+          <div class="tasks-grid">
+            @for (task of tasks(); track trackByTaskId($index, task)) {
+              <div class="task-card" [class]="'priority-' + task.priority" [class.selected]="isTaskSelected(task.id!)">
+                <!-- Card Header -->
+                <div class="card-header">
+                  <div class="card-select">
+                    <input 
+                      type="checkbox" 
+                      class="task-checkbox"
+                      [checked]="isTaskSelected(task.id!)" 
+                      (change)="toggleTaskSelection(task.id!)"
+                    />
+                  </div>
+                  <div class="card-priority">
+                    <span class="priority-badge" [class]="'priority-' + task.priority">
+                      {{ getPriorityLabel(task.priority) }}
+                    </span>
+                  </div>
+                  <div class="card-status">
+                    <span class="status-badge" [class]="'status-' + task.status">
+                      {{ getStatusLabel(task.status) }}
+                    </span>
+                  </div>
+                </div>
+
+                <!-- Card Body -->
+                <div class="card-body">
+                  <h4 class="task-title">{{ task.title }}</h4>
+                  <p class="task-description">{{ task.description | slice:0:100 }}<span *ngIf="task.description && task.description.length > 100">...</span></p>
+                  
+                  <div class="task-meta">
+                    <div class="meta-item">
+                      <div class="meta-label">Vencimiento</div>
+                      <div class="meta-value" [class.overdue]="isTaskOverdue(task)">
+                        {{ formatDate(task.due_date) }}
+                      </div>
+                    </div>
+                    <div class="meta-item">
+                      <div class="meta-label">Categoría</div>
+                      <div class="meta-value">
+                        {{ getCategoryLabel(task.category) }}
+                      </div>
+                    </div>
+                    @if (task.contact_name) {
+                      <div class="meta-item">
+                        <div class="meta-label">Contacto</div>
+                        <div class="meta-value">{{ task.contact_name }}</div>
+                      </div>
+                    }
+                  </div>
+
+                  @if (task.completion_percentage > 0) {
+                    <div class="task-progress">
+                      <div class="progress-label">Progreso: {{ task.completion_percentage }}%</div>
+                      <div class="progress-bar">
+                        <div class="progress-fill" [style.width.%]="task.completion_percentage"></div>
+                      </div>
+                    </div>
+                  }
+                </div>
+
+                <!-- Card Footer -->
+                <div class="card-footer">
+                  <div class="card-actions">
+                    <a [routerLink]="['/tasks/view', task.id]" class="action-btn-sm btn-view" title="Ver detalles">
+                      <i class="fas fa-eye"></i>
+                    </a>
+                    <a [routerLink]="['/tasks/edit', task.id]" class="action-btn-sm btn-edit" title="Editar">
+                      <i class="fas fa-edit"></i>
+                    </a>
+                    @if (task.status !== 'completed' && task.status !== 'cancelled') {
+                      <button class="action-btn-sm btn-complete" (click)="markAsComplete(task)" title="Completar">
+                        <i class="fas fa-check"></i>
+                      </button>
+                      <button class="action-btn-sm btn-cancel" (click)="cancelTask(task)" title="Cancelar">
+                        <i class="fas fa-times"></i>
+                      </button>
+                    }
+                    <button class="action-btn-sm btn-delete" (click)="deleteTask(task.id!)" title="Eliminar">
+                      <i class="fas fa-trash"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- ============================================================================ -->
+        <!-- LIST VIEW -->
+        <!-- ============================================================================ -->
+        @if (viewMode() === 'list') {
+          <div class="tasks-list-container">
+            <div class="list-wrapper">
+              <table class="tasks-table">
+                <thead>
+                  <tr>
+                    <th class="col-select">
+                      <input 
+                        type="checkbox" 
+                        class="select-all-checkbox"
+                        [checked]="allTasksSelected()" 
+                        [indeterminate]="someTasksSelected() && !allTasksSelected()"
+                        (change)="toggleSelectAll()"
+                      />
+                    </th>
+                    <th class="col-title" (click)="changeSort('title')">
+                      Título
+                      <i class="sort-icon fas" [class]="'fa-' + getSortIcon('title')"></i>
+                    </th>
+                    <th class="col-contact">Contacto</th>
+                    <th class="col-due-date" (click)="changeSort('due_date')">
+                      Vencimiento
+                      <i class="sort-icon fas" [class]="'fa-' + getSortIcon('due_date')"></i>
+                    </th>
+                    <th class="col-priority" (click)="changeSort('priority')">
+                      Prioridad
+                      <i class="sort-icon fas" [class]="'fa-' + getSortIcon('priority')"></i>
+                    </th>
+                    <th class="col-category">Categoría</th>
+                    <th class="col-status">Estado</th>
+                    <th class="col-progress">Progreso</th>
+                    <th class="col-actions">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (task of tasks(); track trackByTaskId($index, task)) {
+                    <tr class="task-row" [class.selected]="isTaskSelected(task.id!)" [class.overdue]="isTaskOverdue(task)">
+                      <!-- Select -->
+                      <td class="col-select">
+                        <input 
+                          type="checkbox" 
+                          class="task-checkbox"
+                          [checked]="isTaskSelected(task.id!)" 
+                          (change)="toggleTaskSelection(task.id!)"
+                        />
+                      </td>
+
+                      <!-- Title -->
+                      <td class="col-title">
+                        <div class="title-cell">
+                          <a [routerLink]="['/tasks/view', task.id]" class="task-title-link">
+                            {{ task.title }}
+                          </a>
+                          @if (task.description) {
+                            <div class="task-description-preview">{{ task.description | slice:0:50 }}<span *ngIf="task.description.length > 50">...</span></div>
+                          }
+                        </div>
+                      </td>
+
+                      <!-- Contact -->
+                      <td class="col-contact">
+                        <div class="contact-cell">
+                          {{ task.contact_name || 'N/A' }}
+                        </div>
+                      </td>
+
+                      <!-- Due Date -->
+                      <td class="col-due-date">
+                        <div class="due-date-cell" [class.overdue]="isTaskOverdue(task)">
+                          {{ formatDate(task.due_date) }}
+                        </div>
+                      </td>
+
+                      <!-- Priority -->
+                      <td class="col-priority">
+                        <span class="priority-badge" [class]="'priority-' + task.priority">
+                          {{ getPriorityLabel(task.priority) }}
+                        </span>
+                      </td>
+
+                      <!-- Category -->
+                      <td class="col-category">
+                        <div class="category-cell">
+                          {{ getCategoryLabel(task.category) }}
+                        </div>
+                      </td>
+
+                      <!-- Status -->
+                      <td class="col-status">
+                        <span class="status-badge" [class]="'status-' + task.status">
+                          {{ getStatusLabel(task.status) }}
+                        </span>
+                      </td>
+
+                      <!-- Progress -->
+                      <td class="col-progress">
+                        <div class="progress-cell">
+                          @if (task.completion_percentage > 0) {
+                            <div class="progress-mini">
+                              <div class="progress-bar-mini">
+                                <div class="progress-fill-mini" [style.width.%]="task.completion_percentage"></div>
+                              </div>
+                              <span class="progress-text">{{ task.completion_percentage }}%</span>
+                            </div>
+                          } @else {
+                            <span class="no-progress">0%</span>
+                          }
+                        </div>
+                      </td>
+
+                      <!-- Actions -->
+                      <td class="col-actions">
+                        <div class="action-buttons-table">
+                          <a [routerLink]="['/tasks/view', task.id]" class="action-btn-sm btn-view" title="Ver detalles">
+                            <i class="fas fa-eye"></i>
+                          </a>
+                          <a [routerLink]="['/tasks/edit', task.id]" class="action-btn-sm btn-edit" title="Editar">
+                            <i class="fas fa-edit"></i>
+                          </a>
+                          @if (task.status !== 'completed' && task.status !== 'cancelled') {
+                            <button class="action-btn-sm btn-complete" (click)="markAsComplete(task)" title="Completar">
+                              <i class="fas fa-check"></i>
+                            </button>
+                            <button class="action-btn-sm btn-cancel" (click)="cancelTask(task)" title="Cancelar">
+                              <i class="fas fa-times"></i>
+                            </button>
+                          }
+                          <button class="action-btn-sm btn-delete" (click)="deleteTask(task.id!)" title="Eliminar">
+                            <i class="fas fa-trash"></i>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+        }
+
+        <!-- ============================================================================ -->
+        <!-- PAGINATION -->
+        <!-- ============================================================================ -->
+        @if (totalPages() > 1) {
+          <div class="pagination-section">
+            <div class="pagination">
+              <button 
+                class="page-btn page-nav" 
+                [disabled]="!hasPrev()"
+                (click)="goToFirstPage()"
+                title="Primera página"
+              >
+                <i class="fas fa-angle-double-left"></i>
+              </button>
+
+              <button 
+                class="page-btn page-nav" 
+                [disabled]="!hasPrev()"
+                (click)="goToPrevPage()"
+                title="Página anterior"
+              >
+                <i class="fas fa-angle-left"></i>
+              </button>
+
+              @for (page of getPaginationPages(); track page) {
+                @if (page !== '...') {
+                  <button 
+                    class="page-btn page-number" 
+                    [class.active]="currentPage() === page"
+                    (click)="goToPage(page)"
+                  >
+                    {{ page }}
+                  </button>
+                } @else {
+                  <span class="page-ellipsis">...</span>
+                }
+              }
+
+              <button 
+                class="page-btn page-nav" 
+                [disabled]="!hasNext()"
+                (click)="goToNextPage()"
+                title="Página siguiente"
+              >
+                <i class="fas fa-angle-right"></i>
+              </button>
+
+              <button 
+                class="page-btn page-nav" 
+                [disabled]="!hasNext()"
+                (click)="goToLastPage()"
+                title="Última página"
+              >
+                <i class="fas fa-angle-double-right"></i>
+              </button>
+            </div>
+
+            <div class="pagination-info">
+              <span class="pagination-text">{{ paginationInfo() }}</span>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </main>
+</div>

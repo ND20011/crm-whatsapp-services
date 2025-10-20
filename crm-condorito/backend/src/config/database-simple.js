@@ -8,8 +8,8 @@ require('dotenv').config();
 const dbConfig = {
     host: process.env.DB_HOST || 'localhost',
     port: process.env.DB_PORT || 3306,
-    user: process.env.DB_USER || 'crm_condorito',
-    password: process.env.DB_PASSWORD || 'CRM2024$ecure!',
+    user: process.env.DB_USER || 'root',
+    password: process.env.DB_PASSWORD || '',
     database: process.env.DB_NAME || 'crm_condorito_db',
     charset: 'utf8mb4',
     timezone: '-03:00' // Argentina timezone (UTC-3)

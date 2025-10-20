@@ -59,7 +59,7 @@
             <div class="search-results-info">
               <span class="results-count">
                 <i class="fas fa-filter"></i>
-                {{ filteredConversations().length }} de {{ conversations().length }} conversaciones
+                {{ displayedConversations().length }} de {{ filteredConversations().length }} conversaciones
               </span>
               @if (filteredConversations().length === 0) {
                 <span class="no-results-hint">
@@ -162,7 +162,7 @@
               </div>
             </div>
           </div>
-        } @else if (filteredConversations().length === 0) {
+        } @else if (displayedConversations().length === 0) {
           <div class="no-conversations">
             <i class="fas fa-inbox"></i>
             @if (searchQuery() || selectedTagFilter()) {
@@ -180,7 +180,7 @@
             }
           </div>
         } @else {
-            @for (conversation of filteredConversations(); track trackByConversationId($index, conversation)) {
+            @for (conversation of displayedConversations(); track trackByConversationId($index, conversation)) {
             <div 
               class="conversation-item"
               [class.active]="activeConversation()?.id === conversation.id"
@@ -245,6 +245,14 @@
                             <span>Cambiar Nombre</span>
                           </button>
                           
+                          <button 
+                            type="button"
+                            class="menu-item"
+                            (click)="openScheduleMeetingModal(conversation)">
+                            <i class="fas fa-calendar-plus"></i>
+                            <span>Agendar Reunión</span>
+                          </button>
+                          
                           <div class="menu-divider"></div>
                           
                           <button 
@@ -300,6 +308,23 @@
                   }
                 </div>
               </div>
+            </div>
+          }
+          
+          <!-- Indicador de búsqueda activa del servidor -->
+          <!-- Sección eliminada: isSearching ya no existe -->
+          
+          <!-- Botón para cargar más conversaciones -->
+          @if (hasMoreToLoad() && displayedConversations().length > 0) {
+            <div class="load-more-section">
+              <button 
+                type="button" 
+                class="btn btn-outline-primary btn-sm load-more-btn"
+                (click)="loadMoreConversations()"
+                title="Cargar más conversaciones">
+                <i class="fas fa-chevron-down"></i>
+                Cargar {{ Math.min(loadIncrement, filteredConversations().length - displayedCount()) }} conversaciones más
+              </button>
             </div>
           }
         }
@@ -599,15 +624,32 @@
           <!-- File Upload Area -->
           @if (showFileUpload()) {
             <div class="file-upload-area">
-              <app-file-upload
-                [disabled]="isSendingFile()"
-                [multiple]="true"
-                [acceptImages]="true"
-                [acceptDocuments]="true"
-                (onFileSelected)="onFileSelected($event)"
-                (onFilesSelected)="onFilesSelected($event)"
-                (onError)="onFileError($event)">
-              </app-file-upload>
+              <div class="file-upload-header">
+                <div class="upload-title">
+                  <i class="fas fa-paperclip"></i>
+                  <span>Adjuntar Archivos</span>
+                </div>
+                <button 
+                  type="button" 
+                  class="btn-close-upload"
+                  (click)="toggleFileUpload()"
+                  title="Cerrar área de archivos">
+                  <i class="fas fa-times"></i>
+                </button>
+              </div>
+              
+              <div class="upload-content">
+                <app-file-upload
+                  [disabled]="isSendingFile()"
+                  [multiple]="true"
+                  [acceptImages]="true"
+                  [acceptVideos]="true"
+                  [acceptDocuments]="true"
+                  (onFileSelected)="onFileSelected($event)"
+                  (onFilesSelected)="onFilesSelected($event)"
+                  (onError)="onFileError($event)">
+                </app-file-upload>
+              </div>
             </div>
           }
 
@@ -615,15 +657,17 @@
           @if (hasSelectedFiles()) {
             <div class="selected-files-area">
               <div class="selected-files-header">
-                <h5>Archivos seleccionados ({{ selectedFiles().length }})</h5>
+                <div class="files-title">
+                  <i class="fas fa-file-alt"></i>
+                  <span>Archivos seleccionados ({{ selectedFiles().length }})</span>
+                </div>
                 <button 
                   type="button" 
-                  class="btn btn-sm btn-outline-secondary"
+                  class="btn-clear-files"
                   (click)="clearSelectedFiles()"
                   [disabled]="isSendingFile()"
-                >
-                  <i class="fas fa-times"></i>
-                  Limpiar
+                  title="Limpiar archivos seleccionados">
+                  <i class="fas fa-trash-alt"></i>
                 </button>
               </div>
               <div class="selected-files-list">
@@ -643,57 +687,121 @@
 
           <form [formGroup]="messageForm" (ngSubmit)="sendMessageOrFiles()" class="message-form">
             <div class="message-input-group">
-              <!-- Templates button -->
-              <button
-                type="button"
-                class="btn btn-outline-primary template-button"
-                (click)="openTemplateModal()"
-                [disabled]="isSendingMessage() || isSendingFile()"
-                title="Usar template"
-              >
-                <i class="fas fa-clipboard-list"></i>
-              </button>
+              
+              <!-- DESKTOP: Mostrar todos los botones -->
+              <div class="desktop-actions">
+                <!-- Templates button -->
+                <button
+                  type="button"
+                  class="btn-action template-button"
+                  (click)="openTemplateModal()"
+                  [disabled]="isSendingMessage() || isSendingFile()"
+                  title="Usar template"
+                >
+                  <i class="fas fa-clipboard-list"></i>
+                </button>
 
-              <!-- AI Suggest Response button -->
-              <button
-                type="button"
-                class="btn btn-outline-success ai-suggest-button"
-                (click)="generateAISuggestion()"
-                [disabled]="isSendingMessage() || isSendingFile() || isGeneratingAI() || !canGenerateAISuggestion()"
-                title="Generar respuesta con IA"
-              >
-                @if (isGeneratingAI()) {
-                  <span class="spinner-border spinner-border-sm" role="status"></span>
-                } @else {
-                  <i class="fas fa-brain"></i>
+                <!-- AI Suggest Response button -->
+                <button
+                  type="button"
+                  class="btn-action ai-suggest-button"
+                  (click)="generateAISuggestion()"
+                  [disabled]="isSendingMessage() || isSendingFile() || isGeneratingAI() || !canGenerateAISuggestion()"
+                  title="Generar respuesta con IA"
+                >
+                  @if (isGeneratingAI()) {
+                    <span class="spinner-border spinner-border-sm" role="status"></span>
+                  } @else {
+                    <i class="fas fa-brain"></i>
+                  }
+                </button>
+
+                <!-- File attachment button -->
+                <button
+                  type="button"
+                  class="btn-action attachment-button"
+                  (click)="toggleFileUpload()"
+                  [disabled]="isSendingMessage() || isSendingFile()"
+                  [class.active]="showFileUpload()"
+                  title="Adjuntar archivos"
+                >
+                  <i class="fas fa-paperclip"></i>
+                </button>
+              </div>
+
+              <!-- MOBILE: Menú de + (plus) -->
+              <div class="mobile-menu-container">
+                <button
+                  type="button"
+                  class="btn-mobile-menu"
+                  (click)="toggleMobileMenu()"
+                  [disabled]="isSendingMessage() || isSendingFile()"
+                  title="Más opciones"
+                >
+                  <i class="fas fa-plus"></i>
+                </button>
+
+                <!-- Dropdown del menú móvil -->
+                @if (showMobileMenu()) {
+                  <div class="mobile-menu-dropdown">
+                    <button
+                      type="button"
+                      class="mobile-menu-item"
+                      (click)="openTemplateModal()"
+                      [disabled]="isSendingMessage() || isSendingFile()"
+                    >
+                      <i class="fas fa-clipboard-list"></i>
+                      <span>Templates</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      class="mobile-menu-item"
+                      (click)="generateAISuggestion()"
+                      [disabled]="isSendingMessage() || isSendingFile() || isGeneratingAI() || !canGenerateAISuggestion()"
+                    >
+                      @if (isGeneratingAI()) {
+                        <span class="spinner-border spinner-border-sm" role="status"></span>
+                      } @else {
+                        <i class="fas fa-brain"></i>
+                      }
+                      <span>Sugerencia IA</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      class="mobile-menu-item"
+                      (click)="toggleFileUpload()"
+                      [disabled]="isSendingMessage() || isSendingFile()"
+                      [class.active]="showFileUpload()"
+                    >
+                      <i class="fas fa-paperclip"></i>
+                      <span>Adjuntar archivos</span>
+                    </button>
+                  </div>
                 }
-              </button>
+              </div>
 
-              <!-- File attachment button -->
-              <button
-                type="button"
-                class="btn btn-outline-secondary attachment-button"
-                (click)="toggleFileUpload()"
-                [disabled]="isSendingMessage() || isSendingFile()"
-                [class.active]="showFileUpload()"
-                title="Adjuntar archivos"
-              >
-                <i class="fas fa-paperclip"></i>
-              </button>
-
-              <textarea
-                formControlName="message"
-                class="form-control message-input"
-                placeholder="Escribe tu mensaje..."
-                rows="2"
-                [disabled]="isSendingMessage() || isSendingFile()"
-                (keydown)="onKeyDown($event)"
-              ></textarea>
+              <!-- Input container estilo WhatsApp -->
+              <div class="input-container">
+                <textarea
+                  formControlName="message"
+                  class="message-input"
+                  placeholder="Escribe un mensaje..."
+                  rows="1"
+                  [disabled]="isSendingMessage() || isSendingFile()"
+                  (keydown)="onKeyDown($event)"
+                  (focus)="closeMobileMenu()"
+                  (paste)="onPaste($event)"
+                  (input)="onTextareaInput($event)"
+                  #messageTextarea
+                ></textarea>
+              </div>
 
               <!-- Send button -->
               <button
                 type="submit"
-                class="btn btn-primary send-button"
+                class="btn-send"
                 [disabled]="!canSend()"
                 [title]="hasSelectedFiles() ? 'Enviar archivos' : 'Enviar mensaje'"
               >
@@ -705,15 +813,6 @@
                   <i class="fas fa-paper-plane"></i>
                 }
               </button>
-            </div>
-            
-            <div class="input-help">
-              <small class="form-text text-muted">
-                @if (hasSelectedFiles()) {
-                  {{ selectedFiles().length }} archivo(s) seleccionado(s) • 
-                }
-                Presiona Ctrl + Enter para enviar
-              </small>
             </div>
           </form>
         </div>
@@ -1433,6 +1532,173 @@
           (click)="deleteConversation()">
           <i class="fas fa-trash-alt"></i>
           Eliminar Conversación
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ============================================================================ -->
+<!-- MODAL PARA AGENDAR REUNIÓN -->
+<!-- ============================================================================ -->
+@if (showScheduleMeetingModal()) {
+  <div class="modal-overlay" (click)="closeScheduleMeetingModal()">
+    <div class="modal-content schedule-meeting-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3 class="modal-title">
+          <i class="fas fa-calendar-plus"></i>
+          Agendar Reunión
+        </h3>
+        <button 
+          type="button" 
+          class="modal-close-btn"
+          (click)="closeScheduleMeetingModal()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      
+      <div class="modal-body">
+        @if (currentContactForAction()) {
+          <!-- Información del contacto -->
+          <div class="contact-info">
+            <div class="contact-avatar">
+              <span class="avatar-text">
+                {{ getContactInitials(currentContactForAction()!) }}
+              </span>
+            </div>
+            <div class="contact-details">
+              <h4 class="contact-name">
+                {{ currentContactForAction()!.contact_name || 'Sin nombre' }}
+              </h4>
+              <p class="contact-phone">{{ currentContactForAction()!.contact_phone }}</p>
+            </div>
+          </div>
+          
+          <!-- Formulario de reunión -->
+          <form [formGroup]="meetingForm" (ngSubmit)="scheduleMeeting()">
+            <div class="meeting-form">
+              <!-- Título de la reunión -->
+              <div class="form-group">
+                <label for="meeting-title" class="form-label required">
+                  <i class="fas fa-heading"></i>
+                  Título de la Reunión
+                </label>
+                <input
+                  id="meeting-title"
+                  type="text"
+                  formControlName="title"
+                  class="form-control"
+                  [class.is-invalid]="meetingForm.get('title')?.invalid && meetingForm.get('title')?.touched"
+                  placeholder="Ej: Reunión comercial con cliente">
+                @if (meetingForm.get('title')?.invalid && meetingForm.get('title')?.touched) {
+                  <div class="invalid-feedback">
+                    <i class="fas fa-exclamation-circle"></i>
+                    El título es obligatorio
+                  </div>
+                }
+              </div>
+
+              <!-- Fecha y hora -->
+              <div class="form-group">
+                <label for="meeting-datetime" class="form-label required">
+                  <i class="fas fa-calendar-alt"></i>
+                  Fecha y Hora de la Reunión
+                </label>
+                <input
+                  id="meeting-datetime"
+                  type="datetime-local"
+                  formControlName="meetingDateTime"
+                  class="form-control"
+                  [class.is-invalid]="meetingForm.get('meetingDateTime')?.invalid && meetingForm.get('meetingDateTime')?.touched"
+                  [min]="getMinDateTime()">
+                @if (meetingForm.get('meetingDateTime')?.invalid && meetingForm.get('meetingDateTime')?.touched) {
+                  <div class="invalid-feedback">
+                    <i class="fas fa-exclamation-circle"></i>
+                    La fecha y hora son obligatorias
+                  </div>
+                }
+              </div>
+
+              <!-- Descripción (opcional) -->
+              <div class="form-group">
+                <label for="meeting-description" class="form-label">
+                  <i class="fas fa-align-left"></i>
+                  Descripción (Opcional)
+                </label>
+                <textarea
+                  id="meeting-description"
+                  formControlName="description"
+                  class="form-control"
+                  rows="3"
+                  placeholder="Agrega detalles sobre la reunión..."
+                  maxlength="300">
+                </textarea>
+                <small class="form-text text-muted">Máximo 300 caracteres</small>
+              </div>
+
+              <!-- Configuración del recordatorio -->
+              <div class="reminder-config">
+                <div class="reminder-header">
+                  <h5>
+                    <i class="fas fa-bell"></i>
+                    Recordatorio Automático
+                  </h5>
+                  <div class="reminder-toggle">
+                    <label class="form-check-label">
+                      <input 
+                        type="checkbox" 
+                        formControlName="enableReminder"
+                        class="form-check-input">
+                      Activar recordatorio
+                    </label>
+                  </div>
+                </div>
+                
+                @if (meetingForm.get('enableReminder')?.value) {
+                  <div class="reminder-details">
+                    <div class="reminder-info">
+                      <div class="info-item">
+                        <i class="fas fa-clock"></i>
+                        <span>10 minutos antes de la reunión</span>
+                      </div>
+                      <div class="info-item">
+                        <i class="fas fa-whatsapp"></i>
+                        <span>Recordatorio por WhatsApp</span>
+                      </div>
+                      <div class="info-item">
+                        <i class="fas fa-phone"></i>
+                        <span>{{ currentContactForAction()!.contact_phone }}</span>
+                      </div>
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+          </form>
+        }
+      </div>
+      
+      <div class="modal-footer">
+        <button 
+          type="button" 
+          class="btn btn-secondary"
+          (click)="closeScheduleMeetingModal()">
+          <i class="fas fa-times"></i>
+          Cancelar
+        </button>
+        
+        <button 
+          type="button" 
+          class="btn btn-primary"
+          (click)="scheduleMeeting()"
+          [disabled]="meetingForm.invalid || isSchedulingMeeting()">
+          @if (isSchedulingMeeting()) {
+            <span class="spinner-border spinner-border-sm" role="status"></span>
+            Agendando...
+          } @else {
+            <i class="fas fa-calendar-check"></i>
+            Agendar Reunión
+          }
         </button>
       </div>
     </div>

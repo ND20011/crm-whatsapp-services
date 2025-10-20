@@ -134,6 +134,7 @@ app.use('/api/contacts', require('./routes/contacts'));
 app.use('/api/files', require('./routes/files'));
 app.use('/api/ai', require('./routes/ai'));
 app.use('/api/backoffice', require('./routes/backoffice'));
+app.use('/api/tasks', require('./routes/tasks'));
 
 // ============================================================================
 // SCHEDULED MESSAGES PROCESSOR
@@ -142,6 +143,14 @@ app.use('/api/backoffice', require('./routes/backoffice'));
 // Inicializar procesador de mensajes programados
 const scheduledMessageProcessor = require('./services/ScheduledMessageProcessor');
 scheduledMessageProcessor.init();
+
+// ============================================================================
+// TASKS PROCESSOR
+// ============================================================================
+
+// Inicializar procesador de tareas y recordatorios
+const taskProcessor = require('./services/TaskProcessor');
+taskProcessor.init();
 
 // ============================================================================
 // ERROR HANDLING

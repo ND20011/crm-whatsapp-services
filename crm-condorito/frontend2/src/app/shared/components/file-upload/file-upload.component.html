@@ -31,10 +31,14 @@
     } @else {
       <div class="drop-content">
         <div class="drop-icon">
-          @if (acceptImages() && acceptDocuments()) {
+          @if (acceptImages() && acceptVideos() && acceptDocuments()) {
             <i class="fas fa-cloud-upload-alt"></i>
+          } @else if (acceptImages() && acceptVideos()) {
+            <i class="fas fa-photo-video"></i>
           } @else if (acceptImages()) {
             <i class="fas fa-images"></i>
+          } @else if (acceptVideos()) {
+            <i class="fas fa-video"></i>
           } @else {
             <i class="fas fa-file-upload"></i>
           }
@@ -52,7 +56,33 @@
           {{ getHelpText() }}
         </p>
 
-        @if (acceptImages() && acceptDocuments()) {
+        @if (acceptImages() && acceptVideos() && acceptDocuments()) {
+          <div class="supported-formats">
+            <div class="format-group">
+              <span class="format-label">Imágenes:</span>
+              <span class="format-list">JPG, PNG, GIF, WebP</span>
+            </div>
+            <div class="format-group">
+              <span class="format-label">Videos:</span>
+              <span class="format-list">MP4, WebM, AVI, MOV</span>
+            </div>
+            <div class="format-group">
+              <span class="format-label">Documentos:</span>
+              <span class="format-list">PDF, DOC, XLS, PPT, TXT, ZIP</span>
+            </div>
+          </div>
+        } @else if (acceptImages() && acceptVideos()) {
+          <div class="supported-formats">
+            <div class="format-group">
+              <span class="format-label">Imágenes:</span>
+              <span class="format-list">JPG, PNG, GIF, WebP</span>
+            </div>
+            <div class="format-group">
+              <span class="format-label">Videos:</span>
+              <span class="format-list">MP4, WebM, AVI, MOV</span>
+            </div>
+          </div>
+        } @else if (acceptImages() && acceptDocuments()) {
           <div class="supported-formats">
             <div class="format-group">
               <span class="format-label">Imágenes:</span>
@@ -63,9 +93,24 @@
               <span class="format-list">PDF, DOC, XLS, PPT, TXT, ZIP</span>
             </div>
           </div>
+        } @else if (acceptVideos() && acceptDocuments()) {
+          <div class="supported-formats">
+            <div class="format-group">
+              <span class="format-label">Videos:</span>
+              <span class="format-list">MP4, WebM, AVI, MOV</span>
+            </div>
+            <div class="format-group">
+              <span class="format-label">Documentos:</span>
+              <span class="format-list">PDF, DOC, XLS, PPT, TXT, ZIP</span>
+            </div>
+          </div>
         } @else if (acceptImages()) {
           <div class="supported-formats">
             <span class="format-list">JPG, PNG, GIF, WebP</span>
+          </div>
+        } @else if (acceptVideos()) {
+          <div class="supported-formats">
+            <span class="format-list">MP4, WebM, AVI, MOV</span>
           </div>
         } @else {
           <div class="supported-formats">

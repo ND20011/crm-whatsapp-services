@@ -65,6 +65,7 @@ export class SidebarNavComponent implements OnInit, OnDestroy {
       icon: '',
       separator: true
     },
+    // SECCIÓN DE CHATS - MOVIDA AL PRINCIPIO
     {
       id: 'chat',
       label: 'Chat',
@@ -141,6 +142,37 @@ export class SidebarNavComponent implements OnInit, OnDestroy {
       icon: '',
       separator: true
     },
+    // SECCIÓN DE TAREAS - MOVIDA MÁS ABAJO
+    {
+      id: 'tasks-dashboard',
+      label: 'Dashboard de Tareas',
+      icon: 'kanban',
+      route: '/tasks/dashboard'
+    },
+    {
+      id: 'tasks-list',
+      label: 'Lista de Tareas',
+      icon: 'list-check',
+      route: '/tasks/list'
+    },
+    {
+      id: 'tasks-create',
+      label: 'Nueva Tarea',
+      icon: 'plus-circle',
+      route: '/tasks/create'
+    },
+    {
+      id: 'tasks-calendar',
+      label: 'Calendario de Tareas',
+      icon: 'calendar-event',
+      route: '/tasks/calendar'
+    },
+    {
+      id: 'separator-4',
+      label: '',
+      icon: '',
+      separator: true
+    },
     {
       id: 'whatsapp',
       label: 'WhatsApp',
@@ -161,7 +193,7 @@ export class SidebarNavComponent implements OnInit, OnDestroy {
       ]
     },
     {
-      id: 'separator-4',
+      id: 'separator-5',
       label: '',
       icon: '',
       separator: true

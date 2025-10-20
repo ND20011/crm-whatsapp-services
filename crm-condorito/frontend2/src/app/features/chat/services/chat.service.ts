@@ -37,6 +37,8 @@ export class ChatService {
     offset?: number;
     search?: string;
     archived?: boolean;
+    tagId?: number;
+    tagIds?: number[];
   }, useCache: boolean = true): Observable<ConversationsResponse> {
     if (!useCache) {
       return this.apiService.get<ConversationsResponse>(
@@ -238,14 +240,23 @@ export class ChatService {
       };
     }
 
-    // Verificar tipo
-    const isImage = APP_CONFIG.files.allowedImageTypes.includes(file.type);
-    const isDocument = APP_CONFIG.files.allowedDocumentTypes.includes(file.type);
+    // Verificar tipo usando el método mejorado que incluye extensiones
+    const fileName = file.name.toLowerCase();
+    
+    // Verificar por tipo MIME y extensión
+    const isImage = APP_CONFIG.files.allowedImageTypes.includes(file.type) || 
+                   fileName.match(/\.(jpg|jpeg|png|gif|webp)$/);
+                   
+    const isVideo = APP_CONFIG.files.allowedVideoTypes.includes(file.type) || 
+                   fileName.match(/\.(mp4|webm|ogg|avi|mov|wmv|flv|mkv|m4v|3gp|3gpp)$/);
+                   
+    const isDocument = APP_CONFIG.files.allowedDocumentTypes.includes(file.type) || 
+                      fileName.match(/\.(pdf|doc|docx|xls|xlsx|ppt|pptx|txt|csv|zip|rar)$/);
 
-    if (!isImage && !isDocument) {
+    if (!isImage && !isVideo && !isDocument) {
       return {
         isValid: false,
-        error: 'Tipo de archivo no soportado'
+        error: 'Tipo de archivo no soportado. Formatos válidos: imágenes (JPG, PNG, GIF, WebP), videos (MP4, MOV, AVI, WebM), documentos (PDF, DOC, XLS, etc.)'
       };
     }
 
@@ -266,8 +277,29 @@ export class ChatService {
   /**
    * Determinar tipo de archivo
    */
-  getFileType(file: File): 'image' | 'document' {
-    return APP_CONFIG.files.allowedImageTypes.includes(file.type) ? 'image' : 'document';
+  getFileType(file: File): 'image' | 'video' | 'document' {
+    // Primero verificar por tipo MIME
+    if (APP_CONFIG.files.allowedImageTypes.includes(file.type)) {
+      return 'image';
+    } else if (APP_CONFIG.files.allowedVideoTypes.includes(file.type)) {
+      return 'video';
+    }
+    
+    // Si el tipo MIME no es reconocido, verificar por extensión
+    const fileName = file.name.toLowerCase();
+    
+    // Extensiones de imagen
+    if (fileName.match(/\.(jpg|jpeg|png|gif|webp)$/)) {
+      return 'image';
+    }
+    
+    // Extensiones de video
+    if (fileName.match(/\.(mp4|webm|ogg|avi|mov|wmv|flv|mkv|m4v|3gp|3gpp)$/)) {
+      return 'video';
+    }
+    
+    // Por defecto, documento
+    return 'document';
   }
 
   /**
@@ -288,6 +320,86 @@ export class ChatService {
         reject('Error al leer el archivo');
       };
       reader.readAsDataURL(file);
+    });
+  }
+
+  /**
+   * Crear preview de video
+   */
+  createVideoPreview(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      if (!APP_CONFIG.files.allowedVideoTypes.includes(file.type)) {
+        reject('No es un video válido');
+        return;
+      }
+
+      const video = document.createElement('video');
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      
+      video.onloadedmetadata = () => {
+        // Establecer tiempo al primer frame
+        video.currentTime = 1; // 1 segundo para evitar frame negro
+      };
+      
+      video.onseeked = () => {
+        try {
+          // Calcular dimensiones manteniendo proporción
+          const maxWidth = APP_CONFIG.files.previewMaxWidth;
+          const maxHeight = APP_CONFIG.files.previewMaxHeight;
+          
+          let { videoWidth: width, videoHeight: height } = video;
+          
+          if (width > height) {
+            if (width > maxWidth) {
+              height = (height * maxWidth) / width;
+              width = maxWidth;
+            }
+          } else {
+            if (height > maxHeight) {
+              width = (width * maxHeight) / height;
+              height = maxHeight;
+            }
+          }
+          
+          canvas.width = width;
+          canvas.height = height;
+          
+          ctx?.drawImage(video, 0, 0, width, height);
+          
+          // Agregar overlay de play button
+          if (ctx) {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+            ctx.beginPath();
+            ctx.arc(width / 2, height / 2, 25, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            // Triángulo de play
+            ctx.fillStyle = 'white';
+            ctx.beginPath();
+            ctx.moveTo(width / 2 - 8, height / 2 - 12);
+            ctx.lineTo(width / 2 - 8, height / 2 + 12);
+            ctx.lineTo(width / 2 + 12, height / 2);
+            ctx.closePath();
+            ctx.fill();
+          }
+          
+          resolve(canvas.toDataURL('image/jpeg', 0.8));
+        } catch (error) {
+          reject('Error al crear preview del video');
+        } finally {
+          // Limpiar
+          video.remove();
+        }
+      };
+      
+      video.onerror = () => {
+        video.remove();
+        reject('Error al cargar el video');
+      };
+      
+      video.src = URL.createObjectURL(file);
+      video.load();
     });
   }
 

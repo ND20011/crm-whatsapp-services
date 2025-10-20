@@ -11,7 +11,7 @@ export class SidebarService {
   // SIGNALS
   // ============================================================================
   
-  private _isOpen = signal<boolean>(true); // Iniciamos abierto por defecto para desktop
+  private _isOpen = signal<boolean>(false); // Iniciamos abierto por defecto para desktop
   private _isMobile = signal<boolean>(false);
 
   // ============================================================================

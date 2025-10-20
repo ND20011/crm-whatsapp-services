@@ -4,6 +4,7 @@ import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } 
 import { Subject, takeUntil, finalize } from 'rxjs';
 import { AIConfigService, AIConfiguration, AIMode, AITestResponse } from '../../services/ai-config.service';
 import { SoundSettingsProfessionalComponent } from '../../../../shared/components/sound-settings-professional/sound-settings-professional.component';
+import { ProductSearchConfigComponent } from '../product-search-config/product-search-config.component';
 
 /**
  * 🧠 Componente para configurar IA personalizada del cliente
@@ -11,7 +12,7 @@ import { SoundSettingsProfessionalComponent } from '../../../../shared/component
 @Component({
   selector: 'app-ai-config',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, SoundSettingsProfessionalComponent],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, SoundSettingsProfessionalComponent, ProductSearchConfigComponent],
   templateUrl: './ai-config.component.html',
   styleUrl: './ai-config.component.scss'
 })

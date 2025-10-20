@@ -1,0 +1,473 @@
+<div class="task-detail-container">
+  <!-- ============================================================================ -->
+  <!-- HEADER SECTION -->
+  <!-- ============================================================================ -->
+  <header class="task-header">
+    <div class="header-top">
+      <div class="header-title">
+        <div class="title-icon">
+          <i class="fas fa-eye"></i>
+        </div>
+        <div class="title-text">
+          <h1>Detalle de Tarea</h1>
+          <p class="subtitle">Información completa y acciones disponibles</p>
+        </div>
+      </div>
+      
+      <div class="header-actions">
+        <button class="action-btn btn-secondary" routerLink="/tasks/list">
+          <i class="fas fa-arrow-left"></i>
+          Volver a Lista
+        </button>
+        <button class="action-btn btn-info" routerLink="/tasks/dashboard">
+          <i class="fas fa-chart-line"></i>
+          Dashboard
+        </button>
+        @if (task()) {
+          <button class="action-btn btn-primary" [routerLink]="['/tasks/edit', task()!.id]">
+            <i class="fas fa-edit"></i>
+            Editar Tarea
+          </button>
+        }
+      </div>
+    </div>
+  </header>
+
+  <!-- ============================================================================ -->
+  <!-- MAIN CONTENT -->
+  <!-- ============================================================================ -->
+  <main class="task-main">
+    @if (isLoading()) {
+      <div class="loading-state">
+        <div class="state-icon">
+          <i class="fas fa-spinner fa-spin"></i>
+        </div>
+        <h3 class="state-title">Cargando Tarea</h3>
+        <p class="state-message">Obteniendo información detallada...</p>
+      </div>
+    } @else if (error()) {
+      <div class="error-state">
+        <div class="state-icon">
+          <i class="fas fa-exclamation-triangle"></i>
+        </div>
+        <h3 class="state-title">Error</h3>
+        <p class="state-message">{{ error() }}</p>
+        <button class="action-btn btn-primary" (click)="loadTask()">
+          <i class="fas fa-refresh"></i>
+          Reintentar
+        </button>
+      </div>
+    } @else if (task()) {
+      <!-- ============================================================================ -->
+      <!-- TASK OVERVIEW CARD -->
+      <!-- ============================================================================ -->
+      <div class="overview-card">
+        <div class="card-header">
+          <div class="task-title-section">
+            <h2 class="task-title">{{ task()!.title }}</h2>
+            <div class="task-badges">
+              <span class="badge status-badge" [class]="getStatusBadgeClass(task()!.status)">
+                <i class="fas" [class]="getStatusIcon(task()!.status)"></i>
+                {{ getStatusLabel(task()!.status) }}
+              </span>
+              <span class="badge priority-badge" [class]="getPriorityBadgeClass(task()!.priority)">
+                <i class="fas fa-exclamation-triangle"></i>
+                {{ getPriorityLabel(task()!.priority) }}
+              </span>
+              <span class="badge category-badge">
+                <i class="fas" [class]="getCategoryIcon(task()!.category)"></i>
+                {{ getCategoryLabel(task()!.category) }}
+              </span>
+              @if (isOverdue()) {
+                <span class="badge overdue-badge">
+                  <i class="fas fa-clock"></i>
+                  Vencida
+                </span>
+              }
+            </div>
+          </div>
+          
+          <div class="task-actions">
+            @if (canMarkComplete()) {
+              <button 
+                class="action-btn btn-success"
+                (click)="markComplete()"
+                [disabled]="isUpdating()"
+              >
+                <i class="fas fa-check"></i>
+                Completar
+              </button>
+            }
+            @if (canCancel()) {
+              <button 
+                class="action-btn btn-warning"
+                (click)="cancelTask()"
+                [disabled]="isUpdating()"
+              >
+                <i class="fas fa-times"></i>
+                Cancelar
+              </button>
+            }
+            @if (canReopen()) {
+              <button 
+                class="action-btn btn-info"
+                (click)="reopenTask()"
+                [disabled]="isUpdating()"
+              >
+                <i class="fas fa-undo"></i>
+                Reabrir
+              </button>
+            }
+          </div>
+        </div>
+
+        @if (task()!.description) {
+          <div class="card-body">
+            <div class="description-section">
+              <h4 class="section-title">
+                <i class="fas fa-align-left"></i>
+                Descripción
+              </h4>
+              <p class="task-description">{{ task()!.description }}</p>
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- ============================================================================ -->
+      <!-- TASK DETAILS GRID -->
+      <!-- ============================================================================ -->
+      <div class="details-grid">
+        <!-- DATE AND TIME INFO -->
+        <div class="detail-card">
+          <div class="card-header">
+            <h3 class="card-title">
+              <i class="fas fa-calendar-alt"></i>
+              Fechas y Tiempo
+            </h3>
+          </div>
+          <div class="card-body">
+            <div class="detail-item">
+              <span class="detail-label">
+                <i class="fas fa-calendar"></i>
+                Fecha de Vencimiento
+              </span>
+              <span class="detail-value" [class.overdue]="isOverdue()">
+                {{ formatDate(task()!.due_date) }}
+              </span>
+            </div>
+            
+            @if (task()!.estimated_duration) {
+              <div class="detail-item">
+                <span class="detail-label">
+                  <i class="fas fa-clock"></i>
+                  Duración Estimada
+                </span>
+                <span class="detail-value">{{ task()!.estimated_duration }} minutos</span>
+              </div>
+            }
+            
+            <div class="detail-item">
+              <span class="detail-label">
+                <i class="fas fa-plus-circle"></i>
+                Fecha de Creación
+              </span>
+              <span class="detail-value">{{ formatDate(task()!.created_at) }}</span>
+            </div>
+            
+            <div class="detail-item">
+              <span class="detail-label">
+                <i class="fas fa-edit"></i>
+                Última Actualización
+              </span>
+              <span class="detail-value">{{ formatDate(task()!.updated_at) }}</span>
+            </div>
+            
+            @if (task()!.completed_at) {
+              <div class="detail-item">
+                <span class="detail-label">
+                  <i class="fas fa-check-circle"></i>
+                  Fecha de Finalización
+                </span>
+                <span class="detail-value">{{ formatDate(task()!.completed_at) }}</span>
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- PROGRESS INFO -->
+        <div class="detail-card">
+          <div class="card-header">
+            <h3 class="card-title">
+              <i class="fas fa-chart-line"></i>
+              Progreso
+            </h3>
+          </div>
+          <div class="card-body">
+            <div class="progress-section">
+              <div class="progress-header">
+                <span class="progress-label">Completado</span>
+                <span class="progress-percentage">{{ task()!.completion_percentage }}%</span>
+              </div>
+              <div class="progress-bar-container">
+                <div 
+                  class="progress-bar" 
+                  [style.width.%]="task()!.completion_percentage"
+                  [class]="getProgressBarClass(task()!.completion_percentage)"
+                ></div>
+              </div>
+            </div>
+            
+            <div class="detail-item">
+              <span class="detail-label">
+                <i class="fas fa-flag"></i>
+                Estado Actual
+              </span>
+              <span class="detail-value">
+                <span class="badge" [class]="getStatusBadgeClass(task()!.status)">
+                  {{ getStatusLabel(task()!.status) }}
+                </span>
+              </span>
+            </div>
+            
+            <div class="detail-item">
+              <span class="detail-label">
+                <i class="fas fa-exclamation-triangle"></i>
+                Prioridad
+              </span>
+              <span class="detail-value">
+                <span class="badge" [class]="getPriorityBadgeClass(task()!.priority)">
+                  {{ getPriorityLabel(task()!.priority) }}
+                </span>
+              </span>
+            </div>
+            
+            <div class="detail-item">
+              <span class="detail-label">
+                <i class="fas fa-tags"></i>
+                Categoría
+              </span>
+              <span class="detail-value">
+                <span class="badge category-badge">
+                  <i class="fas" [class]="getCategoryIcon(task()!.category)"></i>
+                  {{ getCategoryLabel(task()!.category) }}
+                </span>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- CONTACT INFO -->
+        @if (task()!.related_contact_id || task()!.related_phone) {
+          <div class="detail-card">
+            <div class="card-header">
+              <h3 class="card-title">
+                <i class="fas fa-user"></i>
+                Contacto Relacionado
+              </h3>
+            </div>
+            <div class="card-body">
+              @if (task()!.contact_name) {
+                <div class="detail-item">
+                  <span class="detail-label">
+                    <i class="fas fa-address-book"></i>
+                    Contacto
+                  </span>
+                  <span class="detail-value">{{ task()!.contact_name }}</span>
+                </div>
+              }
+              
+              @if (task()!.related_phone) {
+                <div class="detail-item">
+                  <span class="detail-label">
+                    <i class="fas fa-phone"></i>
+                    Teléfono
+                  </span>
+                  <span class="detail-value">
+                    <a href="tel:{{ task()!.related_phone }}" class="phone-link">
+                      {{ task()!.related_phone }}
+                    </a>
+                  </span>
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- RECURRENCE INFO -->
+        @if (task()!.is_recurring && task()!.recurrence_pattern) {
+          <div class="detail-card">
+            <div class="card-header">
+              <h3 class="card-title">
+                <i class="fas fa-repeat"></i>
+                Recurrencia
+              </h3>
+            </div>
+            <div class="card-body">
+              <div class="detail-item">
+                <span class="detail-label">
+                  <i class="fas fa-calendar-week"></i>
+                  Tipo de Recurrencia
+                </span>
+                <span class="detail-value">{{ getRecurrenceDescription() }}</span>
+              </div>
+              
+              @if (task()!.parent_task_id) {
+                <div class="detail-item">
+                  <span class="detail-label">
+                    <i class="fas fa-link"></i>
+                    Tarea Padre
+                  </span>
+                  <span class="detail-value">
+                    <a [routerLink]="['/tasks/view', task()!.parent_task_id]" class="task-link">
+                      Ver tarea original
+                    </a>
+                  </span>
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- ============================================================================ -->
+      <!-- REMINDERS SECTION -->
+      <!-- ============================================================================ -->
+      @if (reminders().length > 0) {
+        <div class="reminders-section">
+          <div class="section-header">
+            <h3 class="section-title">
+              <i class="fas fa-bell"></i>
+              Recordatorios ({{ reminders().length }})
+            </h3>
+          </div>
+          
+          <div class="reminders-grid">
+            @for (reminder of reminders(); track reminder.id) {
+              <div class="reminder-card">
+                <div class="reminder-header">
+                  <div class="reminder-type">
+                    <i class="fas" [class]="getReminderIcon(reminder.reminder_type)"></i>
+                    {{ getReminderTypeLabel(reminder.reminder_type) }}
+                  </div>
+                  <span class="reminder-status badge" [class]="getReminderStatusClass(reminder.status)">
+                    {{ getReminderStatusLabel(reminder.status) }}
+                  </span>
+                </div>
+                
+                <div class="reminder-body">
+                  <div class="reminder-datetime">
+                    <i class="fas fa-calendar-alt"></i>
+                    {{ formatDate(reminder.reminder_datetime) }}
+                  </div>
+                  
+                  @if (reminder.message) {
+                    <div class="reminder-message">
+                      <i class="fas fa-comment"></i>
+                      {{ reminder.message }}
+                    </div>
+                  }
+                  
+                  @if (reminder.sent_at) {
+                    <div class="reminder-sent">
+                      <i class="fas fa-check-circle"></i>
+                      Enviado el {{ formatDate(reminder.sent_at) }}
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- ============================================================================ -->
+      <!-- GOOGLE CALENDAR SECTION -->
+      <!-- ============================================================================ -->
+      @if (task()!.google_export_count > 0) {
+        <div class="google-calendar-section">
+          <div class="section-header">
+            <h3 class="section-title">
+              <i class="fab fa-google"></i>
+              Google Calendar
+            </h3>
+          </div>
+          
+          <div class="calendar-info">
+            <div class="detail-item">
+              <span class="detail-label">
+                <i class="fas fa-export"></i>
+                Exportaciones
+              </span>
+              <span class="detail-value">{{ task()!.google_export_count }} veces</span>
+            </div>
+            
+            @if (task()!.last_exported_to_google) {
+              <div class="detail-item">
+                <span class="detail-label">
+                  <i class="fas fa-clock"></i>
+                  Última Exportación
+                </span>
+                <span class="detail-value">{{ formatDate(task()!.last_exported_to_google) }}</span>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- ============================================================================ -->
+      <!-- ACTION BUTTONS -->
+      <!-- ============================================================================ -->
+      <div class="action-section">
+        <div class="action-buttons">
+          <button 
+            class="action-btn btn-primary"
+            [routerLink]="['/tasks/edit', task()!.id]"
+          >
+            <i class="fas fa-edit"></i>
+            Editar Tarea
+          </button>
+          
+          @if (task()!.is_recurring) {
+            <button 
+              class="action-btn btn-info"
+              (click)="viewRecurringSeries()"
+            >
+              <i class="fas fa-repeat"></i>
+              Ver Serie Completa
+            </button>
+          }
+          
+          <button 
+            class="action-btn btn-secondary"
+            (click)="duplicateTask()"
+          >
+            <i class="fas fa-copy"></i>
+            Duplicar Tarea
+          </button>
+          
+          <button 
+            class="action-btn btn-danger"
+            (click)="deleteTask()"
+          >
+            <i class="fas fa-trash"></i>
+            Eliminar
+          </button>
+        </div>
+      </div>
+
+    } @else {
+      <div class="empty-state">
+        <div class="state-icon">
+          <i class="fas fa-search"></i>
+        </div>
+        <h3 class="state-title">Tarea no encontrada</h3>
+        <p class="state-message">La tarea que buscas no existe o ha sido eliminada.</p>
+        <button class="action-btn btn-primary" routerLink="/tasks/list">
+          <i class="fas fa-arrow-left"></i>
+          Volver a Lista
+        </button>
+      </div>
+    }
+  </main>
+</div>

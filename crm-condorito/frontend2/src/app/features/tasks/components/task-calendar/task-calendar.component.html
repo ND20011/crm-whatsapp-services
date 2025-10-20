@@ -1,0 +1,367 @@
+<div class="task-calendar-container">
+  <!-- ============================================================================ -->
+  <!-- HEADER SECTION -->
+  <!-- ============================================================================ -->
+  <header class="task-header">
+    <div class="header-top">
+      <div class="header-title">
+        <div class="title-icon">
+          <i class="fas fa-calendar-alt"></i>
+        </div>
+        <div class="title-text">
+          <h1>Calendario de Tareas</h1>
+          <p class="subtitle">Vista mensual de todas tus tareas y recordatorios</p>
+        </div>
+      </div>
+      
+      <div class="header-actions">
+        <button class="action-btn btn-secondary" routerLink="/tasks/list">
+          <i class="fas fa-list"></i>
+          Ver Lista
+        </button>
+        <button class="action-btn btn-info" routerLink="/tasks/dashboard">
+          <i class="fas fa-chart-line"></i>
+          Dashboard
+        </button>
+        <button class="action-btn btn-primary" routerLink="/tasks/create">
+          <i class="fas fa-plus-circle"></i>
+          Nueva Tarea
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ============================================================================ -->
+  <!-- MAIN CONTENT -->
+  <!-- ============================================================================ -->
+  <main class="task-main">
+    @if (isLoading()) {
+      <div class="loading-state">
+        <div class="state-icon">
+          <i class="fas fa-spinner fa-spin"></i>
+        </div>
+        <h3 class="state-title">Cargando Calendario</h3>
+        <p class="state-message">Obteniendo tareas del mes...</p>
+      </div>
+    } @else if (error()) {
+      <div class="error-state">
+        <div class="state-icon">
+          <i class="fas fa-exclamation-triangle"></i>
+        </div>
+        <h3 class="state-title">Error</h3>
+        <p class="state-message">{{ error() }}</p>
+        <button class="action-btn btn-primary" (click)="loadCalendarData()">
+          <i class="fas fa-refresh"></i>
+          Reintentar
+        </button>
+      </div>
+    } @else {
+      <!-- ============================================================================ -->
+      <!-- CALENDAR CONTROLS -->
+      <!-- ============================================================================ -->
+      <div class="calendar-controls">
+        <div class="month-navigation">
+          <button 
+            class="nav-btn prev-btn"
+            (click)="previousMonth()"
+            [disabled]="isLoading()"
+          >
+            <i class="fas fa-chevron-left"></i>
+          </button>
+          
+          <div class="month-display">
+            <h2 class="month-title">{{ currentMonthName() }}</h2>
+            <p class="month-subtitle">{{ currentYear() }}</p>
+          </div>
+          
+          <button 
+            class="nav-btn next-btn"
+            (click)="nextMonth()"
+            [disabled]="isLoading()"
+          >
+            <i class="fas fa-chevron-right"></i>
+          </button>
+        </div>
+
+        <div class="calendar-actions">
+          <button 
+            class="action-btn btn-outline refresh-btn"
+            (click)="refreshCalendar()"
+            [disabled]="isLoading()"
+            title="Actualizar calendario"
+          >
+            <i class="fas fa-sync-alt" [class.fa-spin]="isLoading()"></i>
+            Actualizar
+          </button>
+          
+          <button 
+            class="action-btn btn-outline today-btn"
+            (click)="goToToday()"
+          >
+            <i class="fas fa-calendar-day"></i>
+            Hoy
+          </button>
+          
+          <div class="view-toggle">
+            <button 
+              class="view-btn"
+              [class.active]="viewMode() === 'month'"
+              (click)="setViewMode('month')"
+            >
+              <i class="fas fa-calendar"></i>
+              Mes
+            </button>
+            <button 
+              class="view-btn"
+              [class.active]="viewMode() === 'week'"
+              (click)="setViewMode('week')"
+            >
+              <i class="fas fa-calendar-week"></i>
+              Semana
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================================================ -->
+      <!-- CALENDAR LEGEND -->
+      <!-- ============================================================================ -->
+      <div class="calendar-legend">
+        <div class="legend-item">
+          <span class="legend-dot priority-urgent"></span>
+          <span class="legend-label">Urgente</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-dot priority-high"></span>
+          <span class="legend-label">Alta</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-dot priority-medium"></span>
+          <span class="legend-label">Media</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-dot priority-low"></span>
+          <span class="legend-label">Baja</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-dot status-overdue"></span>
+          <span class="legend-label">Vencida</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-dot status-completed"></span>
+          <span class="legend-label">Completada</span>
+        </div>
+      </div>
+
+      <!-- ============================================================================ -->
+      <!-- CALENDAR GRID -->
+      <!-- ============================================================================ -->
+      <div class="calendar-grid">
+        <!-- Calendar Header - Days of Week -->
+        <div class="calendar-header">
+          @for (day of weekDays; track day) {
+            <div class="day-header">
+              <span class="day-name">{{ day }}</span>
+            </div>
+          }
+        </div>
+
+        <!-- Calendar Body - Days -->
+        <div class="calendar-body">
+          @for (day of calendarDays(); track day.date) {
+            <div 
+              class="calendar-day"
+              [class.other-month]="!day.is_current_month"
+              [class.today]="day.is_today"
+              [class.weekend]="day.is_weekend"
+              [class.has-tasks]="day.task_count > 0"
+              (click)="selectDay(day)"
+            >
+              <!-- Day Number -->
+              <div class="day-number">
+                {{ day.day_of_month }}
+                @if (day.task_count > 0) {
+                  <span class="task-count-badge">{{ day.task_count }}</span>
+                }
+              </div>
+
+              <!-- Tasks Preview -->
+              <div class="day-tasks">
+                @for (task of day.tasks.slice(0, 3); track task.id) {
+                  <div 
+                    class="task-preview"
+                    [class]="getTaskPreviewClass(task)"
+                    [title]="task.title + ' - ' + getPriorityLabel(task.priority)"
+                    (click)="openTaskDetail(task, $event)"
+                  >
+                    <span class="task-time">{{ getTaskTime(task.due_date) }}</span>
+                    <span class="task-title">{{ task.title }}</span>
+                    <i class="task-icon fas" [class]="getCategoryIcon(task.category)"></i>
+                  </div>
+                }
+                
+                @if (day.tasks.length > 3) {
+                  <div class="more-tasks" (click)="showDayTasks(day, $event)">
+                    +{{ day.tasks.length - 3 }} más
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- ============================================================================ -->
+      <!-- MONTH SUMMARY -->
+      <!-- ============================================================================ -->
+      @if (monthStats().total === 0) {
+        <div class="no-tasks-month">
+          <div class="no-tasks-icon">
+            <i class="fas fa-calendar-plus"></i>
+          </div>
+          <h3 class="no-tasks-title">No hay tareas este mes</h3>
+          <p class="no-tasks-message">
+            Parece que tienes el mes libre. ¿Qué tal si planificas algunas tareas?
+          </p>
+          <button class="action-btn btn-primary" routerLink="/tasks/create">
+            <i class="fas fa-plus-circle"></i>
+            Crear Primera Tarea
+          </button>
+        </div>
+      } @else {
+        <div class="month-summary">
+          <div class="summary-card">
+            <div class="summary-header">
+              <h3 class="summary-title">
+                <i class="fas fa-chart-pie"></i>
+                Resumen del Mes
+              </h3>
+            </div>
+            <div class="summary-content">
+              <div class="summary-grid">
+                <div class="summary-item">
+                  <div class="summary-value">{{ monthStats().total }}</div>
+                  <div class="summary-label">Total</div>
+                </div>
+                <div class="summary-item">
+                  <div class="summary-value">{{ monthStats().pending }}</div>
+                  <div class="summary-label">Pendientes</div>
+                </div>
+                <div class="summary-item">
+                  <div class="summary-value">{{ monthStats().completed }}</div>
+                  <div class="summary-label">Completadas</div>
+                </div>
+                <div class="summary-item">
+                  <div class="summary-value">{{ monthStats().overdue }}</div>
+                  <div class="summary-label">Vencidas</div>
+                </div>
+              </div>
+              
+              <div class="completion-rate">
+                <div class="rate-header">
+                  <span class="rate-label">Tasa de Completitud</span>
+                  <span class="rate-value">{{ completionRate() }}%</span>
+                </div>
+                <div class="rate-bar">
+                  <div 
+                    class="rate-progress" 
+                    [style.width.%]="completionRate()"
+                    [class]="getCompletionRateClass()"
+                  ></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+    }
+  </main>
+
+  <!-- ============================================================================ -->
+  <!-- DAY DETAIL MODAL (if selected day has tasks) -->
+  <!-- ============================================================================ -->
+  @if (selectedDay()) {
+    <div class="day-modal-overlay" (click)="closeDayModal()">
+      <div class="day-modal" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3 class="modal-title">
+            <i class="fas fa-calendar-day"></i>
+            {{ formatSelectedDayTitle() }}
+          </h3>
+          <button class="close-btn" (click)="closeDayModal()">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        
+        <div class="modal-body">
+          @if (selectedDay()!.tasks.length === 0) {
+            <div class="no-tasks">
+              <i class="fas fa-calendar-plus"></i>
+              <p>No hay tareas programadas para este día</p>
+              <button class="action-btn btn-primary" (click)="createTaskForDay()">
+                <i class="fas fa-plus"></i>
+                Crear Tarea
+              </button>
+            </div>
+          } @else {
+            <div class="modal-tasks">
+              @for (task of selectedDay()!.tasks; track task.id) {
+                <div class="modal-task-item" [class]="getTaskStatusClass(task.status)">
+                  <div class="task-info">
+                    <div class="task-header">
+                      <h4 class="task-title">{{ task.title }}</h4>
+                      <span class="task-time">{{ getTaskTime(task.due_date) }}</span>
+                    </div>
+                    
+                    @if (task.description) {
+                      <p class="task-description">{{ task.description }}</p>
+                    }
+                    
+                    <div class="task-meta">
+                      <span class="task-priority badge" [class]="getPriorityBadgeClass(task.priority)">
+                        {{ getPriorityLabel(task.priority) }}
+                      </span>
+                      <span class="task-category badge">
+                        <i class="fas" [class]="getCategoryIcon(task.category)"></i>
+                        {{ getCategoryLabel(task.category) }}
+                      </span>
+                      <span class="task-status badge" [class]="getStatusBadgeClass(task.status)">
+                        {{ getStatusLabel(task.status) }}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <div class="task-actions">
+                    <button 
+                      class="task-action-btn view-btn"
+                      [routerLink]="['/tasks/view', task.id]"
+                      title="Ver detalles"
+                    >
+                      <i class="fas fa-eye"></i>
+                    </button>
+                    <button 
+                      class="task-action-btn edit-btn"
+                      [routerLink]="['/tasks/edit', task.id]"
+                      title="Editar"
+                    >
+                      <i class="fas fa-edit"></i>
+                    </button>
+                    @if (task.status === 'pending' || task.status === 'in_progress') {
+                      <button 
+                        class="task-action-btn complete-btn"
+                        (click)="markTaskComplete(task)"
+                        title="Marcar como completada"
+                      >
+                        <i class="fas fa-check"></i>
+                      </button>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  }
+</div>

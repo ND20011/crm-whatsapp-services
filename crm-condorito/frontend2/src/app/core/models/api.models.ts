@@ -100,6 +100,13 @@ export interface ConversationsResponse {
     limit: number;
     offset: number;
     total: number;
+    hasMore?: boolean; // Agregado para indicar si hay más resultados
+  };
+  filters?: {
+    search?: string;
+    tagId?: number;
+    tagIds?: number[];
+    archived?: boolean;
   };
 }
 
@@ -168,7 +175,7 @@ export interface FileUploadProgress {
 
 export interface ChatFile {
   file: File;
-  type: 'image' | 'document';
+  type: 'image' | 'video' | 'document';
   preview?: string;
   size: string;
   name: string;

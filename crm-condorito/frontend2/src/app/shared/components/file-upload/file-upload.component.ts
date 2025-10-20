@@ -20,6 +20,7 @@ export class FileUploadComponent {
   public disabled = input<boolean>(false);
   public multiple = input<boolean>(false);
   public acceptImages = input<boolean>(true);
+  public acceptVideos = input<boolean>(true);
   public acceptDocuments = input<boolean>(true);
 
   // Outputs
@@ -39,10 +40,20 @@ export class FileUploadComponent {
     
     if (this.acceptImages()) {
       types.push(...APP_CONFIG.files.allowedImageTypes);
+      // Agregar extensiones para mayor compatibilidad
+      types.push('.jpg', '.jpeg', '.png', '.gif', '.webp');
+    }
+    
+    if (this.acceptVideos()) {
+      types.push(...APP_CONFIG.files.allowedVideoTypes);
+      // Agregar extensiones para mayor compatibilidad
+      types.push('.mp4', '.webm', '.ogg', '.avi', '.mov', '.wmv', '.flv', '.mkv', '.m4v', '.3gp');
     }
     
     if (this.acceptDocuments()) {
       types.push(...APP_CONFIG.files.allowedDocumentTypes);
+      // Agregar extensiones para mayor compatibilidad
+      types.push('.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.txt', '.csv', '.zip', '.rar');
     }
     
     return types.join(',');
@@ -131,6 +142,11 @@ export class FileUploadComponent {
           continue;
         }
         
+        if (fileType === 'video' && !this.acceptVideos()) {
+          this.onError.emit('Los videos no están permitidos');
+          continue;
+        }
+        
         if (fileType === 'document' && !this.acceptDocuments()) {
           this.onError.emit('Los documentos no están permitidos');
           continue;
@@ -149,6 +165,15 @@ export class FileUploadComponent {
             chatFile.preview = await this.chatService.createImagePreview(file);
           } catch (error) {
             console.warn('Error creating image preview:', error);
+          }
+        }
+        
+        // Crear preview para videos
+        if (fileType === 'video') {
+          try {
+            chatFile.preview = await this.chatService.createVideoPreview(file);
+          } catch (error) {
+            console.warn('Error creating video preview:', error);
           }
         }
 
@@ -203,6 +228,10 @@ export class FileUploadComponent {
     
     if (this.acceptImages()) {
       types.push('imágenes');
+    }
+    
+    if (this.acceptVideos()) {
+      types.push('videos');
     }
     
     if (this.acceptDocuments()) {

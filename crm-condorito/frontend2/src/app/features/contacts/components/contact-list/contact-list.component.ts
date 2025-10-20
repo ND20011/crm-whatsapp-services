@@ -176,8 +176,8 @@ export class ContactListComponent implements OnInit, OnDestroy {
       next: (response) => {
         if (response.success) {
           this.contacts.set(response.data);
-          this.totalContacts.set(response.total);
-          this.totalPages.set(response.totalPages);
+          this.totalContacts.set(response.pagination.total);
+          this.totalPages.set(response.pagination.pages);
         } else {
           this.errorHandler.handleError('Error al cargar contactos');
         }

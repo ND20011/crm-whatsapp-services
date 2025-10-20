@@ -86,27 +86,7 @@
               </div>
             </div>
 
-            <!-- Bot Messages Card -->
-            <div class="stat-card">
-              <div class="stat-icon responses">
-                <i class="fas fa-reply"></i>
-              </div>
-              <div class="stat-content">
-                <h3 class="stat-number">{{ getTotalBotMessages() }}</h3>
-                <p class="stat-label">Mensajes del Bot</p>
-                <div class="stat-badges">
-                  <span class="stat-badge total">
-                    {{ messageStats()?.manual_messages || 0 }} manuales
-                  </span>
-                  @if (getWhatsAppStats()?.bot_messages) {
-                    <span class="stat-badge whatsapp">
-                      <i class="fab fa-whatsapp"></i>
-                      {{ getWhatsAppStats()?.bot_messages }} WhatsApp
-                    </span>
-                  }
-                </div>
-              </div>
-            </div>
+          
 
             <!-- Bot Quota Card (Mensajes y Tokens) -->
             <div class="stat-card quota-card">
@@ -224,6 +204,188 @@
                 </button>
               </div>
             </div>
+      </div>
+
+      <!-- Tareas del Día Panel -->
+      <div class="tasks-panel collapsible-panel" [class.expanded]="showTasksTable()">
+        <div class="panel-header clickable" (click)="toggleTasksTable()">
+          <div class="header-content">
+            <h2 class="panel-title">
+              <i class="fas fa-tasks"></i>
+              Tareas del Día
+              @if (getTodayActiveTasks().length > 0) {
+                <span class="badge bg-primary ms-2">{{ getTodayActiveTasks().length }}</span>
+              }
+            </h2>
+            <p class="panel-subtitle">
+              Gestiona tus tareas pendientes para hoy
+            </p>
+          </div>
+          <div class="collapse-toggle">
+            <i class="fas" [ngClass]="{
+              'fa-chevron-down': !showTasksTable(),
+              'fa-chevron-up': showTasksTable()
+            }"></i>
+          </div>
+        </div>
+        
+        <div class="panel-content" [class.expanded]="showTasksTable()">
+          <div class="content-inner">
+            @if (isLoadingTasks()) {
+              <div class="loading-tasks">
+                <div class="spinner-border text-primary" role="status">
+                  <span class="visually-hidden">Cargando tareas...</span>
+                </div>
+                <p class="mt-2">Cargando tareas del día...</p>
+              </div>
+            } @else if (getTodayActiveTasks().length === 0) {
+              <div class="no-tasks">
+                <i class="fas fa-calendar-check text-success fa-3x mb-3"></i>
+                <h5>¡Excelente trabajo!</h5>
+                <p class="text-muted">No tienes tareas pendientes para hoy.</p>
+                <button class="btn btn-outline-primary" (click)="goToTasks()">
+                  <i class="fas fa-plus"></i>
+                  Crear Nueva Tarea
+                </button>
+              </div>
+            } @else {
+              <div class="tasks-table-container">
+                <div class="table-header">
+                  <div class="table-actions">
+                    <button class="btn btn-sm btn-outline-secondary" (click)="loadTodayTasks()">
+                      <i class="fas fa-sync-alt" [class.fa-spin]="isLoadingTasks()"></i>
+                      Actualizar
+                    </button>
+                    <button class="btn btn-sm btn-primary" (click)="goToTasks()">
+                      <i class="fas fa-eye"></i>
+                      Ver Todas
+                    </button>
+                  </div>
+                </div>
+
+                <div class="table-responsive">
+                  <table class="table table-hover tasks-table">
+                    <thead>
+                      <tr>
+                        <th width="5%">
+                          <i class="fas fa-flag"></i>
+                        </th>
+                        <th width="40%">Tarea</th>
+                        <th width="15%">Categoría</th>
+                        <th width="15%">Vencimiento</th>
+                        <th width="10%">Estado</th>
+                        <th width="15%">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (task of getTodayActiveTasks(); track task.id) {
+                        <tr class="task-row" 
+                            [class.task-overdue]="isTaskOverdue(task)"
+                            [class.task-in-progress]="task.status === 'in_progress'">
+                          <!-- Prioridad -->
+                          <td class="priority-cell">
+                            <div class="priority-indicator" [class]="'priority-' + task.priority" 
+                                 [title]="getTaskPriorityLabel(task.priority)">
+                              <i class="fas" [class]="getTaskPriorityIcon(task.priority)"></i>
+                            </div>
+                          </td>
+                          
+                          <!-- Información de la tarea -->
+                          <td class="task-info">
+                            <div class="task-title">
+                              <i class="fas" [class]="getTaskCategoryIcon(task.category)" 
+                                 [title]="getTaskCategoryLabel(task.category)"></i>
+                              {{ task.title }}
+                            </div>
+                            @if (task.description) {
+                              <div class="task-description">
+                                {{ task.description }}
+                              </div>
+                            }
+                            @if (task.related_phone || task.contact_name) {
+                              <div class="task-contact">
+                                <i class="fas fa-user"></i>
+                                {{ task.contact_name || task.related_phone }}
+                              </div>
+                            }
+                          </td>
+                          
+                          <!-- Categoría -->
+                          <td class="category-cell">
+                            <span class="category-badge" [class]="'category-' + task.category">
+                              <i class="fas" [class]="getTaskCategoryIcon(task.category)"></i>
+                              {{ getTaskCategoryLabel(task.category) }}
+                            </span>
+                          </td>
+                          
+                          <!-- Vencimiento -->
+                          <td class="due-date-cell">
+                            <div class="due-date" [class.overdue]="isTaskOverdue(task)">
+                              <i class="fas fa-clock"></i>
+                              {{ formatTaskDate(task.due_date) }}
+                            </div>
+                            @if (task.estimated_duration) {
+                              <div class="duration">
+                                <i class="fas fa-hourglass-half"></i>
+                                {{ task.estimated_duration }}min
+                              </div>
+                            }
+                          </td>
+                          
+                          <!-- Estado -->
+                          <td class="status-cell">
+                            <span class="status-badge" [class]="'status-' + task.status">
+                              <i class="fas" [class]="getTaskStatusIcon(task.status)"></i>
+                              {{ getTaskStatusLabel(task.status) }}
+                            </span>
+                          </td>
+                          
+                          <!-- Acciones -->
+                          <td class="actions-cell">
+                            <div class="task-actions">
+                              @if (task.status === 'pending') {
+                                <button class="btn btn-sm btn-outline-primary" 
+                                        (click)="startTask(task)"
+                                        title="Iniciar tarea">
+                                  <i class="fas fa-play"></i>
+                                </button>
+                              }
+                              
+                              @if (task.status === 'pending' || task.status === 'in_progress') {
+                                <button class="btn btn-sm btn-outline-success" 
+                                        (click)="completeTask(task)"
+                                        title="Completar tarea">
+                                  <i class="fas fa-check"></i>
+                                </button>
+                              }
+                              
+                              @if (task.status !== 'completed' && task.status !== 'cancelled') {
+                                <button class="btn btn-sm btn-outline-danger" 
+                                        (click)="cancelTask(task)"
+                                        title="Cancelar tarea">
+                                  <i class="fas fa-times"></i>
+                                </button>
+                              }
+                            </div>
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+
+                @if (getTodayActiveTasks().length >= 20) {
+                  <div class="table-footer">
+                    <small class="text-muted">
+                      Mostrando las primeras 20 tareas. 
+                      <a href="javascript:void(0)" (click)="goToTasks()" class="text-primary">Ver todas las tareas</a>
+                    </small>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </div>
       </div>
 
       <!-- Push Notifications Panel -->

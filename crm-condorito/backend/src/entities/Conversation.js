@@ -104,8 +104,6 @@ class Conversation {
     static async findByClientId(clientId, options = {}) {
         try {
             const {
-                limit = 50,
-                offset = 0,
                 archived = false,
                 search = null,
                 orderBy = 'last_message_at',
@@ -124,12 +122,15 @@ class Conversation {
             const params = [clientId, archived ? 1 : 0];
 
             if (search) {
-                query += ` AND (c.contact_name LIKE ? OR c.contact_phone LIKE ?)`;
-                params.push(`%${search}%`, `%${search}%`);
+                query += ` AND (c.contact_name LIKE ? OR c.contact_phone LIKE ? OR c.last_message LIKE ?)`;
+                const searchTerm = `%${search}%`;
+                params.push(searchTerm, searchTerm, searchTerm);
             }
 
-            query += ` GROUP BY c.id ORDER BY c.${orderBy} ${orderDirection} LIMIT ${limit} OFFSET ${offset}`;
-            // No agregar limit y offset como parámetros, usar directamente en la query
+            query += ` GROUP BY c.id ORDER BY c.${orderBy} ${orderDirection}`;
+
+            console.log('🔍 Query conversaciones (sin límite):', query);
+            console.log('📊 Parámetros:', params);
 
             const results = await executeQuery(query, params);
             

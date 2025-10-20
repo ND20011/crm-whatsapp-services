@@ -64,28 +64,26 @@ router.get('/conversations', async (req, res, next) => {
     try {
         const clientId = req.user.id;
         const {
-            limit = 50,
-            offset = 0,
             archived = false,
             search = null
         } = req.query;
 
         const options = {
-            limit: parseInt(limit),
-            offset: parseInt(offset),
             archived: archived === 'true',
             search: search || null
         };
+
+        console.log('🔍 Cargando todas las conversaciones:', options);
 
         const conversations = await MessageService.getConversations(clientId, options);
 
         res.status(200).json({
             success: true,
             conversations,
-            pagination: {
-                limit: options.limit,
-                offset: options.offset,
-                total: conversations.length
+            total: conversations.length,
+            filters: {
+                search: options.search,
+                archived: options.archived
             }
         });
 

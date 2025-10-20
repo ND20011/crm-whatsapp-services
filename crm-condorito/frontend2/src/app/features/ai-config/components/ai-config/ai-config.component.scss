@@ -1406,4 +1406,192 @@
   .text-success { color: var(--color-success) !important; }
   .text-warning { color: var(--color-warning) !important; }
   .text-danger { color: var(--color-danger) !important; }
+
+  // ============================================================================
+  // PRODUCT SEARCH CONFIG SECTION
+  // ============================================================================
+
+  .product-search-config-section {
+    margin-top: 3rem;
+    
+    .section-header {
+      margin-bottom: 2rem;
+      
+      .section-title {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        
+        .title-icon {
+          width: 60px;
+          height: 60px;
+          background: linear-gradient(135deg, #ff6b6b, #ffa500);
+          border-radius: 16px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: white;
+          font-size: 1.5rem;
+          box-shadow: 0 8px 25px rgba(255, 107, 107, 0.3);
+        }
+        
+        .title-text {
+          h2 {
+            color: var(--text-primary);
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin: 0;
+            background: linear-gradient(135deg, #ff6b6b, #ffa500);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+          }
+          
+          .section-subtitle {
+            color: var(--text-secondary);
+            font-size: 1rem;
+            margin: 0.25rem 0 0 0;
+            font-weight: 400;
+          }
+        }
+      }
+    }
+    
+    .section-content {
+      background: var(--bg-card);
+      border-radius: 20px;
+      padding: 2rem;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+      border: 1px solid var(--border-light);
+      
+      // Integrar estilos del componente de productos
+      app-product-search-config {
+        display: block;
+        width: 100%;
+        
+        // Override algunos estilos para mantener consistencia
+        ::ng-deep {
+          .product-search-config-container {
+            padding: 0;
+            max-width: none;
+          }
+          
+          .config-header {
+            display: none; // Ocultamos el header del componente ya que usamos el de la sección
+          }
+          
+          .card {
+            border: 1px solid var(--border-light);
+            border-radius: 16px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            margin-bottom: 1.5rem;
+            
+            .card-header {
+              background: var(--bg-secondary);
+              border-bottom: 1px solid var(--border-light);
+              border-radius: 16px 16px 0 0;
+              
+              h5 {
+                color: var(--text-primary);
+                font-weight: 600;
+              }
+            }
+            
+            .card-body {
+              padding: 1.5rem;
+            }
+          }
+          
+          .form-control, .form-select {
+            border: 2px solid var(--border-light);
+            border-radius: 12px;
+            padding: 0.75rem 1rem;
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+            
+            &:focus {
+              border-color: var(--color-primary);
+              box-shadow: 0 0 0 0.2rem rgba(var(--color-primary-rgb), 0.15);
+            }
+            
+            &.is-invalid {
+              border-color: var(--color-danger);
+              
+              &:focus {
+                box-shadow: 0 0 0 0.2rem rgba(var(--color-danger-rgb), 0.15);
+              }
+            }
+          }
+          
+          .btn {
+            border-radius: 12px;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+            
+            &.btn-primary {
+              background: linear-gradient(135deg, var(--color-primary), #0056b3);
+              border: none;
+              
+              &:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 8px 25px rgba(var(--color-primary-rgb), 0.3);
+              }
+            }
+            
+            &.btn-success {
+              background: linear-gradient(135deg, var(--color-success), #1e7e34);
+              border: none;
+              
+              &:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 8px 25px rgba(var(--color-success-rgb), 0.3);
+              }
+            }
+            
+            &.btn-outline-primary {
+              border: 2px solid var(--color-primary);
+              color: var(--color-primary);
+              
+              &:hover {
+                background: var(--color-primary);
+                transform: translateY(-2px);
+              }
+            }
+          }
+          
+          .alert {
+            border-radius: 12px;
+            border: none;
+            padding: 1rem 1.25rem;
+            
+            &.alert-success {
+              background: rgba(var(--color-success-rgb), 0.1);
+              color: var(--color-success);
+            }
+            
+            &.alert-danger {
+              background: rgba(var(--color-danger-rgb), 0.1);
+              color: var(--color-danger);
+            }
+          }
+          
+          .badge {
+            border-radius: 8px;
+            padding: 0.4rem 0.8rem;
+            font-weight: 600;
+            
+            &.badge-success {
+              background: var(--color-success);
+            }
+            
+            &.badge-primary {
+              background: var(--color-primary);
+            }
+          }
+        }
+      }
+    }
+  }
 }

@@ -71,6 +71,58 @@ export interface AIStats {
   client_code: string;
 }
 
+// ============================================================================
+// INTERFACES PARA BÚSQUEDA DE PRODUCTOS
+// ============================================================================
+
+export interface ProductSearchConfiguration {
+  product_search_enabled: boolean;
+  product_endpoint_url: string;
+  product_endpoint_method: 'GET' | 'POST';
+  product_endpoint_body: string;
+  product_endpoint_headers: string;
+  product_search_param_name: string;
+  product_response_path: string;
+  product_max_results: number;
+  product_cache_ttl: number;
+  product_timeout: number;
+}
+
+export interface ProductSearchTestResult {
+  searchTerm: string;
+  searchResult: {
+    success: boolean;
+    products: any[];
+    error?: string;
+    fromCache: boolean;
+  };
+  responseTime: number;
+  timestamp: string;
+  configUsed: {
+    product_endpoint_url: string;
+    product_endpoint_method: string;
+    product_search_param_name: string;
+    product_response_path: string;
+    product_max_results: number;
+    product_timeout: number;
+  };
+}
+
+export interface ProductSearchStats {
+  cache: {
+    total_entries: number;
+    active_entries: number;
+    expired_entries: number;
+    avg_size: number;
+  };
+  config: {
+    product_search_enabled: boolean;
+    product_cache_ttl: number;
+    product_max_results: number;
+  };
+  timestamp: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -242,5 +294,78 @@ export class AIConfigService {
    */
   clearCache(): void {
     this.configSubject.next(null);
+  }
+
+  // ============================================================================
+  // MÉTODOS PARA BÚSQUEDA DE PRODUCTOS
+  // ============================================================================
+
+  /**
+   * Obtener configuración de búsqueda de productos
+   */
+  getProductSearchConfig(): Observable<{ success: boolean; data: ProductSearchConfiguration }> {
+    return this.http.get<{ success: boolean; data: ProductSearchConfiguration }>(
+      `${this.baseUrl}/api/ai/product-search-config`,
+      { headers: this.getHeaders() }
+    ).pipe(
+      retry(1),
+      catchError(this.handleError.bind(this))
+    );
+  }
+
+  /**
+   * Actualizar configuración de búsqueda de productos
+   */
+  updateProductSearchConfig(config: Partial<ProductSearchConfiguration>): Observable<{ success: boolean; message: string; data: ProductSearchConfiguration }> {
+    return this.http.put<{ success: boolean; message: string; data: ProductSearchConfiguration }>(
+      `${this.baseUrl}/api/ai/product-search-config`,
+      config,
+      { headers: this.getHeaders() }
+    ).pipe(
+      catchError(this.handleError.bind(this))
+    );
+  }
+
+  /**
+   * Probar configuración de búsqueda de productos
+   */
+  testProductSearch(searchTerm: string, testConfig?: Partial<ProductSearchConfiguration>): Observable<{ success: boolean; message: string; data: ProductSearchTestResult }> {
+    const body: any = { searchTerm };
+    if (testConfig) {
+      body.testConfig = testConfig;
+    }
+
+    return this.http.post<{ success: boolean; message: string; data: ProductSearchTestResult }>(
+      `${this.baseUrl}/api/ai/test-product-search`,
+      body,
+      { headers: this.getHeaders() }
+    ).pipe(
+      catchError(this.handleError.bind(this))
+    );
+  }
+
+  /**
+   * Obtener estadísticas del cache de productos
+   */
+  getProductSearchStats(): Observable<{ success: boolean; data: ProductSearchStats }> {
+    return this.http.get<{ success: boolean; data: ProductSearchStats }>(
+      `${this.baseUrl}/api/ai/product-search-stats`,
+      { headers: this.getHeaders() }
+    ).pipe(
+      retry(1),
+      catchError(this.handleError.bind(this))
+    );
+  }
+
+  /**
+   * Limpiar cache de búsqueda de productos
+   */
+  clearProductSearchCache(): Observable<{ success: boolean; message: string; data: { entriesDeleted: number; timestamp: string } }> {
+    return this.http.delete<{ success: boolean; message: string; data: { entriesDeleted: number; timestamp: string } }>(
+      `${this.baseUrl}/api/ai/product-search-cache`,
+      { headers: this.getHeaders() }
+    ).pipe(
+      catchError(this.handleError.bind(this))
+    );
   }
 }

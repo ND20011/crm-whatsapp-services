@@ -7,16 +7,6 @@
 <aside class="sidebar" [class.open]="isOpen()" [class.mobile]="isMobile()">
   <!-- Header del Sidebar -->
   <div class="sidebar-header">
-    <div class="logo-section">
-      <div class="logo-icon">
-        <span class="logo-letter">C</span>
-      </div>
-      <div class="logo-text" [class.hidden]="!isOpen()">
-        <h3>CRM Condorito</h3>
-        <span class="client-code">{{ getClientCode() }}</span>
-      </div>
-    </div>
-    
     <!-- Toggle Button -->
     <button class="toggle-btn" (click)="toggle()" [class.hidden]="isMobile()">
       <i class="icon-menu"></i>
@@ -92,10 +82,7 @@
   <div class="sidebar-footer">
     <!-- User Info -->
     <div class="user-section">
-      <div class="user-avatar">
-        <span class="avatar-text">{{ getUserInitials() }}</span>
-      </div>
-      <div class="user-info" [class.hidden]="!isOpen()">
+      <div class="user-info">
         <div class="user-name">{{ getCompanyName() }}</div>
         <div class="user-role">Cliente: {{ getClientCode() }}</div>
       </div>
