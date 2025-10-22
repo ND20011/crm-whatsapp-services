@@ -9,12 +9,12 @@ import { WhatsAppRealtimeService, WebSocketConnectionState } from '../../../../c
 import { TagSelectorComponent } from '../../../../shared/components/tag-selector/tag-selector.component';
 import { FileUploadComponent } from '../../../../shared/components/file-upload/file-upload.component';
 import { FilePreviewComponent } from '../../../../shared/components/file-preview/file-preview.component';
-import { 
-  Conversation, 
+import {
+  Conversation,
   SendMessageRequest,
   SendImageRequest,
   SendDocumentRequest,
-  ChatFile 
+  ChatFile
 } from '../../../../core/models/api.models';
 import { ContactsService } from '../../../contacts/services/contacts.service';
 import { ContactTag, Contact } from '../../../contacts/models/contact.models';
@@ -52,7 +52,7 @@ export class BulkMessagesComponent implements OnInit, OnDestroy {
   public isLoading = signal<boolean>(false);
   public isSending = signal<boolean>(false);
   public sendProgress = signal<{ current: number; total: number; conversation?: string }>({ current: 0, total: 0 });
-  
+
   // Messages
   public successMessage = signal<string>('');
   public errorMessage = signal<string>('');
@@ -67,7 +67,7 @@ export class BulkMessagesComponent implements OnInit, OnDestroy {
   public selectedContacts = signal<Set<string>>(new Set()); // Using phone_number as IDs
   public availableTags = signal<ContactTag[]>([]);
   public selectedTags = signal<ContactTag[]>([]);
-  
+
   // New: Templates functionality
   public availableTemplates = signal<MessageTemplate[]>([]);
   public selectedTemplate = signal<MessageTemplate | null>(null);
@@ -119,7 +119,7 @@ export class BulkMessagesComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.websocketSubscription?.unsubscribe();
     this.bulkProgressSubscription?.unsubscribe();
-    
+
     // Desconectar WebSocket
     this.whatsappRealtimeService.disconnect();
   }
@@ -212,13 +212,13 @@ export class BulkMessagesComponent implements OnInit, OnDestroy {
    */
   toggleConversationSelection(conversationId: number): void {
     const selected = new Set(this.selectedConversations());
-    
+
     if (selected.has(conversationId)) {
       selected.delete(conversationId);
     } else {
       selected.add(conversationId);
     }
-    
+
     this.selectedConversations.set(selected);
   }
 
@@ -310,12 +310,34 @@ export class BulkMessagesComponent implements OnInit, OnDestroy {
   /**
    * Cargar contactos
    */
-  loadContacts(): void {
-    this.contactsService.getContacts({ limit: 1000 }).subscribe({
+  loadContacts(page: number = 1): void {
+    this.contactsService.getContacts({
+      search: '', page: page, limit: 100
+      // Usar límite estándar 
+    }).subscribe({
       next: (response) => {
+
+        if (page == 1) {
+          this.allContacts.set([]);
+          this.filteredContacts.set([]);
+        }
+
         if (response.success) {
-          this.allContacts.set(response.data);
-          this.filteredContacts.set(response.data);
+          const currentAll = this.allContacts();
+          const currentFiltered = this.filteredContacts();
+
+          // Concatenar los nuevos resultados
+          const updatedAll = [...currentAll, ...response.data];
+          const updatedFiltered = [...currentFiltered, ...response.data];
+
+          // Actualizar los signals
+          this.allContacts.set(updatedAll);
+          this.filteredContacts.set(updatedFiltered);
+        }
+
+        if (response.pagination.pages && page < response.pagination.pages) {
+          // Cargar siguiente página
+          this.loadContacts(page + 1);
         }
       },
       error: (error) => {
@@ -370,25 +392,25 @@ export class BulkMessagesComponent implements OnInit, OnDestroy {
    */
   private filterContacts(): void {
     let filtered = this.allContacts();
-    
+
     // Filtrar por tags
     const selectedTags = this.selectedTags();
     if (selectedTags.length > 0) {
       const tagIds = selectedTags.map(tag => tag.id);
-      filtered = filtered.filter(contact => 
+      filtered = filtered.filter(contact =>
         contact.tags && contact.tags.some(tag => tagIds.includes(tag.id))
       );
     }
-    
+
     // Filtrar por búsqueda
     const searchTerm = this.filterForm.value.search?.toLowerCase();
     if (searchTerm) {
-      filtered = filtered.filter(contact => 
+      filtered = filtered.filter(contact =>
         contact.name?.toLowerCase().includes(searchTerm) ||
         contact.phone_number.includes(searchTerm)
       );
     }
-    
+
     this.filteredContacts.set(filtered);
   }
 
@@ -397,13 +419,13 @@ export class BulkMessagesComponent implements OnInit, OnDestroy {
    */
   toggleContactSelection(contact: Contact): void {
     const selected = new Set(this.selectedContacts());
-    
+
     if (selected.has(contact.phone_number)) {
       selected.delete(contact.phone_number);
     } else {
       selected.add(contact.phone_number);
     }
-    
+
     this.selectedContacts.set(selected);
   }
 
@@ -454,14 +476,14 @@ export class BulkMessagesComponent implements OnInit, OnDestroy {
     this.selectedTemplate.set(template);
     const variables = this.getTemplateVariables(template.content);
     this.templateVariables.set(variables);
-    
+
     // Configurar formulario
     this.messageForm.patchValue({
       useTemplate: true,
       selectedTemplateId: template.id,
       messageType: 'template'
     });
-    
+
     if (variables.length > 0) {
       // Crear formulario para variables
       const formControls: { [key: string]: any } = {};
@@ -474,12 +496,12 @@ export class BulkMessagesComponent implements OnInit, OnDestroy {
         formControls[variable] = [defaultValue];
       });
       this.templateVariablesForm = this.fb.group(formControls);
-      
+
       // Escuchar cambios para actualizar preview
       this.templateVariablesForm.valueChanges.subscribe(() => {
         this.updateTemplatePreview();
       });
-      
+
       this.updateTemplatePreview();
       this.closeTemplateModal();
       this.showVariablesModal.set(true);
@@ -509,14 +531,14 @@ export class BulkMessagesComponent implements OnInit, OnDestroy {
     if (template) {
       let content = template.content;
       const variables = this.templateVariablesForm.value;
-      
+
       // Procesar variables
       Object.keys(variables).forEach(key => {
         const value = variables[key] || '';
         content = content.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), value);
         content = content.replace(new RegExp(`\\{${key}\\}`, 'g'), value);
       });
-      
+
       this.templatePreview.set(content);
       this.messageForm.patchValue({ message: content });
     }
@@ -536,7 +558,7 @@ export class BulkMessagesComponent implements OnInit, OnDestroy {
    */
   private getTemplateVariables(content: string): string[] {
     const variables = new Set<string>();
-    
+
     // Buscar variables con formato {variable}
     const singleBraceMatches = content.match(/\{([^{}]+)\}/g);
     if (singleBraceMatches) {
@@ -545,7 +567,7 @@ export class BulkMessagesComponent implements OnInit, OnDestroy {
         variables.add(variable);
       });
     }
-    
+
     // Buscar variables con formato {{variable}}
     const doubleBraceMatches = content.match(/\{\{([^{}]+)\}\}/g);
     if (doubleBraceMatches) {
@@ -554,7 +576,7 @@ export class BulkMessagesComponent implements OnInit, OnDestroy {
         variables.add(variable);
       });
     }
-    
+
     return Array.from(variables);
   }
 
@@ -563,11 +585,11 @@ export class BulkMessagesComponent implements OnInit, OnDestroy {
    */
   private processMessageForContact(message: string, contact: Contact): string {
     let processedMessage = message;
-    
+
     // Reemplazar variables automáticas
     processedMessage = processedMessage.replace(/\{NOMBRE_CONTACTO\}/g, contact.name || contact.phone_number);
     processedMessage = processedMessage.replace(/\{TELEFONO_CONTACTO\}/g, contact.phone_number);
-    
+
     return processedMessage;
   }
 
@@ -580,7 +602,7 @@ export class BulkMessagesComponent implements OnInit, OnDestroy {
    */
   sendBulkMessagesEnhanced(): void {
     const messageType = this.messageForm.value.messageType;
-    
+
     if (messageType === 'files') {
       this.sendBulkFiles();
       return;
@@ -589,10 +611,10 @@ export class BulkMessagesComponent implements OnInit, OnDestroy {
     if (!this.canSendEnhanced()) return;
 
     const selectedPhones = Array.from(this.selectedContacts());
-    const selectedContactsData = this.allContacts().filter(contact => 
+    const selectedContactsData = this.allContacts().filter(contact =>
       selectedPhones.includes(contact.phone_number)
     );
-    
+
     if (selectedContactsData.length === 0) {
       this.errorMessage.set('No hay contactos seleccionados');
       return;
@@ -613,22 +635,22 @@ export class BulkMessagesComponent implements OnInit, OnDestroy {
         // Completado
         this.isSending.set(false);
         this.sendProgress.set({ current: selectedContactsData.length, total: selectedContactsData.length });
-        
+
         if (failed === 0) {
           this.successMessage.set(`Mensajes enviados exitosamente a ${successful} contactos`);
         } else {
           this.errorMessage.set(`${successful} enviados, ${failed} fallaron`);
         }
-        
+
         this.clearMessagesAfterDelay();
         return;
       }
 
       const contact = selectedContactsData[index];
       const personalizedMessage = this.processMessageForContact(baseMessage, contact);
-      
-      this.sendProgress.set({ 
-        current: index + 1, 
+
+      this.sendProgress.set({
+        current: index + 1,
         total: selectedContactsData.length,
         conversation: contact.name || contact.phone_number
       });
@@ -667,7 +689,7 @@ export class BulkMessagesComponent implements OnInit, OnDestroy {
    */
   canSendEnhanced(): boolean {
     const messageType = this.messageForm.value.messageType;
-    
+
     if (!this.isSending() && this.selectedContacts().size > 0) {
       if (messageType === 'files') {
         return this.selectedFiles().length > 0;
@@ -675,7 +697,7 @@ export class BulkMessagesComponent implements OnInit, OnDestroy {
         return this.messageForm.valid && this.messageForm.value.message?.trim();
       }
     }
-    
+
     return false;
   }
 
@@ -695,7 +717,7 @@ export class BulkMessagesComponent implements OnInit, OnDestroy {
    */
   onFilesSelected(files: ChatFile[]): void {
     this.selectedFiles.set(files);
-    
+
     // Si hay archivos, cambiar el tipo de mensaje
     if (files.length > 0) {
       this.messageForm.patchValue({
@@ -711,7 +733,7 @@ export class BulkMessagesComponent implements OnInit, OnDestroy {
     const currentFiles = [...this.selectedFiles()];
     currentFiles.splice(index, 1);
     this.selectedFiles.set(currentFiles);
-    
+
     // Si no quedan archivos, volver a texto
     if (currentFiles.length === 0) {
       this.messageForm.patchValue({
@@ -724,7 +746,7 @@ export class BulkMessagesComponent implements OnInit, OnDestroy {
    * Actualizar caption de archivo
    */
   onCaptionChange(data: { file: ChatFile; caption: string }): void {
-    const files = this.selectedFiles().map(file => 
+    const files = this.selectedFiles().map(file =>
       file === data.file ? { ...file, caption: data.caption } : file
     );
     this.selectedFiles.set(files);
@@ -743,7 +765,7 @@ export class BulkMessagesComponent implements OnInit, OnDestroy {
   clearSelectedFiles(): void {
     this.selectedFiles.set([]);
     this.showFileUpload.set(false);
-    
+
     if (this.messageForm.value.messageType === 'files') {
       this.messageForm.patchValue({
         messageType: 'text'
@@ -758,10 +780,10 @@ export class BulkMessagesComponent implements OnInit, OnDestroy {
     if (!this.canSendEnhanced()) return;
 
     const selectedPhones = Array.from(this.selectedContacts());
-    const selectedContactsData = this.allContacts().filter(contact => 
+    const selectedContactsData = this.allContacts().filter(contact =>
       selectedPhones.includes(contact.phone_number)
     );
-    
+
     if (selectedContactsData.length === 0) {
       this.errorMessage.set('No hay contactos seleccionados');
       return;
@@ -786,21 +808,21 @@ export class BulkMessagesComponent implements OnInit, OnDestroy {
         // Completado
         this.isSending.set(false);
         this.sendProgress.set({ current: selectedContactsData.length, total: selectedContactsData.length });
-        
+
         if (failed === 0) {
           this.successMessage.set(`Archivos enviados exitosamente a ${successful} contactos`);
         } else {
           this.errorMessage.set(`${successful} enviados, ${failed} fallaron`);
         }
-        
+
         this.clearMessagesAfterDelay();
         return;
       }
 
       const contact = selectedContactsData[contactIndex];
-      
-      this.sendProgress.set({ 
-        current: contactIndex + 1, 
+
+      this.sendProgress.set({
+        current: contactIndex + 1,
         total: selectedContactsData.length,
         conversation: contact.name || contact.phone_number
       });
@@ -823,13 +845,13 @@ export class BulkMessagesComponent implements OnInit, OnDestroy {
    * Enviar archivos a un contacto específico
    */
   private sendFilesToContact(
-    contact: Contact, 
-    fileIndex: number, 
-    onSuccess: () => void, 
+    contact: Contact,
+    fileIndex: number,
+    onSuccess: () => void,
     onError: (error: string) => void
   ): void {
     const files = this.selectedFiles();
-    
+
     if (fileIndex >= files.length) {
       onSuccess();
       return;

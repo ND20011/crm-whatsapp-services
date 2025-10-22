@@ -2,9 +2,9 @@ import { Injectable, inject, signal } from '@angular/core';
 import { SwPush, SwUpdate } from '@angular/service-worker';
 import { Observable, BehaviorSubject, from, EMPTY, of, timer, race, throwError } from 'rxjs';
 import { map, catchError, tap, switchMap, filter } from 'rxjs/operators';
-import { HttpClient } from '@angular/common/http';
 import { APP_CONFIG } from '../config/app.config';
 import { AuthService } from '../../features/auth/services/auth.service';
+import { ApiService } from './api.service';
 
 export interface PushSubscriptionData {
   endpoint: string;
@@ -30,13 +30,13 @@ export interface PushNotificationPermission {
   providedIn: 'root'
 })
 export class PushNotificationService {
-  private http = inject(HttpClient);
+  private apiService = inject(ApiService);
   private authService = inject(AuthService);
   private swPush = inject(SwPush);
   private swUpdate = inject(SwUpdate);
 
   // VAPID public key - debe coincidir con el backend
-  private readonly VAPID_PUBLIC_KEY = 'BDSbebZd-j-TMgkUCtUWgvZ9OwURp7jho4DWGhUOZmFSg30UsmrccyxmDw3JytUcT9E_5NCrbWE39l7mWegGV0Y';
+  private readonly VAPID_PUBLIC_KEY = 'BMAamp57IlLYBemgN583n2paRqIlGOnvZcJ9jKqnE_-1sXsZ-gxbz9gWrxEowGg-ql9B7Q5tE6snCR1mYdqF5AE';
 
   // Signals para estado reactivo
   public isSupported = signal<boolean>(false);
@@ -268,7 +268,7 @@ export class PushNotificationService {
       user_id: subscriptionData.user_id
     });
 
-    return this.http.post<any>(`${APP_CONFIG.api.baseUrl}/api/push-notifications/subscribe`, subscriptionData).pipe(
+    return this.apiService.post<any>('/api/push-notifications/subscribe', subscriptionData).pipe(
       tap(response => {
         console.log('🔔 Server response:', response);
       }),
@@ -289,7 +289,7 @@ export class PushNotificationService {
       return of(false);
     }
 
-    return this.http.delete<any>(`${APP_CONFIG.api.baseUrl}/api/push-notifications/unsubscribe/${user.client_code}`).pipe(
+    return this.apiService.delete<any>(`/api/push-notifications/unsubscribe/${user.client_code}`).pipe(
       map(response => response.success),
       catchError(error => {
         console.error('❌ Error removing subscription from server:', error);
@@ -312,6 +312,38 @@ export class PushNotificationService {
    */
   getSubscription(): Observable<PushSubscription | null> {
     return this.subscriptionSubject.asObservable();
+  }
+
+  /**
+   * Enviar notificación de prueba
+   */
+  sendTestNotification(title: string = 'Notificación de Prueba', body: string = 'Esta es una notificación de prueba desde el CRM Condorito!'): Observable<boolean> {
+    const user = this.authService.getCurrentUser();
+    if (!user) {
+      console.error('❌ User not authenticated');
+      return of(false);
+    }
+
+    const testData = { title, body };
+    
+    console.log('🔔 Sending test notification to backend...');
+    
+    return this.apiService.post<any>('/api/push-notifications/test', testData).pipe(
+      tap(response => {
+        console.log('🔔 Test notification response:', response);
+        if (response.success) {
+          // También mostrar una notificación local como feedback
+          this.showLocalNotification('Prueba Exitosa', {
+            body: 'El backend procesó la notificación correctamente'
+          });
+        }
+      }),
+      map(response => response.success),
+      catchError(error => {
+        console.error('❌ Error sending test notification:', error);
+        return of(false);
+      })
+    );
   }
 
   /**

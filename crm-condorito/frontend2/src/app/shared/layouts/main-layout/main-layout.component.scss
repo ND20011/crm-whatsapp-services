@@ -25,7 +25,6 @@
 
 .content-wrapper {
   flex: 1;
-  padding: 2rem;
   overflow-x: hidden;
   background: var(--color-background);
 
@@ -36,7 +35,6 @@
   scroll-behavior: smooth;
 
   @media (max-width: 768px) {
-    padding: 1rem;
     min-height: calc(100vh - 110px); // Header + mobile actions bar
   }
 }

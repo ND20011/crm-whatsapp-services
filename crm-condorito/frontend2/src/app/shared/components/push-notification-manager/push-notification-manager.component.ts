@@ -3,7 +3,6 @@ import { CommonModule } from '@angular/common';
 import { Subscription, of } from 'rxjs';
 import { tap, catchError } from 'rxjs/operators';
 import { PushNotificationService } from '../../../core/services/push-notification.service';
-import { APP_CONFIG } from '../../../core/config/app.config';
 
 /**
  * Componente para gestionar las notificaciones push en la UI.
@@ -96,53 +95,26 @@ export class PushNotificationManagerComponent implements OnInit, OnDestroy {
     this.isLoading.set(true);
     this.clearStatus();
 
-    const token = this.pushService['authService'].getToken();
-    if (!token) {
-      this.showStatus('No hay token de autenticación para enviar notificación de prueba.', 'error');
-      this.isLoading.set(false);
-      return;
-    }
-
-    const headers = {
-      'Authorization': `Bearer ${token}`
-    };
-
-    const testData = {
-      title: 'Notificacion de Prueba',
-      body: 'Esta es una notificacion de prueba desde el CRM Condorito!'
-    };
-
-    console.log('🔔 Sending test notification to backend...');
-
-    this.pushService['http'].post<any>(
-      `${APP_CONFIG.api.baseUrl}/api/push-notifications/test`,
-      testData,
-      { headers }
-    ).pipe(
-      tap(response => {
+    const subscription = this.pushService.sendTestNotification(
+      'Notificación de Prueba',
+      'Esta es una notificación de prueba desde el CRM Condorito!'
+    ).subscribe({
+      next: (success) => {
         this.isLoading.set(false);
-        console.log('🔔 Test notification response:', response);
-        if (response.success) {
-          this.showStatus('Notificacion de prueba enviada correctamente al backend.', 'success');
-          
-          // También mostrar una notificación local como feedback
-          if ('Notification' in window && Notification.permission === 'granted') {
-            new Notification('Prueba Exitosa', {
-              body: 'El backend procesó la notificación correctamente',
-              icon: '/icon-192x192.png'
-            });
-          }
+        if (success) {
+          this.showStatus('Notificación de prueba enviada correctamente al backend.', 'success');
         } else {
-          this.showStatus('Error al enviar notificacion de prueba: ' + response.message, 'error');
+          this.showStatus('Error al enviar notificación de prueba', 'error');
         }
-      }),
-      catchError(error => {
+      },
+      error: (error) => {
         this.isLoading.set(false);
-        console.error('❌ Error sending test notification:', error);
-        this.showStatus('Error al enviar notificacion de prueba al backend', 'error');
-        return of(false);
-      })
-    ).subscribe();
+        console.error('Error sending test notification:', error);
+        this.showStatus('Error al enviar notificación de prueba al backend', 'error');
+      }
+    });
+
+    this.subscriptions.push(subscription);
   }
 
   /**

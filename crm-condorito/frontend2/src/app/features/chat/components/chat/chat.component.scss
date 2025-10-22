@@ -11,8 +11,7 @@
   @media (max-width: 768px) {
     // Solo en móvil necesitamos ajustar para el header global fijo
     padding-top: 60px; // Altura del header global en móvil
-    height: calc(100vh - 60px); // Compensar el padding-top
-    height: calc(100dvh - 60px); // Para navegadores que soportan dvh
+
     
     // MEJORA: Evitar que el sidebar se cierre cuando aparece el teclado
     // Usar viewport-height estable en iOS
@@ -3754,8 +3753,7 @@
 
 @media (max-width: 768px) {
   .chat-container {
-    height: calc(100vh - 60px); // Ajustado para header global móvil
-    height: calc(100dvh - 60px); // Para navegadores que soportan dvh
+ 
     padding-top: 60px;
   }
   
