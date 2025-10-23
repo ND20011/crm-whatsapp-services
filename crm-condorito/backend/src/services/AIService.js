@@ -21,9 +21,9 @@ const log = {
 };
 
 // 🔑 Configuración de OpenAI
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY ;
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
-const OPENAI_MODEL =  'gpt-4o-mini';
+const OPENAI_MODEL = 'gpt-4o-mini';
 
 // 🎯 Modos de AI disponibles
 const AI_MODES = {
@@ -57,7 +57,7 @@ class AIService {
 
             // 2. Verificar modo de AI
             const aiMode = clientConfig.ai_mode || AI_MODES.PROMPT_ONLY;
-            
+
             if (aiMode === AI_MODES.DATABASE_SEARCH) {
                 log.warn(`Database search mode not implemented yet for client: ${clientCode}`);
                 return 'El modo de búsqueda en base de datos está en desarrollo. Por favor contacta al administrador.';
@@ -65,7 +65,7 @@ class AIService {
 
             // 3. Construir el prompt del sistema con datos del negocio
             const systemPrompt = this.buildSystemPrompt(clientConfig);
-            
+
             // 4. Construir historial de conversación para OpenAI
             const messages = this.buildConversationMessages(systemPrompt, conversationHistory, question);
 
@@ -94,10 +94,10 @@ class AIService {
 
             const respuesta = response.data.choices[0].message.content.trim();
             const tokensUsed = response.data.usage || { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 };
-            
+
             log.success(`OpenAI response received: ${respuesta ? respuesta.substring(0, 100) : "Empty response"}...`);
             log.ai(`Tokens used: ${tokensUsed.total_tokens} (input: ${tokensUsed.prompt_tokens}, output: ${tokensUsed.completion_tokens})`);
-            
+
             // Reportar tokens consumidos al BotQuotaService si está disponible
             try {
                 const BotQuotaService = require("./BotQuotaService");
@@ -106,11 +106,11 @@ class AIService {
             } catch (tokenError) {
                 log.warn(`Failed to report tokens to quota service: ${tokenError.message}`);
             }
-            
+
             return this.formatResponseForWhatsApp(respuesta);
         } catch (error) {
             console.error('❌ Error al obtener la respuesta de OpenAI:', error.message);
-            
+
             // Log detallado del error
             if (error.response) {
                 console.error('❌ OpenAI API Error Response:', {
@@ -135,9 +135,9 @@ class AIService {
      * @returns {string} Prompt del sistema
      */
     static buildSystemPrompt(clientConfig) {
-        const businessPrompt = clientConfig.business_prompt || 
+        const businessPrompt = clientConfig.business_prompt ||
             'Sos un asistente que responde mensajes de WhatsApp de un negocio.';
-        
+
         // 🚀 OPTIMIZACIÓN: Prompt más conciso para reducir tokens
         const baseInstructions = `${businessPrompt}
 
@@ -160,10 +160,10 @@ Responde en español, sé amable y conciso. Si no sabes algo, sugiere contactar 
 
         // Agregar historial de conversación (últimos 3 mensajes para optimizar tokens)
         const recentHistory = conversationHistory.slice(-3);
-        
+
         for (let i = 0; i < recentHistory.length; i++) {
             const msg = recentHistory[i];
-            
+
             // Determinar el rol basado en sender_type
             let role;
             if (msg.sender_type === 'bot' || msg.sender_type === 'assistant') {
@@ -171,10 +171,10 @@ Responde en español, sé amable y conciso. Si no sabes algo, sugiere contactar 
             } else {
                 role = 'user'; // client, user, etc.
             }
-            
+
             // Usar msg.content si es un objeto, o msg directamente si es string (compatibilidad)
             const content = typeof msg === 'object' && msg.content ? msg.content : msg;
-            
+
             messages.push({ role: role, content: content });
         }
 
@@ -247,14 +247,14 @@ Responde en español, sé amable y conciso. Si no sabes algo, sugiere contactar 
                 INNER JOIN clients c ON bc.client_id = c.id
                 WHERE c.client_code = ?
             `;
-            
+
             const results = await executeQuery(query, [clientCode]);
             console.log('🔍 Product search query results count:', results?.length, 'for clientCode:', clientCode);
 
             if (results && results.length > 0) {
                 const config = results[0];
                 console.log('✅ Found product search config for client:', clientCode);
-                
+
                 return {
                     product_search_enabled: config.product_search_enabled === 1,
                     product_endpoint_url: config.product_endpoint_url || '',
@@ -318,7 +318,7 @@ Responde en español, sé amable y conciso. Si no sabes algo, sugiere contactar 
                 LEFT JOIN bot_configurations bc ON bc.client_id = c.id
                 WHERE c.client_code = ?
             `;
-            
+
             const results = await executeQuery(query, [clientCode]);
             console.log('🔍 Query results count:', results?.length, 'for clientCode:', clientCode);
 
@@ -326,7 +326,7 @@ Responde en español, sé amable y conciso. Si no sabes algo, sugiere contactar 
                 const config = results[0];
                 console.log('✅ Found AI config for client:', clientCode, 'prompt preview:', config.business_prompt?.substring(0, 50) + '...');
                 console.log('🛒 Product search enabled:', config.product_search_enabled, 'URL:', config.product_endpoint_url ? 'configured' : 'not configured');
-                
+
                 // Manejar working_days con más cuidado
                 let workingDays = [0, 1, 2, 3, 4, 5, 6]; // Default
                 try {
@@ -343,7 +343,7 @@ Responde en español, sé amable y conciso. Si no sabes algo, sugiere contactar 
                     console.log('⚠️ Error parsing working_days, using default:', jsonError.message);
                     workingDays = [0, 1, 2, 3, 4, 5, 6];
                 }
-                
+
                 return {
                     enabled: config.enabled === 1,
                     ai_mode: config.ai_mode || AI_MODES.PROMPT_ONLY,
@@ -388,7 +388,7 @@ Responde en español, sé amable y conciso. Si no sabes algo, sugiere contactar 
         } catch (error) {
             console.error('❌ Error getting AI config for client:', clientCode, 'Error:', error.message);
             console.error('❌ Stack trace:', error.stack);
-            
+
             // Retornar configuración básica en caso de error
             return null
         }
@@ -495,8 +495,8 @@ Responde en español, sé amable y conciso. Si no sabes algo, sugiere contactar 
                 SELECT id FROM ai_configurations WHERE client_id = ?
             `, [clientId]);
 
-            const workingDays = Array.isArray(config.workingHours?.days) 
-                ? JSON.stringify(config.workingHours.days) 
+            const workingDays = Array.isArray(config.workingHours?.days)
+                ? JSON.stringify(config.workingHours.days)
                 : JSON.stringify([0, 1, 2, 3, 4, 5, 6]);
 
             if (existingConfig) {
@@ -643,24 +643,24 @@ Responde en español, sé amable y conciso. Si no sabes algo, sugiere contactar 
             }
 
             // 🛒 FLUJO CON BÚSQUEDA DE PRODUCTOS
-            if (permisoProducto === 1 ) {
+            if (permisoProducto === 1) {
                 return await this.processWithProductSearch(clientCode, clientConfig, question, conversationHistory);
             }
 
             // 🔄 FLUJO NORMAL (sin búsqueda de productos)
             const result = await this.processNormalResponse(clientConfig, question, conversationHistory);
-            
+
             // 🚀 OPTIMIZACIÓN: Guardar en caché respuestas normales exitosas
             if (result.success) {
                 const cacheKey = this.generateCacheKey(clientCode, question);
                 this.setCachedResponse(cacheKey, result.response);
             }
-            
+
             return result;
 
         } catch (error) {
             console.error('❌ Error al obtener la respuesta de OpenAI con tokens:', error.message);
-            
+
             // Manejo específico de errores 429 (Rate Limit)
             if (error.response?.status === 429) {
                 console.error('❌ OpenAI Rate Limit Exceeded (429):', {
@@ -669,11 +669,11 @@ Responde en español, sé amable y conciso. Si no sabes algo, sugiere contactar 
                     data: error.response.data,
                     clientCode: clientCode
                 });
-                
+
                 // Verificar si es por tokens o por rate limit
                 const errorMessage = error.response.data?.error?.message || '';
                 console.error('❌ Rate limit details:', errorMessage);
-                
+
                 if (errorMessage.toLowerCase().includes('token')) {
                     return {
                         response: 'Has alcanzado el límite de tokens por minuto. Por favor intenta con un mensaje más corto o espera unos minutos.',
@@ -690,7 +690,7 @@ Responde en español, sé amable y conciso. Si no sabes algo, sugiere contactar 
                     };
                 }
             }
-            
+
             // Log detallado del error para otros casos
             if (error.response) {
                 console.error('❌ OpenAI API Error Response:', {
@@ -786,9 +786,9 @@ Responde en español, sé amable y conciso. Si no sabes algo, sugiere contactar 
 
             // PASO 2: Buscar productos
             const searchResult = await this.searchAndFormatProducts(
-                clientCode, 
-                clientConfig, 
-                detectionResult.productName, 
+                clientCode,
+                clientConfig,
+                detectionResult.productName,
                 question,
                 conversationHistory
             );
@@ -804,7 +804,7 @@ Responde en español, sé amable y conciso. Si no sabes algo, sugiere contactar 
 
         } catch (error) {
             console.error('❌ Error en búsqueda de productos:', error.message);
-            
+
             // Fallback a respuesta normal
             log.debug('🔄 Fallback a respuesta normal debido a error');
             const fallbackResult = await this.processNormalResponse(clientConfig, question, conversationHistory);
@@ -885,7 +885,7 @@ Consulta: "${question}"`;
 
             if (searchResult.success && searchResult.products.length > 0) {
                 log.debug(`✅ Productos encontrados: ${searchResult.products.length}`);
-                
+
                 // Generar respuesta con productos encontrados
                 try {
                     return await this.generateProductResponse(
@@ -899,12 +899,12 @@ Consulta: "${question}"`;
                 } catch (responseError) {
                     // Error generando respuesta (ej: 429 de OpenAI), NO reintentar búsqueda
                     console.error(`❌ Error generando respuesta con productos encontrados:`, responseError.message);
-                    
+
                     // Si es error 429 de OpenAI, devolver mensaje específico
                     if (responseError.response?.status === 429) {
                         // Generar link de búsqueda si está configurado
                         let responseMessage = `Encontré ${searchResult.products.length} productos relacionados con "${productName}"`;
-                        
+
                         if (clientConfig.product_link_template) {
                             // Crear link de búsqueda con el nombre del producto
                             let searchLink = '';
@@ -919,7 +919,7 @@ Consulta: "${question}"`;
                         } else {
                             responseMessage += '.';
                         }
-                        
+
                         return {
                             response: responseMessage,
                             tokens: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
@@ -929,7 +929,7 @@ Consulta: "${question}"`;
                             openaiError: true
                         };
                     }
-                    
+
                     // Para otros errores, lanzar para que se maneje en el catch principal
                     throw responseError;
                 }
@@ -939,14 +939,14 @@ Consulta: "${question}"`;
                 // Si no encontró productos, intentar reformular (máximo 3 intentos)
                 if (attempt < maxAttempts) {
                     const alternativeTerms = await this.generateAlternativeSearchTerms(
-                        productName, 
-                        originalQuestion, 
+                        productName,
+                        originalQuestion,
                         clientConfig
                     );
 
                     if (alternativeTerms.success && alternativeTerms.terms.length > 0) {
                         log.debug(`🔄 Reintentando con términos alternativos: ${alternativeTerms.terms.join(', ')}`);
-                        
+
                         // Intentar con el primer término alternativo
                         return await this.searchAndFormatProducts(
                             clientCode,
@@ -970,14 +970,14 @@ Consulta: "${question}"`;
 
         } catch (error) {
             console.error(`❌ Error en búsqueda de productos (intento ${attempt}):`, error.message);
-            
+
             // Solo reintentar si es un error de búsqueda de productos, no de generación de respuesta
             if (error.openaiError || (error.response && error.response.status === 429)) {
                 // Error de OpenAI generando respuesta - no reintentar búsqueda
                 console.log(`🚫 Error de OpenAI, no reintentando búsqueda de productos`);
                 throw error;
             }
-            
+
             // Error real de búsqueda de productos - sí reintentar
             if (attempt < maxAttempts) {
                 log.debug(`🔄 Reintentando búsqueda debido a error de productos (${attempt + 1}/${maxAttempts})`);
@@ -1000,14 +1000,14 @@ Consulta: "${question}"`;
      */
     static async generateProductResponse(products, originalQuestion, conversationHistory, clientConfig, fromCache = false, productName = '') {
         const systemPrompt = this.buildSystemPrompt(clientConfig);
-        
+
         // 🚀 OPTIMIZACIÓN: Limitar a 5 productos y solo campos esenciales
         const optimizedProducts = products.slice(0, 5).map(product => ({
             name: product.name || product.title || product.producto || 'Producto sin nombre',
             price: product.price || product.precio || product.cost || 'Consultar precio',
             stock: product.stock || product.cantidad || product.available || 'Consultar stock'
         }));
-        
+
         const productPrompt = `${systemPrompt}
 
 PRODUCTOS ENCONTRADOS (${optimizedProducts.length} de ${products.length}):
@@ -1040,7 +1040,7 @@ PREGUNTA: "${originalQuestion}"`;
         const tokens = response.data.usage || { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 };
 
         // Agregar links de productos si están configurados
-        if  (clientConfig.product_link_template) {
+        if (clientConfig.product_link_template) {
             const linksSection = this.generateProductLinks(products, clientConfig, productName);
             if (linksSection) {
                 respuesta += '\n\n' + linksSection;
@@ -1087,7 +1087,7 @@ PREGUNTA: "${originalQuestion}"`;
                 for (let i = 0; i < maxLinks; i++) {
                     const product = products[i];
                     const productId = this.extractProductId(product, product_link_id_field);
-                    
+
                     if (productId) {
                         const link = product_link_template.replace(/{PRODUCT_ID}/g, encodeURIComponent(productId));
                         const productName = product.name || product.title || product.producto || `Producto ${i + 1}`;
@@ -1103,7 +1103,7 @@ PREGUNTA: "${originalQuestion}"`;
                 // Generar un link general de búsqueda
                 const link = product_link_template.replace(/{SEARCH_TERM}/g, encodeURIComponent(searchTerm));
                 linksText = `🔗 ${product_link_text}: ${link}`;
-                
+
             } else {
                 // Link estático sin variables
                 linksText = `🔗 ${product_link_text}: ${product_link_template}`;
@@ -1113,7 +1113,7 @@ PREGUNTA: "${originalQuestion}"`;
 
         } catch (error) {
             console.error('❌ Error generando links de productos:', error.message);
-            
+
             // FALLBACK FINAL: Si hay error, intentar crear link básico de búsqueda
             if (searchTerm && clientConfig.product_link_template) {
                 try {
@@ -1125,7 +1125,7 @@ PREGUNTA: "${originalQuestion}"`;
                     console.error('❌ Error en fallback final:', fallbackError.message);
                 }
             }
-            
+
             return null;
         }
     }
@@ -1237,7 +1237,7 @@ Responde solo los términos separados por comas, sin explicaciones adicionales.`
      */
     static async generateNoProductsFoundResponse(productName, originalQuestion, conversationHistory, clientConfig) {
         const systemPrompt = this.buildSystemPrompt(clientConfig);
-        
+
         const noProductsPrompt = `${systemPrompt}
 
 SITUACIÓN: No se encontraron productos para "${productName}" en el catálogo.
@@ -1297,7 +1297,7 @@ PREGUNTA ORIGINAL: "${originalQuestion}"`;
      */
     static generateCacheKey(clientCode, question, productName = null) {
         const normalizedQuestion = question.toLowerCase().trim();
-        const key = productName 
+        const key = productName
             ? `${clientCode}:product:${productName}:${normalizedQuestion}`
             : `${clientCode}:general:${normalizedQuestion}`;
         return key;
@@ -1312,12 +1312,12 @@ PREGUNTA ORIGINAL: "${originalQuestion}"`;
             log.debug(`📋 Cache hit para: ${cacheKey.substring(0, 50)}...`);
             return cached.response;
         }
-        
+
         if (cached) {
             // Eliminar entrada expirada
             responseCache.delete(cacheKey);
         }
-        
+
         return null;
     }
 
@@ -1329,13 +1329,13 @@ PREGUNTA ORIGINAL: "${originalQuestion}"`;
             response: response,
             timestamp: Date.now()
         });
-        
+
         // Limpiar caché si crece mucho (mantener últimas 100 entradas)
         if (responseCache.size > 100) {
             const firstKey = responseCache.keys().next().value;
             responseCache.delete(firstKey);
         }
-        
+
         log.debug(`💾 Respuesta cacheada para: ${cacheKey.substring(0, 50)}...`);
     }
 }

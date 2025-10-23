@@ -311,24 +311,301 @@
             </div>
           }
 
-          <!-- Send Section -->
-          <div class="send-section">
-            @if (isSending()) {
-              <div class="sending-progress">
-                <div class="progress-info">
-                  <span>Enviando {{ sendProgress().current }} de {{ sendProgress().total }}</span>
-                  @if (sendProgress().conversation) {
-                    <span class="current-contact">{{ sendProgress().conversation }}</span>
+          <!-- Auto-Tagging Section -->
+          <div class="auto-tagging-section">
+            <div class="section-header">
+              <label class="form-label">
+                <i class="icon-tag"></i>
+                Asignación Automática de Etiquetas
+              </label>
+              <div class="toggle-switch">
+                <input 
+                  type="checkbox" 
+                  id="autoTagToggle"
+                  [checked]="autoTaggingEnabled()"
+                  (change)="autoTaggingEnabled.set($any($event.target).checked)">
+                <label for="autoTagToggle" class="toggle-label">
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+            </div>
+            
+            <p class="section-description">
+              Asigna automáticamente una etiqueta a todos los contactos que reciban el mensaje
+            </p>
+
+            @if (autoTaggingEnabled()) {
+              <div class="tag-selection">
+                @if (selectedAutoTag()) {
+                  <div class="selected-tag-display">
+                    <span class="selected-tag" [style.background-color]="selectedAutoTag()!.color">
+                      <i class="icon-tag"></i>
+                      {{ selectedAutoTag()!.name }}
+                      <button 
+                        type="button" 
+                        class="remove-tag-btn"
+                        (click)="removeAutoTag()"
+                        title="Quitar etiqueta">
+                        <i class="icon-close"></i>
+                      </button>
+                    </span>
+                    <div class="tag-info">
+                      <small>Esta etiqueta se asignará automáticamente a {{ selectedContacts().size }} contactos</small>
+                    </div>
+                  </div>
+                } @else {
+                  <button 
+                    type="button" 
+                    class="btn btn-outline-primary select-tag-btn"
+                    (click)="openAutoTagModal()">
+                    <i class="icon-tag"></i>
+                    Seleccionar Etiqueta
+                  </button>
+                  <small class="select-tag-hint">
+                    Elige la etiqueta que se asignará automáticamente a los contactos
+                  </small>
+                }
+              </div>
+            }
+          </div>
+
+          <!-- Bulk Sending Status -->
+          @if (hasBulkSendingInProgress()) {
+            <div class="bulk-status-section">
+              <div class="status-header">
+                <h4>
+                  <i class="icon-broadcast"></i>
+                  Estado del Envío Masivo
+                </h4>
+                @if (bulkState().isPaused) {
+                  <span class="status-badge paused">Pausado</span>
+                } @else if (bulkState().isActive) {
+                  <span class="status-badge active">Enviando</span>
+                } @else if (bulkState().canResume) {
+                  <span class="status-badge can-resume">Listo para reanudar</span>
+                }
+              </div>
+
+              <div class="status-content">
+                <!-- Progress Info -->
+                <div class="progress-section">
+                  <div class="progress-info">
+                    <div class="progress-stats">
+                      <span class="stat success">✅ {{ bulkState().successful }} enviados</span>
+                      <span class="stat failed">❌ {{ bulkState().failed }} fallaron</span>
+                      <span class="stat remaining">⏳ {{ bulkState().remaining }} pendientes</span>
+                      @if (autoTaggingEnabled() && selectedAutoTag()) {
+                        <span class="stat tags">🏷️ {{ bulkState().tagsAssigned }} etiquetados</span>
+                      }
+                    </div>
+                    <div class="progress-percentage">{{ getBulkProgress() }}%</div>
+                  </div>
+                  
+                  <div class="progress-bar">
+                    <div 
+                      class="progress-fill"
+                      [style.width.%]="getBulkProgress()">
+                    </div>
+                  </div>
+
+                  <!-- Error Details -->
+                  @if (bulkState().failed > 0) {
+                    <div class="error-details">
+                      <div class="error-summary">
+                        <strong>Detalles de errores:</strong> {{ getErrorSummary() }}
+                      </div>
+                      @if (hasCriticalErrors()) {
+                        <div class="error-recommendation critical">
+                          {{ getErrorRecommendation() }}
+                        </div>
+                      } @else if (bulkState().failed > 0) {
+                        <div class="error-recommendation">
+                          {{ getErrorRecommendation() }}
+                        </div>
+                      }
+                    </div>
                   }
                 </div>
-                <div class="progress-bar">
+
+                <!-- Batch Info -->
+                @if (bulkState().totalBatches > 0) {
+                  <div class="batch-info">
+                    <div class="batch-current">
+                      <strong>Lote {{ bulkState().currentBatch + 1 }} de {{ bulkState().totalBatches }}</strong>
+                      <span class="batch-progress">({{ bulkState().currentInBatch }}/{{ bulkState().totalInBatch }})</span>
+                    </div>
+                    @if (bulkState().estimatedCompletion) {
+                      <div class="time-info">
+                        <span class="time-remaining">Tiempo restante: {{ getEstimatedTimeRemaining() }}</span>
+                      </div>
+                    }
+                  </div>
+                }
+
+                <!-- Control Buttons -->
+                <div class="bulk-controls">
+                  @if (bulkState().isActive && !bulkState().isPaused) {
+                    <button 
+                      class="btn btn-warning"
+                      (click)="pauseBulkSending()">
+                      <i class="icon-pause"></i>
+                      Pausar
+                    </button>
+                  }
+                  
+                  @if (bulkState().isPaused || bulkState().canResume) {
+                    <button 
+                      class="btn btn-success"
+                      (click)="resumeBulkSending()">
+                      <i class="icon-play"></i>
+                      Reanudar
+                    </button>
+                  }
+                  
+                  <button 
+                    class="btn btn-danger"
+                    (click)="cancelBulkSending()">
+                    <i class="icon-stop"></i>
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            </div>
+          }
+
+          <!-- Quota Information -->
+          <div class="quota-section">
+            <div class="quota-header">
+              <h4>
+                <i class="icon-chart"></i>
+                Límites de Envío
+              </h4>
+              <button 
+                class="btn btn-outline-secondary btn-sm"
+                type="button"
+                (click)="toggleAdvancedConfig()"
+                [class.active]="showAdvancedConfig()">
+                <i class="icon-settings"></i>
+                Configuración Avanzada
+                <i class="fas fa-chevron-down transition-transform" 
+                   [class.rotate-180]="showAdvancedConfig()"></i>
+              </button>
+            </div>
+            
+            <div class="quota-content">
+              <div class="quota-item">
+                <div class="quota-label">Por hora</div>
+                <div class="quota-bar">
                   <div 
-                    class="progress-fill"
-                    [style.width.%]="(sendProgress().current / sendProgress().total) * 100">
+                    class="quota-fill"
+                    [style.width.%]="(quotaUsage().hourly.used / quotaUsage().hourly.limit) * 100"
+                    [class.warning]="(quotaUsage().hourly.used / quotaUsage().hourly.limit) > 0.8"
+                    [class.danger]="(quotaUsage().hourly.used / quotaUsage().hourly.limit) > 0.9">
+                  </div>
+                </div>
+                <div class="quota-text">
+                  {{ quotaUsage().hourly.used }}/{{ quotaUsage().hourly.limit }}
+                </div>
+              </div>
+              
+              <div class="quota-item">
+                <div class="quota-label">Por día</div>
+                <div class="quota-bar">
+                  <div 
+                    class="quota-fill"
+                    [style.width.%]="(quotaUsage().daily.used / quotaUsage().daily.limit) * 100"
+                    [class.warning]="(quotaUsage().daily.used / quotaUsage().daily.limit) > 0.8"
+                    [class.danger]="(quotaUsage().daily.used / quotaUsage().daily.limit) > 0.9">
+                  </div>
+                </div>
+                <div class="quota-text">
+                  {{ quotaUsage().daily.used }}/{{ quotaUsage().daily.limit }}
+                </div>
+              </div>
+            </div>
+
+            <!-- Advanced Configuration Panel -->
+            @if (showAdvancedConfig()) {
+              <div class="advanced-config-panel">
+                <h5>⚙️ Configuración de Envío</h5>
+                <div class="config-grid">
+                  <div class="config-item">
+                    <label>Mensajes por lote</label>
+                    <input 
+                      type="number" 
+                      class="form-control form-control-sm"
+                      [value]="bulkConfig().batchSize"
+                      min="1" 
+                      max="50"
+                      (change)="updateBulkConfig({batchSize: +$any($event.target).value})">
+                    <small>Recomendado: 5-15</small>
+                  </div>
+                  
+                  <div class="config-item">
+                    <label>Pausa entre mensajes (seg)</label>
+                    <input 
+                      type="number" 
+                      class="form-control form-control-sm"
+                      [value]="bulkConfig().messageDelay / 1000"
+                      min="1" 
+                      max="10"
+                      (change)="updateBulkConfig({messageDelay: +$any($event.target).value * 1000})">
+                    <small>Recomendado: 2-5 seg</small>
+                  </div>
+                  
+                  <div class="config-item">
+                    <label>Pausa entre lotes (min)</label>
+                    <input 
+                      type="number" 
+                      class="form-control form-control-sm"
+                      [value]="bulkConfig().batchDelay / 60000"
+                      min="0.5" 
+                      max="10"
+                      step="0.5"
+                      (change)="updateBulkConfig({batchDelay: +$any($event.target).value * 60000})">
+                    <small>Recomendado: 1-3 min</small>
+                  </div>
+                  
+                  <div class="config-item">
+                    <label>Límite por hora</label>
+                    <input 
+                      type="number" 
+                      class="form-control form-control-sm"
+                      [value]="bulkConfig().hourlyLimit"
+                      min="10" 
+                      max="500"
+                      (change)="updateBulkConfig({hourlyLimit: +$any($event.target).value})">
+                    <small>Recomendado: 50-200</small>
+                  </div>
+                </div>
+                
+                <div class="config-presets">
+                  <h6>🚀 Configuraciones Predefinidas</h6>
+                  <div class="preset-buttons">
+                    <button 
+                      class="btn btn-outline-success btn-sm"
+                      (click)="updateBulkConfig({batchSize: 5, messageDelay: 3000, batchDelay: 120000, hourlyLimit: 50})">
+                      🐌 Muy Seguro
+                    </button>
+                    <button 
+                      class="btn btn-outline-primary btn-sm"
+                      (click)="updateBulkConfig({batchSize: 10, messageDelay: 2000, batchDelay: 60000, hourlyLimit: 100})">
+                      ⚖️ Balanceado
+                    </button>
+                    <button 
+                      class="btn btn-outline-warning btn-sm"
+                      (click)="updateBulkConfig({batchSize: 15, messageDelay: 1500, batchDelay: 45000, hourlyLimit: 150})">
+                      ⚡ Rápido
+                    </button>
                   </div>
                 </div>
               </div>
-            } @else {
+            }
+          </div>
+
+          <!-- Send Section -->
+          <div class="send-section">
+            @if (!hasBulkSendingInProgress()) {
               <button 
                 type="button"
                 class="btn btn-primary send-btn"
@@ -341,6 +618,28 @@
                   Enviar mensaje a {{ selectedContacts().size }} contactos
                 }
               </button>
+              
+              @if (selectedContacts().size > 0) {
+                <div class="send-info">
+                  <div class="send-estimate">
+                    <i class="icon-info"></i>
+                    <span>
+                      Tiempo estimado: ~{{ getEstimatedSendingTime() }} minutos
+                      ({{ getEstimatedBatches() }} lotes de {{ bulkConfig().batchSize }} mensajes)
+                    </span>
+                  </div>
+                  @if (autoTaggingEnabled() && selectedAutoTag()) {
+                    <div class="auto-tag-info">
+                      <i class="icon-tag"></i>
+                      <span>
+                        Se asignará automáticamente la etiqueta 
+                        <strong [style.color]="selectedAutoTag()!.color">{{ selectedAutoTag()!.name }}</strong>
+                        a los contactos que reciban el mensaje
+                      </span>
+                    </div>
+                  }
+                </div>
+              }
             }
           </div>
         </form>
@@ -470,6 +769,197 @@
           <i class="icon-check"></i>
           Usar Template
         </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Auto-Tag Selection Modal -->
+@if (showAutoTagModal()) {
+  <div class="modal-overlay auto-tag-overlay" (click)="closeAutoTagModal()">
+    <div class="modal-container auto-tag-modal" (click)="$event.stopPropagation()">
+      <!-- Modal Header -->
+      <div class="modal-header">
+        <div class="header-content">
+          <div class="header-icon">
+            <i class="fas fa-tags"></i>
+          </div>
+          <div class="header-text">
+            <h3 class="modal-title">Asignación Automática de Etiquetas</h3>
+            <p class="modal-subtitle">Selecciona la etiqueta para tus contactos</p>
+          </div>
+        </div>
+        <button class="modal-close-btn" (click)="closeAutoTagModal()" title="Cerrar">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      
+      <!-- Modal Body -->
+      <div class="modal-body">
+        <!-- Description Section -->
+        <div class="description-section">
+          <div class="description-content">
+            <div class="description-icon">
+              <i class="fas fa-info-circle"></i>
+            </div>
+            <div class="description-text">
+              <p class="main-text">
+                La etiqueta seleccionada se asignará automáticamente a todos los contactos 
+                <strong>que reciban exitosamente</strong> el mensaje masivo.
+              </p>
+              <div class="feature-list">
+                <div class="feature-item">
+                  <i class="fas fa-shield-alt"></i>
+                  <span>Preserva etiquetas existentes</span>
+                </div>
+                <div class="feature-item">
+                  <i class="fas fa-check-double"></i>
+                  <span>Evita duplicados automáticamente</span>
+                </div>
+                <div class="feature-item">
+                  <i class="fas fa-chart-line"></i>
+                  <span>Seguimiento en tiempo real</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tags Selection Section -->
+        <div class="tags-section">
+          <div class="section-header">
+            <h4 class="section-title">
+              <i class="fas fa-palette"></i>
+              Etiquetas Disponibles
+              <span class="tags-count">({{ availableTags().length }})</span>
+            </h4>
+            @if (selectedAutoTag()) {
+              <div class="current-selection">
+                <span class="selection-label">Seleccionada:</span>
+                <span class="selected-tag-preview" [style.background-color]="selectedAutoTag()!.color">
+                  {{ selectedAutoTag()!.name }}
+                </span>
+              </div>
+            }
+          </div>
+
+          @if (availableTags().length === 0) {
+            <div class="empty-state">
+              <div class="empty-icon">
+                <i class="fas fa-tag"></i>
+              </div>
+              <div class="empty-content">
+                <h5>No hay etiquetas disponibles</h5>
+                <p>Crea etiquetas desde el módulo de contactos para poder asignarlas automáticamente.</p>
+                <button class="btn btn-outline-primary btn-sm" type="button">
+                  <i class="fas fa-plus"></i>
+                  Ir a Contactos
+                </button>
+              </div>
+            </div>
+          } @else {
+            <div class="tags-grid">
+              @for (tag of availableTags(); track tag.id) {
+                <div 
+                  class="tag-card"
+                  (click)="selectAutoTag(tag)"
+                  [class.selected]="selectedAutoTag()?.id === tag.id"
+                  [class.has-description]="tag.description">
+                  
+                  <!-- Tag Color Indicator -->
+                  <div class="tag-color-indicator">
+                    <div class="color-circle" [style.background-color]="tag.color"></div>
+                    <div class="color-glow" [style.box-shadow]="'0 0 20px ' + tag.color + '40'"></div>
+                  </div>
+                  
+                  <!-- Tag Content -->
+                  <div class="tag-content">
+                    <div class="tag-header">
+                      <h5 class="tag-name">{{ tag.name }}</h5>
+                      @if (selectedAutoTag()?.id === tag.id) {
+                        <div class="selected-indicator">
+                          <i class="fas fa-check-circle"></i>
+                        </div>
+                      }
+                    </div>
+                    
+                    @if (tag.description) {
+                      <p class="tag-description">{{ tag.description }}</p>
+                    } @else {
+                      <p class="tag-no-description">Sin descripción</p>
+                    }
+                  </div>
+                  
+                  <!-- Hover Effect -->
+                  <div class="tag-hover-effect"></div>
+                </div>
+              }
+            </div>
+          }
+        </div>
+
+        <!-- Preview Section -->
+        @if (selectedAutoTag()) {
+          <div class="preview-section">
+            <div class="preview-header">
+              <i class="fas fa-eye"></i>
+              <span>Vista Previa del Resultado</span>
+            </div>
+            <div class="preview-content">
+              <div class="preview-item">
+                <div class="preview-icon">
+                  <i class="fas fa-users"></i>
+                </div>
+                <div class="preview-text">
+                  <strong>{{ selectedContacts().size }} contactos</strong> recibirán la etiqueta
+                  <span class="preview-tag" [style.background-color]="selectedAutoTag()!.color">
+                    {{ selectedAutoTag()!.name }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+      
+      <!-- Modal Footer -->
+      <div class="modal-footer">
+        <div class="footer-info">
+          @if (selectedAutoTag()) {
+            <div class="selection-summary">
+              <i class="fas fa-info-circle"></i>
+              <span>
+                Etiqueta <strong>"{{ selectedAutoTag()!.name }}"</strong> lista para asignar
+              </span>
+            </div>
+          } @else {
+            <div class="no-selection">
+              <i class="fas fa-hand-pointer"></i>
+              <span>Selecciona una etiqueta para continuar</span>
+            </div>
+          }
+        </div>
+        
+        <div class="footer-actions">
+          <button class="btn btn-secondary" (click)="closeAutoTagModal()">
+            <i class="fas fa-times"></i>
+            Cancelar
+          </button>
+          
+          @if (selectedAutoTag()) {
+            <button 
+              class="btn btn-primary btn-confirm"
+              (click)="closeAutoTagModal()">
+              <i class="fas fa-check"></i>
+              Confirmar Selección
+            </button>
+          } @else {
+            <button class="btn btn-primary" disabled>
+              <i class="fas fa-check"></i>
+              Selecciona una Etiqueta
+            </button>
+          }
+        </div>
       </div>
     </div>
   </div>

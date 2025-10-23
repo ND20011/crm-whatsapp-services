@@ -141,6 +141,9 @@ class MessageService {
             // Incrementar contador de no leídos si es mensaje recibido
             if (!whatsappMessage.fromMe) {
                 await conversation.incrementUnreadCount();
+                
+                // Enviar notificación push para mensajes recibidos
+                await this.sendPushNotificationForMessage(clientId, savedMessage, conversation);
             }
 
             // Si el cliente envió un mensaje manual, deshabilitar bot para esta conversación
@@ -1239,6 +1242,84 @@ class MessageService {
         } catch (error) {
             console.error('❌ Error en reset manual:', error.message);
             return false;
+        }
+    }
+
+    /**
+     * Enviar notificación push cuando llega un mensaje nuevo
+     * @param {number} clientId - ID del cliente
+     * @param {Object} message - Mensaje guardado
+     * @param {Object} conversation - Conversación
+     */
+    static async sendPushNotificationForMessage(clientId, message, conversation) {
+        try {
+            // Solo enviar notificaciones para mensajes recibidos (no enviados por el cliente)
+            if (message.from_me) {
+                return;
+            }
+
+            console.log(`🔔 Sending push notification for new message from ${conversation.contact_name}`);
+
+            const PushNotificationService = require('./PushNotificationService');
+            
+            // Preparar el contenido de la notificación
+            let notificationBody = message.content;
+            
+            // Personalizar el mensaje según el tipo
+            if (message.message_type !== 'text') {
+                switch (message.message_type) {
+                    case 'image':
+                        notificationBody = '📷 Imagen';
+                        break;
+                    case 'video':
+                        notificationBody = '🎥 Video';
+                        break;
+                    case 'audio':
+                        notificationBody = '🎵 Audio';
+                        break;
+                    case 'document':
+                        notificationBody = '📄 Documento';
+                        break;
+                    case 'sticker':
+                        notificationBody = '😊 Sticker';
+                        break;
+                    default:
+                        notificationBody = `📱 ${message.message_type}`;
+                }
+            }
+
+            // Truncar mensaje si es muy largo
+            if (notificationBody.length > 100) {
+                notificationBody = notificationBody.substring(0, 97) + '...';
+            }
+
+            const notification = {
+                title: `💬 ${conversation.contact_name}`,
+                body: notificationBody,
+                type: 'message',
+                urgency: 'normal',
+                data: {
+                    conversationId: conversation.id,
+                    messageId: message.id,
+                    contactPhone: conversation.contact_phone,
+                    contactName: conversation.contact_name,
+                    url: `/chat/${conversation.id}` // URL para abrir la conversación
+                }
+            };
+
+            // Enviar notificación al cliente (asumiendo que user_id = client_id por ahora)
+            // TODO: En el futuro, obtener todos los usuarios del cliente que tengan suscripciones activas
+            const result = await PushNotificationService.sendToUser(clientId, clientId, notification);
+            
+            if (result.success) {
+                console.log(`✅ Push notification sent for message from ${conversation.contact_name}`);
+            } else {
+                console.log(`⚠️ Push notification not sent: ${result.reason || result.error}`);
+            }
+
+        } catch (error) {
+            console.error('❌ Error sending push notification for message:', error.message);
+            // No relanzar el error para no afectar el procesamiento del mensaje
         }
     }
 }

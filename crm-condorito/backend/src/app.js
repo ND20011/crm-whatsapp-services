@@ -50,7 +50,7 @@ app.use(cors({
 
 // Rate Limiting
 const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutos
+    windowMs: 5 * 60 * 1000, // 15 minutos
     max: 500, // máximo 500 requests por ventana por IP
     message: {
         error: 'Demasiadas solicitudes desde esta IP, intenta de nuevo en 15 minutos.'
@@ -150,6 +150,7 @@ app.use('/api/files', require('./routes/files'));
 app.use('/api/ai', require('./routes/ai'));
 app.use('/api/backoffice', require('./routes/backoffice'));
 app.use('/api/admin', require('./routes/admin'));
+app.use('/api/push-notifications', require('./routes/pushNotifications'));
 app.use('/api/tasks', require('./routes/tasks'));
 
 // ============================================================================
