@@ -152,6 +152,7 @@ app.use('/api/backoffice', require('./routes/backoffice'));
 app.use('/api/admin', require('./routes/admin'));
 app.use('/api/push-notifications', require('./routes/pushNotifications'));
 app.use('/api/tasks', require('./routes/tasks'));
+app.use('/api/intelligent-rules', require('./routes/intelligentRules'));
 
 // ============================================================================
 // SCHEDULED MESSAGES PROCESSOR

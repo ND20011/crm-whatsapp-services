@@ -31,9 +31,9 @@
   height: 44px;
   border-radius: 50%;
   background: var(--color-primary);
-  color: white;
+  color: var(--color-text-white);
   border: none;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 12px var(--color-shadow-medium);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -75,7 +75,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: var(--color-shadow-darker);
   z-index: 999;
   display: block;
   
@@ -96,8 +96,8 @@
 
 .chat-sidebar {
   width: 350px;
-  background: white;
-  border-right: 1px solid #dee2e6;
+  background: var(--color-bg-primary);
+  border-right: 1px solid var(--color-border-medium);
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
@@ -157,14 +157,14 @@
 
 .sidebar-header {
   padding: 20px;
-  border-bottom: 1px solid #dee2e6;
+  border-bottom: 1px solid var(--color-border-medium);
   flex-shrink: 0;
   
   @media (max-width: 768px) {
     // MEJORA: Asegurar que el header se mantenga visible cuando aparece el teclado
     position: sticky;
     top: 0;
-    background: white;
+    background: var(--color-bg-primary);
     z-index: 10;
     
     // Reducir padding en móvil para optimizar espacio
@@ -175,7 +175,7 @@
 .sidebar-title {
   font-size: 1.2rem;
   font-weight: 600;
-  color: #333;
+  color: var(--color-text-primary);
   margin: 0 0 16px 0;
 }
 
@@ -194,7 +194,7 @@
   left: 16px;
   top: 50%;
   transform: translateY(-50%);
-  color: #8e9aaf;
+  color: var(--color-text-muted);
   z-index: 2;
   font-size: 14px;
   transition: all 0.3s ease;
@@ -204,16 +204,16 @@
   width: 100%;
   padding: 14px 50px 14px 48px;
   border-radius: 25px;
-  border: 2px solid #e8ecf4;
-  background: #f8fafc;
-  color: #2d3748;
+  border: 2px solid var(--color-border-light);
+  background: var(--color-bg-secondary);
+  color: var(--color-text-primary);
   font-size: 14px;
   font-weight: 400;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   
   &::placeholder {
-    color: #a0aec0;
+    color: var(--color-text-muted);
     font-weight: 400;
   }
   
@@ -233,12 +233,12 @@
   
   &:focus {
     outline: none;
-    border-color: #667eea;
-    background: #ffffff;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1), 0 4px 12px rgba(0, 0, 0, 0.05);
+    border-color: var(--color-primary);
+    background: var(--color-bg-primary);
+    box-shadow: 0 0 0 3px var(--color-primary-lighter), 0 4px 12px var(--color-shadow-light);
     
     + .search-icon {
-      color: #667eea;
+      color: var(--color-primary);
     }
   }
   

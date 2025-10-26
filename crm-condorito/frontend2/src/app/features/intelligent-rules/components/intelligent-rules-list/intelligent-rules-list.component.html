@@ -1,0 +1,451 @@
+<div class="intelligent-rules-container">
+  <!-- Header con estadísticas y controles -->
+  <div class="rules-header">
+    <div class="header-content">
+      <div class="title-section">
+        <h1 class="page-title">
+          <i class="fas fa-brain"></i>
+          Reglas Inteligentes del Bot
+        </h1>
+        <p class="page-subtitle">
+          Configura reglas automáticas para que el bot maneje conversaciones específicas
+        </p>
+      </div>
+
+      <div class="header-actions">
+        <!-- Toggle del sistema -->
+        <div class="system-toggle">
+          <label class="toggle-switch">
+            <input 
+              type="checkbox" 
+              [checked]="systemEnabled()" 
+              (change)="toggleSystem()"
+            >
+            <span class="toggle-slider"></span>
+          </label>
+          <span class="toggle-label">
+            Sistema {{ systemEnabled() ? 'Habilitado' : 'Deshabilitado' }}
+          </span>
+        </div>
+
+        <!-- Botón crear nueva regla -->
+        <button 
+          class="btn btn-primary"
+          (click)="createRule()"
+          [disabled]="!systemEnabled"
+        >
+          <i class="fas fa-plus"></i>
+          Nueva Regla
+        </button>
+      </div>
+    </div>
+
+    <!-- Estadísticas -->
+    <div class="stats-cards" *ngIf="stats">
+      <div class="stat-card">
+        <div class="stat-icon">
+          <i class="fas fa-list"></i>
+        </div>
+        <div class="stat-content">
+          <div class="stat-number">{{ stats()?.general?.total_rules || 0 }}</div>
+          <div class="stat-label">Total Reglas</div>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon active">
+          <i class="fas fa-play-circle"></i>
+        </div>
+        <div class="stat-content">
+          <div class="stat-number">{{ stats()?.general?.active_rules || 0 }}</div>
+          <div class="stat-label">Activas</div>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon triggered">
+          <i class="fas fa-bolt"></i>
+        </div>
+        <div class="stat-content">
+          <div class="stat-number">{{ stats()?.general?.total_triggers || 0 }}</div>
+          <div class="stat-label">Activaciones</div>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon success">
+          <i class="fas fa-check-circle"></i>
+        </div>
+        <div class="stat-content">
+          <div class="stat-number">{{ (stats()?.general?.avg_success_rate || 0).toFixed(1) }}%</div>
+          <div class="stat-label">Éxito Promedio</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filtros y búsqueda -->
+  <div class="filters-section">
+    <div class="search-box">
+      <i class="fas fa-search"></i>
+      <input 
+        type="text" 
+        placeholder="Buscar por nombre, descripción o palabras clave..."
+        [ngModel]="searchTerm()" (ngModelChange)="onSearchChange($event)"
+        class="form-control"
+      >
+    </div>
+
+    <div class="filter-controls">
+      <select [(ngModel)]="filterActive" class="form-select">
+        <option [ngValue]="null">Todos los estados</option>
+        <option [ngValue]="true">Solo activas</option>
+        <option [ngValue]="false">Solo inactivas</option>
+      </select>
+
+      <select [(ngModel)]="filterActionType" class="form-select">
+        <option value="">Todos los tipos</option>
+        <option value="assign_tags">Asignar Etiquetas</option>
+        <option value="escalate_human">Derivar a Humano</option>
+        <option value="call_api">Llamar API</option>
+        <option value="ai_response">Respuesta IA</option>
+        <option value="hybrid">Híbrido</option>
+      </select>
+
+      <button class="btn btn-outline-secondary" (click)="clearFilters()">
+        <i class="fas fa-times"></i>
+        Limpiar
+      </button>
+    </div>
+  </div>
+
+  <!-- Lista de reglas -->
+  <div class="rules-content">
+    <div *ngIf="loading()" class="loading-state">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Cargando...</span>
+      </div>
+      <p>Cargando reglas inteligentes...</p>
+    </div>
+
+    <div *ngIf="!loading() && filteredRules().length === 0" class="empty-state">
+      <div class="empty-icon">
+        <i class="fas fa-brain"></i>
+      </div>
+      <h3>No hay reglas inteligentes</h3>
+      <p *ngIf="rules().length === 0">
+        Crea tu primera regla para automatizar las respuestas del bot
+      </p>
+      <p *ngIf="rules().length > 0">
+        No se encontraron reglas que coincidan con los filtros aplicados
+      </p>
+      <button 
+        *ngIf="rules().length === 0" 
+        class="btn btn-primary"
+        (click)="createRule()"
+      >
+        <i class="fas fa-plus"></i>
+        Crear Primera Regla
+      </button>
+    </div>
+
+    <!-- Tabla de reglas -->
+    <div *ngIf="!loading() && paginatedRules().length > 0" class="rules-table-container">
+      <table class="table rules-table">
+        <thead>
+          <tr>
+            <th>Estado</th>
+            <th>Regla</th>
+            <th>Palabras Clave</th>
+            <th>Acción</th>
+            <th>Etiquetas</th>
+            <th>Estadísticas</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let rule of paginatedRules()" class="rule-row">
+            <!-- Estado -->
+            <td class="status-cell">
+              <label class="toggle-switch small">
+                <input 
+                  type="checkbox" 
+                  [checked]="rule.is_active"
+                  (change)="toggleRuleActive(rule)"
+                >
+                <span class="toggle-slider"></span>
+              </label>
+            </td>
+
+            <!-- Información de la regla -->
+            <td class="rule-info-cell">
+              <div class="rule-info">
+                <div class="rule-name">{{ rule.name }}</div>
+                <div class="rule-description" *ngIf="rule.description">
+                  {{ rule.description }}
+                </div>
+                <div class="rule-meta">
+                  <span class="priority-badge">Prioridad {{ rule.priority }}</span>
+                  <span class="match-type-badge">{{ getMatchTypeText(rule.match_type) }}</span>
+                  <span *ngIf="rule.ai_extraction_enabled" class="ai-badge">
+                    <i class="fas fa-brain"></i> IA
+                  </span>
+                </div>
+              </div>
+            </td>
+
+            <!-- Palabras clave -->
+            <td class="keywords-cell">
+              <div class="keywords-container">
+                <span 
+                  *ngFor="let keyword of rule.trigger_keywords.slice(0, 3)" 
+                  class="keyword-badge"
+                >
+                  {{ keyword }}
+                </span>
+                <span 
+                  *ngIf="rule.trigger_keywords.length > 3" 
+                  class="more-keywords"
+                >
+                  +{{ rule.trigger_keywords.length - 3 }} más
+                </span>
+              </div>
+            </td>
+
+            <!-- Tipo de acción -->
+            <td class="action-cell">
+              <span 
+                class="badge action-badge"
+                [ngClass]="getActionTypeClass(rule.action_type)"
+              >
+                {{ getActionTypeText(rule.action_type) }}
+              </span>
+            </td>
+
+            <!-- Etiquetas -->
+            <td class="tags-cell">
+              <div class="tags-container" *ngIf="rule.tags_to_assign && rule.tags_to_assign.length > 0">
+                <span 
+                  *ngFor="let tagId of rule.tags_to_assign.slice(0, 2)" 
+                  class="tag-badge"
+                  [style.background-color]="getTagColor(tagId)"
+                >
+                  {{ getTagName(tagId) }}
+                </span>
+                <span 
+                  *ngIf="rule.tags_to_assign.length > 2" 
+                  class="more-tags"
+                >
+                  +{{ rule.tags_to_assign.length - 2 }}
+                </span>
+              </div>
+              <span *ngIf="!rule.tags_to_assign || rule.tags_to_assign.length === 0" class="no-tags">
+                Sin etiquetas
+              </span>
+            </td>
+
+            <!-- Estadísticas -->
+            <td class="stats-cell">
+              <div class="rule-stats">
+                <div class="stat-item">
+                  <i class="fas fa-bolt"></i>
+                  {{ rule.times_triggered || 0 }}
+                </div>
+                <div class="stat-item" *ngIf="rule.success_rate !== undefined">
+                  <i class="fas fa-check-circle"></i>
+                  {{ rule.success_rate.toFixed(1) }}%
+                </div>
+                <div class="last-triggered" *ngIf="rule.last_triggered_at">
+                  <small>{{ formatDate(rule.last_triggered_at) }}</small>
+                </div>
+              </div>
+            </td>
+
+            <!-- Acciones -->
+            <td class="actions-cell">
+              <div class="action-buttons">
+                <button 
+                  class="btn btn-sm btn-outline-primary"
+                  (click)="openTestModal(rule)"
+                  title="Probar regla"
+                >
+                  <i class="fas fa-vial"></i>
+                </button>
+
+                <button 
+                  class="btn btn-sm btn-outline-secondary"
+                  (click)="editRule(rule)"
+                  title="Editar regla"
+                >
+                  <i class="fas fa-edit"></i>
+                </button>
+
+                <button 
+                  class="btn btn-sm btn-outline-info"
+                  (click)="duplicateRule(rule)"
+                  title="Duplicar regla"
+                >
+                  <i class="fas fa-copy"></i>
+                </button>
+
+                <button 
+                  class="btn btn-sm btn-outline-danger"
+                  (click)="deleteRule(rule)"
+                  title="Eliminar regla"
+                >
+                  <i class="fas fa-trash"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Paginación -->
+    <div *ngIf="totalPages() > 1" class="pagination-container">
+      <nav aria-label="Paginación de reglas">
+        <ul class="pagination">
+          <li class="page-item" [class.disabled]="currentPage() === 1">
+            <button class="page-link" (click)="changePage(currentPage() - 1)">
+              <i class="fas fa-chevron-left"></i>
+            </button>
+          </li>
+
+          <li 
+            *ngFor="let page of Array(totalPages()).fill(0); let i = index" 
+            class="page-item" 
+            [class.active]="currentPage() === i + 1"
+          >
+            <button class="page-link" (click)="changePage(i + 1)">
+              {{ i + 1 }}
+            </button>
+          </li>
+
+          <li class="page-item" [class.disabled]="currentPage() === totalPages()">
+            <button class="page-link" (click)="changePage(currentPage() + 1)">
+              <i class="fas fa-chevron-right"></i>
+            </button>
+          </li>
+        </ul>
+      </nav>
+
+      <div class="pagination-info">
+        Mostrando {{ paginationInfo().start }} - 
+        {{ paginationInfo().end }} 
+        de {{ paginationInfo().total }} reglas
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de prueba de regla -->
+<div 
+  class="modal fade" 
+  [class.show]="showTestModal()" 
+  [style.display]="showTestModal() ? 'block' : 'none'"
+  *ngIf="showTestModal()"
+>
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="fas fa-vial"></i>
+          Probar Regla: {{ testingRule?.name }}
+        </h5>
+        <button type="button" class="btn-close" (click)="closeTestModal()"></button>
+      </div>
+
+      <div class="modal-body">
+        <div class="test-form">
+          <label for="testMessage" class="form-label">Mensaje de prueba:</label>
+          <textarea 
+            id="testMessage"
+            class="form-control"
+            rows="3"
+            placeholder="Escribe un mensaje para probar si la regla se activaría..."
+            [ngModel]="testMessage()" (ngModelChange)="testMessage.set($event)"
+          ></textarea>
+        </div>
+
+        <div *ngIf="testResult()" class="test-results mt-4">
+          <h6>Resultado de la prueba:</h6>
+          
+          <div class="result-summary">
+            <div class="result-item">
+              <strong>¿Coincide?</strong>
+              <span 
+                class="badge"
+                [class.badge-success]="testResult()?.matches"
+                [class.badge-danger]="!testResult()?.matches"
+              >
+                {{ testResult()?.matches ? 'Sí' : 'No' }}
+              </span>
+            </div>
+
+            <div class="result-item">
+              <strong>¿Se activaría?</strong>
+              <span 
+                class="badge"
+                [class.badge-success]="testResult()?.wouldTrigger"
+                [class.badge-warning]="!testResult()?.wouldTrigger"
+              >
+                {{ testResult()?.wouldTrigger ? 'Sí' : 'No' }}
+              </span>
+            </div>
+          </div>
+
+          <div *ngIf="testResult()?.matchedKeywords?.length > 0" class="matched-keywords">
+            <strong>Palabras clave encontradas:</strong>
+            <div class="keywords-list">
+              <span 
+                *ngFor="let keyword of testResult()?.matchedKeywords" 
+                class="keyword-badge matched"
+              >
+                {{ keyword }}
+              </span>
+            </div>
+          </div>
+
+          <div class="test-details">
+            <div class="detail-row">
+              <span class="detail-label">Tipo de coincidencia:</span>
+              <span class="detail-value">{{ getMatchTypeText(testResult()?.matchType) }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Acción que ejecutaría:</span>
+              <span class="detail-value">{{ getActionTypeText(testResult()?.actionType) }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Estado de la regla:</span>
+              <span class="detail-value">{{ testResult()?.isActive ? 'Activa' : 'Inactiva' }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeTestModal()">
+          Cerrar
+        </button>
+        <button 
+          type="button" 
+          class="btn btn-primary"
+          (click)="testRule()"
+          [disabled]="!testMessage().trim() || testLoading()"
+        >
+          <span *ngIf="testLoading()" class="spinner-border spinner-border-sm me-2"></span>
+          <i *ngIf="!testLoading()" class="fas fa-play"></i>
+          {{ testLoading() ? 'Probando...' : 'Probar' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Backdrop del modal -->
+<div 
+  *ngIf="showTestModal" 
+  class="modal-backdrop fade show"
+  (click)="closeTestModal()"
+></div>

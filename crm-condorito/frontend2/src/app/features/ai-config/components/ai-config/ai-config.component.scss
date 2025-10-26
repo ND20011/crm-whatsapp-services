@@ -41,9 +41,9 @@
           display: flex;
           align-items: center;
           justify-content: center;
-          color: white;
+          color: var(--color-text-white);
           font-size: 1.5rem;
-          box-shadow: 0 4px 12px rgba(23, 162, 184, 0.3);
+          box-shadow: 0 4px 12px var(--color-shadow-medium);
         }
 
         .title-text {
@@ -1425,7 +1425,7 @@
         .title-icon {
           width: 60px;
           height: 60px;
-          background: linear-gradient(135deg, #ff6b6b, #ffa500);
+          background: var(--color-dashboard-responses);
           border-radius: 16px;
           display: flex;
           align-items: center;
@@ -1441,7 +1441,7 @@
             font-size: 1.75rem;
             font-weight: 700;
             margin: 0;
-            background: linear-gradient(135deg, #ff6b6b, #ffa500);
+            background: var(--color-dashboard-responses);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;

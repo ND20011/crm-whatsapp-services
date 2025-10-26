@@ -91,12 +91,12 @@
   // COLORES ESPECÍFICOS DE COMPONENTES
   // -----------------------------------------------------------------------------
   
-  // Dashboard
-  --color-dashboard-conversations: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  --color-dashboard-messages: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-  --color-dashboard-bot: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-  --color-dashboard-bot-active: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
-  --color-dashboard-responses: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+  // Dashboard - Paleta coherente basada en colores del sistema
+  --color-dashboard-conversations: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+  --color-dashboard-messages: linear-gradient(135deg, var(--color-danger) 0%, #f5576c 100%);
+  --color-dashboard-bot: linear-gradient(135deg, var(--color-info) 0%, var(--color-info-dark) 100%);
+  --color-dashboard-bot-active: linear-gradient(135deg, var(--color-success) 0%, var(--color-success-dark) 100%);
+  --color-dashboard-responses: linear-gradient(135deg, var(--color-warning) 0%, #fee140 100%);
 
   // Errores por severidad
   --color-error-low: var(--color-info);

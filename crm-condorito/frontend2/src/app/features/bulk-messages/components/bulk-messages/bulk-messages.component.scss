@@ -1099,8 +1099,8 @@
   
   // Header Styles
   .modal-header {
-    background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark, #0056b3));
-    color: white;
+    background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
+    color: var(--color-text-white);
     padding: 2rem;
     display: flex;
     align-items: center;

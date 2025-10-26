@@ -83,6 +83,18 @@ export interface AppConfig {
         processorRestart: string;
         processManually: string;
       };
+      intelligentRules: {
+        list: string;
+        create: string;
+        get: string;
+        update: string;
+        delete: string;
+        duplicate: string;
+        test: string;
+        stats: string;
+        config: string;
+        updateConfig: string;
+      };
     };
   };
   app: {
@@ -113,7 +125,7 @@ export interface AppConfig {
 
 export const APP_CONFIG: AppConfig = {
   api: {
-    baseUrl: (window as any)['env']?.['apiUrl'] || 'https://crm.condorestudio.com/backend',
+    baseUrl: (window as any)['env']?.['apiUrl'] || 'http://localhost:3000',
     timeout: 30000,
     endpoints: {
       auth: {
@@ -190,6 +202,18 @@ export const APP_CONFIG: AppConfig = {
         processorStatus: '/api/scheduled-messages/processor/status',
         processorRestart: '/api/scheduled-messages/processor/restart',
         processManually: '/api/scheduled-messages/process'
+      },
+      intelligentRules: {
+        list: '/api/intelligent-rules',
+        create: '/api/intelligent-rules',
+        get: '/api/intelligent-rules/{id}',
+        update: '/api/intelligent-rules/{id}',
+        delete: '/api/intelligent-rules/{id}',
+        duplicate: '/api/intelligent-rules/{id}/duplicate',
+        test: '/api/intelligent-rules/{id}/test',
+        stats: '/api/intelligent-rules/stats',
+        config: '/api/intelligent-rules/config',
+        updateConfig: '/api/intelligent-rules/config'
       }
     }
   },

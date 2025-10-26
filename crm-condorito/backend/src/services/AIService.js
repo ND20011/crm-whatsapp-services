@@ -132,18 +132,43 @@ class AIService {
     /**
      * Construir el prompt del sistema con datos del negocio
      * @param {Object} clientConfig - Configuración del cliente
+     * @param {Object} enrichedContext - Contexto enriquecido de reglas inteligentes
      * @returns {string} Prompt del sistema
      */
-    static buildSystemPrompt(clientConfig) {
+    static buildSystemPrompt(clientConfig, enrichedContext = null) {
         const businessPrompt = clientConfig.business_prompt ||
             'Sos un asistente que responde mensajes de WhatsApp de un negocio.';
 
         // 🚀 OPTIMIZACIÓN: Prompt más conciso para reducir tokens
-        const baseInstructions = `${businessPrompt}
+        let baseInstructions = `${businessPrompt}
 
-Responde en español, sé amable y conciso. Si no sabes algo, sugiere contactar directamente.`.trim();
+Responde en español, sé amable y conciso. Si no sabes algo, sugiere contactar directamente.`;
 
-        return baseInstructions;
+        // 🧠 AGREGAR CONTEXTO ENRIQUECIDO DE REGLAS INTELIGENTES
+        if (enrichedContext && Object.keys(enrichedContext).some(key => enrichedContext[key] !== null)) {
+            baseInstructions += `
+
+CONTEXTO ADICIONAL:`;
+
+            if (enrichedContext.appliedRule) {
+                baseInstructions += `\n- Se aplicó la regla: "${enrichedContext.appliedRule}"`;
+            }
+
+            if (enrichedContext.extractedData) {
+                baseInstructions += `\n- Datos extraídos: ${JSON.stringify(enrichedContext.extractedData)}`;
+            }
+
+            if (enrichedContext.apiResponse) {
+                baseInstructions += `\n- Respuesta de API externa: ${JSON.stringify(enrichedContext.apiResponse)}`;
+                baseInstructions += `\n- IMPORTANTE: Usa esta información de la API para responder la consulta del usuario de manera natural y útil.`;
+            }
+
+            if (enrichedContext.tagsApplied && enrichedContext.tagsApplied.length > 0) {
+                baseInstructions += `\n- Etiquetas aplicadas al contacto: ${enrichedContext.tagsApplied.join(', ')}`;
+            }
+        }
+
+        return baseInstructions.trim();
     }
 
     /**
@@ -615,9 +640,10 @@ Responde en español, sé amable y conciso. Si no sabes algo, sugiere contactar 
      * @param {string} question - Pregunta del usuario
      * @param {Array} conversationHistory - Historial de conversación
      * @param {number} permisoProducto - Permiso de producto (0 por defecto)
+     * @param {Object} enrichedContext - Contexto enriquecido de reglas inteligentes
      * @returns {Promise<Object>} Objeto con respuesta y tokens
      */
-    static async getResponseWithTokens(clientCode, question, conversationHistory = [], permisoProducto = 0) {
+    static async getResponseWithTokens(clientCode, question, conversationHistory = [], permisoProducto = 0, enrichedContext = null) {
         try {
             // 1. Obtener configuración del cliente
             const clientConfig = await this.getClientAIConfig(clientCode);
@@ -644,11 +670,11 @@ Responde en español, sé amable y conciso. Si no sabes algo, sugiere contactar 
 
             // 🛒 FLUJO CON BÚSQUEDA DE PRODUCTOS
             if (permisoProducto === 1) {
-                return await this.processWithProductSearch(clientCode, clientConfig, question, conversationHistory);
+                return await this.processWithProductSearch(clientCode, clientConfig, question, conversationHistory, enrichedContext);
             }
 
             // 🔄 FLUJO NORMAL (sin búsqueda de productos)
-            const result = await this.processNormalResponse(clientConfig, question, conversationHistory);
+            const result = await this.processNormalResponse(clientConfig, question, conversationHistory, enrichedContext);
 
             // 🚀 OPTIMIZACIÓN: Guardar en caché respuestas normales exitosas
             if (result.success) {
@@ -720,9 +746,9 @@ Responde en español, sé amable y conciso. Si no sabes algo, sugiere contactar 
     /**
      * Procesar respuesta normal (sin búsqueda de productos)
      */
-    static async processNormalResponse(clientConfig, question, conversationHistory) {
-        // 2. Construir prompt del sistema
-        const systemPrompt = this.buildSystemPrompt(clientConfig);
+    static async processNormalResponse(clientConfig, question, conversationHistory, enrichedContext = null) {
+        // 2. Construir prompt del sistema con contexto enriquecido
+        const systemPrompt = this.buildSystemPrompt(clientConfig, enrichedContext);
 
         // 3. Construir mensajes para OpenAI
         const messages = this.buildConversationMessages(systemPrompt, conversationHistory, question);
@@ -765,7 +791,7 @@ Responde en español, sé amable y conciso. Si no sabes algo, sugiere contactar 
     /**
      * Procesar respuesta con búsqueda de productos
      */
-    static async processWithProductSearch(clientCode, clientConfig, question, conversationHistory) {
+    static async processWithProductSearch(clientCode, clientConfig, question, conversationHistory, enrichedContext = null) {
         let totalTokens = { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 };
 
         try {
@@ -777,7 +803,7 @@ Responde en español, sé amable y conciso. Si no sabes algo, sugiere contactar 
 
             if (!detectionResult.needsProduct) {
                 log.debug('📝 No se detectó consulta de producto, usando flujo normal');
-                const normalResult = await this.processNormalResponse(clientConfig, question, conversationHistory);
+                const normalResult = await this.processNormalResponse(clientConfig, question, conversationHistory, enrichedContext);
                 normalResult.tokens = this.sumTokens(totalTokens, normalResult.tokens);
                 return normalResult;
             }
@@ -807,7 +833,7 @@ Responde en español, sé amable y conciso. Si no sabes algo, sugiere contactar 
 
             // Fallback a respuesta normal
             log.debug('🔄 Fallback a respuesta normal debido a error');
-            const fallbackResult = await this.processNormalResponse(clientConfig, question, conversationHistory);
+            const fallbackResult = await this.processNormalResponse(clientConfig, question, conversationHistory, enrichedContext);
             fallbackResult.tokens = this.sumTokens(totalTokens, fallbackResult.tokens);
             fallbackResult.productSearchError = error.message;
             return fallbackResult;

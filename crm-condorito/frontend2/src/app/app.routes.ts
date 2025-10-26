@@ -123,6 +123,10 @@ export const routes: Routes = [
         loadComponent: () => import('./features/ai-config/components/ai-config/ai-config.component').then(m => m.AIConfigComponent)
       },
       {
+        path: 'intelligent-rules',
+        loadChildren: () => import('./features/intelligent-rules/intelligent-rules.routes').then(m => m.intelligentRulesRoutes)
+      },
+      {
         path: 'tasks',
         children: [
           {

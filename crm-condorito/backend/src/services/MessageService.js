@@ -479,15 +479,98 @@ class MessageService {
 
             log.bot(`Processing automatic response for ${clientCode}`);
 
-            // Obtener historial de conversación para contexto
+            // 🧠 EVALUAR REGLAS INTELIGENTES PRIMERO
+            let selectedRule = null;
+            let extractedData = {};
+            let apiResponse = null;
+            let shouldEscalate = false;
+            let tagsApplied = [];
+
+            if (botConfig.intelligent_rules_enabled) {
+                const IntelligentRulesService = require('./IntelligentRulesService');
+                
+                try {
+                    const conversationHistory = await Message.getConversationHistory(conversation.id, 10);
+                    
+                    const ruleResult = await IntelligentRulesService.processMessage({
+                        message: receivedMessage.content,
+                        conversation,
+                        clientId,
+                        clientCode,
+                        conversationHistory,
+                        botConfig
+                    });
+                    
+                    if (ruleResult.handled) {
+                        log.bot(`✅ Message handled by intelligent rule: ${ruleResult.ruleName}`);
+                        
+                        const actionResult = ruleResult.actionResult;
+                        
+                        // Procesar resultado según tipo de acción
+                        if (actionResult.type === 'escalate_human' && actionResult.success) {
+                            // Enviar mensaje de escalación y terminar
+                            await this.sendAutomaticMessage(
+                                clientCode, 
+                                conversation.contact_phone, 
+                                actionResult.escalationMessage,
+                                conversation.id,
+                                socketIo
+                            );
+                            
+                            log.bot(`👤 Conversation escalated to human: ${actionResult.escalationMessage}`);
+                            return; // No continuar con IA
+                            
+                        } else if (actionResult.type === 'call_api') {
+                            // Guardar respuesta de API para usar en contexto de IA
+                            apiResponse = actionResult.apiResponse;
+                            selectedRule = ruleResult.ruleName;
+                            extractedData = ruleResult.extractedData;
+                            
+                            if (actionResult.additionalTagsApplied) {
+                                tagsApplied = actionResult.additionalTagsApplied;
+                            }
+                            
+                            log.bot(`🌐 API called successfully, continuing with enriched context`);
+                            
+                        } else if (actionResult.type === 'assign_tags') {
+                            // Solo etiquetas aplicadas, continuar con IA normal
+                            tagsApplied = actionResult.tagsApplied || [];
+                            selectedRule = ruleResult.ruleName;
+                            extractedData = ruleResult.extractedData;
+                            
+                            log.bot(`🏷️ Tags applied: ${tagsApplied.join(', ')}, continuing with IA`);
+                        }
+                    } else {
+                        log.bot(`ℹ️ No intelligent rule applied: ${ruleResult.reason || 'unknown'}`);
+                    }
+                    
+                } catch (ruleError) {
+                    console.error('❌ Error processing intelligent rules:', ruleError.message);
+                    log.bot(`⚠️ Intelligent rules failed, continuing with normal IA flow`);
+                }
+            }
+
+            // 🤖 CONTINUAR CON FLUJO NORMAL DE IA (con contexto enriquecido si hay)
             const history = await Message.getConversationHistory(conversation.id, 10);
-            
-            // Llamar al servicio de IA con configuración de productos
             const AIService = require("./AIService");
             const productSearchEnabled = botConfig.product_search_enabled ? 1 : 0;
             
-            // Usar el nuevo método que retorna tokens
-            const aiResult = await AIService.getResponseWithTokens(clientCode, receivedMessage.content, history, productSearchEnabled);
+            // Crear contexto enriquecido para la IA
+            const enrichedContext = {
+                appliedRule: selectedRule,
+                extractedData: Object.keys(extractedData).length > 0 ? extractedData : null,
+                apiResponse: apiResponse,
+                tagsApplied: tagsApplied.length > 0 ? tagsApplied : null
+            };
+            
+            // Usar el nuevo método que retorna tokens con contexto enriquecido
+            const aiResult = await AIService.getResponseWithTokens(
+                clientCode, 
+                receivedMessage.content, 
+                history, 
+                productSearchEnabled,
+                enrichedContext
+            );
             
             if (aiResult.success && aiResult.response && aiResult.response.trim()) {
                 // Enviar respuesta automática

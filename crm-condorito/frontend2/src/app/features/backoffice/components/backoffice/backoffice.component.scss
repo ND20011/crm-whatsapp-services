@@ -2,26 +2,8 @@
 // BACKOFFICE COMPONENT STYLES - CRM CONDORITO FRONTEND
 // ============================================================================
 
-// Variables CSS personalizadas
-:host {
-  --backoffice-primary: #1a365d;
-  --backoffice-secondary: #2d3748;
-  --backoffice-accent: #3182ce;
-  --backoffice-success: #38a169;
-  --backoffice-warning: #d69e2e;
-  --backoffice-danger: #e53e3e;
-  --backoffice-info: #3182ce;
-  
-  --backoffice-bg: #f7fafc;
-  --backoffice-card-bg: #ffffff;
-  --backoffice-border: #e2e8f0;
-  --backoffice-text: #2d3748;
-  --backoffice-text-muted: #718096;
-  
-  --backoffice-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  --backoffice-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  --backoffice-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-}
+// Usando el sistema de colores global
+// Las variables están disponibles desde styles.scss
 
 // ============================================================================
 // CONTAINER PRINCIPAL
@@ -29,7 +11,7 @@
 
 .backoffice-container {
   min-height: 100vh;
-  background: linear-gradient(135deg, var(--backoffice-bg) 0%, #edf2f7 100%);
+  background: linear-gradient(135deg, var(--color-bg-secondary) 0%, var(--color-bg-tertiary) 100%);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
 }
 
@@ -38,10 +20,10 @@
 // ============================================================================
 
 .backoffice-header {
-  background: linear-gradient(135deg, var(--backoffice-primary) 0%, var(--backoffice-secondary) 100%);
-  color: white;
+  background: linear-gradient(135deg, var(--color-bg-dark) 0%, var(--color-bg-darker) 100%);
+  color: var(--color-text-white);
   padding: 0;
-  box-shadow: var(--backoffice-shadow-lg);
+  box-shadow: var(--color-shadow-dark);
   position: sticky;
   top: 0;
   z-index: 1000;
@@ -110,9 +92,9 @@
       }
 
       &.btn-success {
-        background-color: var(--backoffice-success);
-        border-color: var(--backoffice-success);
-        color: white;
+        background-color: var(--color-success);
+        border-color: var(--color-success);
+        color: var(--color-text-white);
       }
     }
   }
@@ -147,7 +129,7 @@
   }
 
   p {
-    color: var(--backoffice-text-muted);
+    color: var(--color-text-muted);
     font-size: 1.125rem;
     margin: 0;
   }

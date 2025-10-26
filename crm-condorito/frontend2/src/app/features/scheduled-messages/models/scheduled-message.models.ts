@@ -291,13 +291,14 @@ export const RECURRENCE_OPTIONS = [
 /**
  * Colores para estados
  */
+// Usando el sistema de colores CSS - estos valores se obtienen dinámicamente
 export const STATUS_COLORS = {
-  pending: '#6c757d',    // Gris
-  active: '#28a745',     // Verde
-  paused: '#ffc107',     // Amarillo
-  completed: '#17a2b8',  // Azul
-  cancelled: '#6f42c1',  // Púrpura
-  error: '#dc3545'       // Rojo
+  pending: 'var(--color-secondary)',    // Gris
+  active: 'var(--color-success)',       // Verde
+  paused: 'var(--color-warning)',       // Amarillo
+  completed: 'var(--color-info)',       // Azul
+  cancelled: 'var(--color-secondary-dark)', // Púrpura oscuro
+  error: 'var(--color-danger)'          // Rojo
 } as const;
 
 /**

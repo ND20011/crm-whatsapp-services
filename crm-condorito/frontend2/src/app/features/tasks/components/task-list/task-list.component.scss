@@ -2,7 +2,7 @@
 
 .task-list-container {
   min-height: 100vh;
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  background: linear-gradient(135deg, var(--color-bg-secondary) 0%, var(--color-bg-tertiary) 100%);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 
   // ============================================================================
@@ -31,12 +31,12 @@
         .title-icon {
           width: 48px;
           height: 48px;
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          background: var(--color-dashboard-conversations);
           border-radius: 12px;
           display: flex;
           align-items: center;
           justify-content: center;
-          color: white;
+          color: var(--color-text-white);
           font-size: 1.5rem;
         }
 
@@ -81,24 +81,24 @@
           }
 
           &.btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            background: var(--color-dashboard-conversations);
+            color: var(--color-text-white);
+            box-shadow: 0 4px 15px var(--color-shadow-medium);
 
             &:hover {
               transform: translateY(-2px);
-              box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
+              box-shadow: 0 8px 25px var(--color-shadow-dark);
             }
           }
 
           &.btn-secondary {
-            background: linear-gradient(135deg, #a0aec0 0%, #718096 100%);
-            color: white;
-            box-shadow: 0 4px 15px rgba(160, 174, 192, 0.4);
+            background: linear-gradient(135deg, var(--color-secondary) 0%, var(--color-secondary-dark) 100%);
+            color: var(--color-text-white);
+            box-shadow: 0 4px 15px var(--color-shadow-medium);
 
             &:hover {
               transform: translateY(-2px);
-              box-shadow: 0 8px 25px rgba(160, 174, 192, 0.6);
+              box-shadow: 0 8px 25px var(--color-shadow-dark);
             }
           }
 
@@ -1237,12 +1237,8 @@
 // UTILITY CLASSES
 // ============================================================================
 .overdue {
-  color: #e53e3e !important;
+  color: var(--color-danger) !important;
   font-weight: 600;
 }
 
-.TASK_STATUSES,
-.TASK_PRIORITIES,
-.TASK_CATEGORIES {
-  // These will be imported from the component
-}
+// Task constants are imported from the component
