@@ -1,5 +1,6 @@
 const { executeQuery } = require('../config/database-simple');
 const ContactController = require('../controllers/ContactController');
+const AIService = require('./AIService');
 const axios = require('axios');
 
 /**
@@ -102,7 +103,18 @@ class IntelligentRulesService {
             // Filtrar reglas que coincidan con palabras clave
             const candidates = rules.filter(rule => {
                 try {
-                    const keywords = JSON.parse(rule.trigger_keywords);
+                    // Manejar keywords que pueden estar ya parseadas por MySQL o como string
+                    let keywords;
+                    if (typeof rule.trigger_keywords === 'object' && Array.isArray(rule.trigger_keywords)) {
+                        // Ya está parseado por MySQL
+                        keywords = rule.trigger_keywords;
+                    } else if (typeof rule.trigger_keywords === 'string') {
+                        // Necesita parsing manual
+                        keywords = JSON.parse(rule.trigger_keywords);
+                    } else {
+                        console.error(`❌ Unexpected keywords type for rule ${rule.id}:`, typeof rule.trigger_keywords);
+                        return false;
+                    }
                     
                     switch (rule.match_type) {
                         case 'all':
@@ -164,6 +176,7 @@ class IntelligentRulesService {
                     candidateRules[0]
                 );
                 
+                
                 return {
                     selectedRule: candidateRules[0],
                     extractedData: extractedData
@@ -177,7 +190,15 @@ class IntelligentRulesService {
 
 REGLAS CANDIDATAS:
 ${candidateRules.map((rule, i) => {
-    const keywords = JSON.parse(rule.trigger_keywords);
+    // Manejar keywords que pueden estar ya parseadas por MySQL o como string
+    let keywords;
+    if (typeof rule.trigger_keywords === 'object' && Array.isArray(rule.trigger_keywords)) {
+        keywords = rule.trigger_keywords;
+    } else if (typeof rule.trigger_keywords === 'string') {
+        keywords = JSON.parse(rule.trigger_keywords);
+    } else {
+        keywords = [];
+    }
     return `${i+1}. "${rule.name}": palabras clave [${keywords.join(', ')}] - Acción: ${rule.action_type}`;
 }).join('\n')}
 
@@ -244,10 +265,17 @@ Responde SOLO JSON:
      * PASO 2C: Extraer datos específicos con IA
      * @param {string} message - Mensaje del usuario
      * @param {Object} rule - Regla seleccionada
+     * @param {Object} existingData - Datos ya extraídos (opcional)
      * @returns {Object} Datos extraídos
      */
-    static async extractDataWithAI(message, rule) {
+    static async extractDataWithAI(message, rule, existingData = null) {
         try {
+            // Si ya tenemos datos extraídos, no volver a extraer
+            if (existingData && Object.keys(existingData).length > 0) {
+                console.log(`✅ Using existing extracted data for rule: "${rule.name}"`);
+                return existingData;
+            }
+            
             if (!rule.ai_extraction_enabled || !rule.ai_extraction_prompt) {
                 console.log(`ℹ️ AI extraction disabled for rule: "${rule.name}"`);
                 return {};
@@ -260,13 +288,36 @@ Responde SOLO JSON:
 MENSAJE DEL USUARIO: "${message}"`;
 
             const aiResponse = await this.callOpenAI(prompt, 200);
-            const extractedData = JSON.parse(aiResponse.trim());
+            
+            let extractedData;
+            try {
+                extractedData = JSON.parse(aiResponse.trim());
+            } catch (jsonError) {
+                console.error(`❌ JSON Parse Error:`, jsonError.message);
+                
+                // Intentar extraer JSON de una respuesta que puede tener texto adicional
+                const jsonMatch = aiResponse.match(/\{.*\}/s);
+                if (jsonMatch) {
+                    extractedData = JSON.parse(jsonMatch[0]);
+                } else {
+                    throw new Error(`Invalid JSON response from AI: ${aiResponse.substring(0, 100)}...`);
+                }
+            }
             
             console.log(`✅ Extracted data:`, extractedData);
             
             // Validar que contiene los campos esperados
             if (rule.expected_data_fields) {
-                const expectedFields = JSON.parse(rule.expected_data_fields);
+                // Manejar expected_data_fields que puede estar ya parseado por MySQL o como string
+                let expectedFields;
+                if (typeof rule.expected_data_fields === 'object' && Array.isArray(rule.expected_data_fields)) {
+                    expectedFields = rule.expected_data_fields;
+                } else if (typeof rule.expected_data_fields === 'string') {
+                    expectedFields = JSON.parse(rule.expected_data_fields);
+                } else {
+                    expectedFields = [];
+                }
+                
                 const missingFields = expectedFields.filter(field => 
                     !extractedData.hasOwnProperty(field)
                 );
@@ -279,7 +330,7 @@ MENSAJE DEL USUARIO: "${message}"`;
             return extractedData;
             
         } catch (error) {
-            console.error('❌ Error extracting data with AI:', error.message);
+            console.error(`❌ Error extracting data with AI:`, error.message);
             return {};
         }
     }
@@ -312,6 +363,7 @@ MENSAJE DEL USUARIO: "${message}"`;
                     actionResult = await this.executeEscalation(rule, conversation);
                     break;
                     
+                    
                 case 'ai_response':
                 case 'hybrid':
                 default:
@@ -322,9 +374,18 @@ MENSAJE DEL USUARIO: "${message}"`;
             // Aplicar etiquetas adicionales si están configuradas
             if (rule.tags_to_assign) {
                 try {
-                    const additionalTags = JSON.parse(rule.tags_to_assign);
+                    // Manejar tags_to_assign que puede estar ya parseado por MySQL o como string
+                    let additionalTags;
+                    if (typeof rule.tags_to_assign === 'object' && Array.isArray(rule.tags_to_assign)) {
+                        additionalTags = rule.tags_to_assign;
+                    } else if (typeof rule.tags_to_assign === 'string') {
+                        additionalTags = JSON.parse(rule.tags_to_assign);
+                    } else {
+                        additionalTags = [];
+                    }
+                    
                     if (additionalTags.length > 0) {
-                        await this.applyTagsToContact(conversation.contact_id, additionalTags);
+                        await this.applyTagsToContact(conversation.contact_id, additionalTags, conversation.client_id);
                         console.log(`🏷️ Applied additional tags: ${additionalTags.join(', ')}`);
                         
                         // Agregar tags al resultado
@@ -355,10 +416,17 @@ MENSAJE DEL USUARIO: "${message}"`;
      */
     static async executeApiCall(rule, extractedData) {
         try {
-            const config = JSON.parse(rule.action_config);
+            // Manejar action_config que puede estar ya parseado por MySQL o como string
+            let config;
+            if (typeof rule.action_config === 'object' && rule.action_config !== null) {
+                config = rule.action_config;
+            } else if (typeof rule.action_config === 'string') {
+                config = JSON.parse(rule.action_config);
+            } else {
+                config = {};
+            }
             let apiUrl = config.api_endpoint;
             
-            console.log(`🌐 Preparing API call with extracted data:`, extractedData);
             
             // Reemplazar variables en la URL con datos extraídos
             Object.keys(extractedData).forEach(key => {
@@ -445,7 +513,15 @@ MENSAJE DEL USUARIO: "${message}"`;
     static async executeTagAssignment(rule, conversation, extractedData = {}) {
         try {
             // Obtener etiquetas base de la regla
-            const baseTags = JSON.parse(rule.tags_to_assign || '[]');
+            // Manejar tags_to_assign que pueden estar ya parseadas por MySQL o como string
+            let baseTags;
+            if (typeof rule.tags_to_assign === 'object' && Array.isArray(rule.tags_to_assign)) {
+                baseTags = rule.tags_to_assign;
+            } else if (typeof rule.tags_to_assign === 'string') {
+                baseTags = JSON.parse(rule.tags_to_assign || '[]');
+            } else {
+                baseTags = [];
+            }
             let allTagsToApply = [...baseTags];
             
             // Procesar configuración adicional si existe
@@ -453,7 +529,15 @@ MENSAJE DEL USUARIO: "${message}"`;
             let shouldEscalate = false;
             
             if (rule.action_config) {
-                const config = JSON.parse(rule.action_config);
+                // Manejar action_config que puede estar ya parseado por MySQL o como string
+                let config;
+                if (typeof rule.action_config === 'object' && rule.action_config !== null) {
+                    config = rule.action_config;
+                } else if (typeof rule.action_config === 'string') {
+                    config = JSON.parse(rule.action_config);
+                } else {
+                    config = {};
+                }
                 
                 // Mensaje automático personalizado
                 if (config.auto_response) {
@@ -484,7 +568,7 @@ MENSAJE DEL USUARIO: "${message}"`;
             
             // Aplicar todas las etiquetas
             if (allTagsToApply.length > 0) {
-                await this.applyTagsToContact(conversation.contact_id, allTagsToApply);
+                await this.applyTagsToContact(conversation.contact_id, allTagsToApply, conversation.client_id);
                 console.log(`🏷️ Applied ${allTagsToApply.length} tags: ${allTagsToApply.join(', ')}`);
             }
             
@@ -516,7 +600,15 @@ MENSAJE DEL USUARIO: "${message}"`;
      */
     static async executeEscalation(rule, conversation) {
         try {
-            const config = JSON.parse(rule.action_config || '{}');
+            // Manejar action_config que puede estar ya parseado por MySQL o como string
+            let config;
+            if (typeof rule.action_config === 'object' && rule.action_config !== null) {
+                config = rule.action_config;
+            } else if (typeof rule.action_config === 'string') {
+                config = JSON.parse(rule.action_config || '{}');
+            } else {
+                config = {};
+            }
             const escalationMessage = config.escalation_message || 
                 'Te estoy conectando con un agente humano que podrá ayudarte mejor.';
             
@@ -550,40 +642,22 @@ MENSAJE DEL USUARIO: "${message}"`;
     }
 
     /**
-     * Aplicar etiquetas a un contacto usando el sistema existente
+     * Aplicar etiquetas a un contacto SIN reemplazar las existentes
      * @param {number} contactId - ID del contacto
      * @param {Array} tagIds - Array de IDs de etiquetas
      * @returns {Promise} Resultado de la aplicación
      */
-    static async applyTagsToContact(contactId, tagIds) {
+    static async applyTagsToContact(contactId, tagIds, clientId) {
         try {
             if (!Array.isArray(tagIds) || tagIds.length === 0) {
                 return;
             }
             
-            console.log(`🏷️ Applying tags ${tagIds.join(', ')} to contact ${contactId}`);
+            console.log(`🏷️ Adding tags ${tagIds.join(', ')} to contact ${contactId} (preserving existing)`);
             
-            // Usar el ContactController existente
-            // Simular request object para reutilizar método existente
-            const mockReq = {
-                params: { id: contactId },
-                body: { tagIds: tagIds },
-                user: { id: 1 } // TODO: Obtener del contexto real
-            };
-            
-            const mockRes = {
-                json: (response) => {
-                    if (response.success) {
-                        console.log(`✅ Tags applied successfully to contact ${contactId}`);
-                    } else {
-                        console.error(`❌ Error applying tags: ${response.message}`);
-                    }
-                },
-                status: (code) => ({ json: mockRes.json })
-            };
-            
-            // Llamar al método existente
-            await ContactController.addContactTags(mockReq, mockRes);
+            // Usar directamente addTagsToContact que AGREGA sin reemplazar las existentes
+            const ContactController = require('../controllers/ContactController');
+            await ContactController.addTagsToContact(contactId, tagIds, clientId); // clientId = 1 (demo)
             
         } catch (error) {
             console.error('❌ Error in applyTagsToContact:', error.message);
@@ -615,37 +689,33 @@ MENSAJE DEL USUARIO: "${message}"`;
     }
 
     /**
-     * Llamada optimizada a OpenAI
+     * Llamada a OpenAI usando AIService centralizado
      * @param {string} prompt - Prompt para la IA
      * @param {number} maxTokens - Máximo de tokens
      * @returns {string} Respuesta de la IA
      */
     static async callOpenAI(prompt, maxTokens = 200) {
         try {
-            const response = await axios.post('https://api.openai.com/v1/chat/completions', {
-                model: 'gpt-3.5-turbo',
-                messages: [
-                    { 
-                        role: 'system', 
-                        content: 'Eres un asistente que responde SOLO en el formato JSON solicitado. No agregues explicaciones adicionales.' 
-                    },
-                    { role: 'user', content: prompt }
-                ],
-                max_tokens: maxTokens,
-                temperature: 0.1, // Baja creatividad para respuestas precisas
-                timeout: 15000
-            }, {
-                headers: {
-                    'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-                    'Content-Type': 'application/json'
+            // Usar AIService centralizado para consistencia
+            const messages = [
+                { 
+                    role: 'system', 
+                    content: 'Eres un asistente que responde SOLO en el formato JSON solicitado. No agregues explicaciones adicionales.' 
                 },
-                timeout: 15000
-            });
+                { role: 'user', content: prompt }
+            ];
+
+            const response = await AIService.getChatCompletion(
+                messages,
+                maxTokens,
+                0.1, // Baja creatividad para respuestas precisas
+                'gpt-3.5-turbo' // Modelo específico para reglas (más rápido)
+            );
             
-            return response.data.choices[0].message.content.trim();
+            return response.trim();
             
         } catch (error) {
-            console.error('❌ Error calling OpenAI:', error.message);
+            console.error('❌ Error calling OpenAI via AIService:', error.message);
             throw new Error(`OpenAI API error: ${error.message}`);
         }
     }
@@ -693,6 +763,7 @@ MENSAJE DEL USUARIO: "${message}"`;
             return {};
         }
     }
+
 }
 
 module.exports = IntelligentRulesService;

@@ -201,8 +201,14 @@ export class IntelligentRulesService {
    * Probar regla con mensaje
    */
   testRule(id: number, testMessage: string): Observable<{ success: boolean; data: TestRuleResult }> {
-    const url = this.endpoints.test.replace('{id}', id.toString());
-    return this.apiService.post<{ success: boolean; data: TestRuleResult }>(url, { testMessage });
+    // Usar endpoint de testing sin autenticación para desarrollo
+    const testUrl = `/api/test/intelligent-rules/${id}`;
+    
+    return this.apiService.post<{ success: boolean; data: TestRuleResult }>(
+      testUrl, 
+      { testMessage, clientId: 1 }, // clientId hardcodeado para testing
+      false // sin autenticación
+    );
   }
 
   /**

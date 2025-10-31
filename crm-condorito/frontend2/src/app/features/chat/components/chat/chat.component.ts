@@ -12,6 +12,7 @@ import { FileUploadComponent } from '../../../../shared/components/file-upload/f
 import { FilePreviewComponent } from '../../../../shared/components/file-preview/file-preview.component';
 import { TagSelectorComponent } from '../../../../shared/components/tag-selector/tag-selector.component';
 import { MediaUrlPipe } from '../../../../shared/pipes/media-url.pipe';
+import { LinkifyPipe } from '../../../../shared/pipes/linkify.pipe';
 import {
   Conversation,
   Message,
@@ -36,7 +37,7 @@ import { TaskPriority, TaskCategory, ReminderType } from '../../../tasks/models/
 @Component({
   selector: 'app-chat',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, FileUploadComponent, FilePreviewComponent, TagSelectorComponent, MediaUrlPipe],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, FileUploadComponent, FilePreviewComponent, TagSelectorComponent, MediaUrlPipe, LinkifyPipe],
   templateUrl: './chat.component.html',
   styleUrl: './chat.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush

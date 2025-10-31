@@ -21,7 +21,7 @@ const log = {
 };
 
 // 🔑 Configuración de OpenAI
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY ;
 const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
 const OPENAI_MODEL = 'gpt-4o-mini';
 
@@ -1363,6 +1363,45 @@ PREGUNTA ORIGINAL: "${originalQuestion}"`;
         }
 
         log.debug(`💾 Respuesta cacheada para: ${cacheKey.substring(0, 50)}...`);
+    }
+
+    /**
+     * Método genérico para llamadas a OpenAI (para uso de otros servicios)
+     * @param {Array} messages - Array de mensajes para OpenAI
+     * @param {number} maxTokens - Máximo de tokens
+     * @param {number} temperature - Temperatura (creatividad)
+     * @param {string} model - Modelo a usar (opcional)
+     * @returns {string} Respuesta de OpenAI
+     */
+    static async getChatCompletion(messages, maxTokens = 500, temperature = 0.7, model = null) {
+        try {
+            const selectedModel = model || OPENAI_MODEL;
+            
+            log.debug(`🤖 Generic OpenAI call: ${messages.length} messages, model: ${selectedModel}`);
+
+            const response = await axios.post(OPENAI_API_URL, {
+                model: selectedModel,
+                messages: messages,
+                max_tokens: maxTokens,
+                temperature: temperature
+            }, {
+                timeout: 30000,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${OPENAI_API_KEY}`
+                }
+            });
+
+            const content = response.data.choices[0].message.content;
+            
+            log.debug(`✅ OpenAI response received (${response.data.usage?.total_tokens || 0} tokens)`);
+            
+            return content;
+
+        } catch (error) {
+            log.error(`❌ Error in generic OpenAI call: ${error.message}`);
+            throw new Error(`OpenAI API error: ${error.message}`);
+        }
     }
 }
 

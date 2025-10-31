@@ -125,7 +125,7 @@ export interface AppConfig {
 
 export const APP_CONFIG: AppConfig = {
   api: {
-    baseUrl: (window as any)['env']?.['apiUrl'] || 'http://localhost:3000',
+    baseUrl: (window as any)['env']?.['apiUrl'] || 'https://crm.condorestudio.com/backend',
     timeout: 30000,
     endpoints: {
       auth: {

@@ -23,7 +23,7 @@ export class IntelligentRulesFormComponent implements OnInit {
   actionTypes = [
     { value: 'assign_tags', label: 'Asignar Etiquetas', description: 'Aplica etiquetas automáticamente al contacto' },
     { value: 'escalate_human', label: 'Derivar a Humano', description: 'Transfiere la conversación a un agente humano' },
-    { value: 'call_api', label: 'Llamar API', description: 'Consulta una API externa con datos extraídos' },
+    { value: 'call_api', label: 'Llamar API / n8n', description: 'Consulta API externa, webhook n8n o cualquier endpoint HTTP' },
     { value: 'ai_response', label: 'Respuesta IA', description: 'Genera respuesta personalizada con IA' },
     { value: 'hybrid', label: 'Híbrido', description: 'Combina múltiples acciones' }
   ];
@@ -73,13 +73,29 @@ export class IntelligentRulesFormComponent implements OnInit {
       expected_data_fields: this.fb.array([]),
       action_type: ['assign_tags', Validators.required],
       action_config: this.fb.group({
+        // API Configuration
         api_endpoint: [''],
         method: ['GET'],
         headers: this.fb.group({}),
         response_template: [''],
+        
+        // Assign Tags Configuration
         auto_response: [''],
+        
+        // Escalate Human Configuration
         escalation_message: [''],
-        priority: ['normal']
+        priority: ['normal'],
+        
+        // AI Response Configuration
+        ai_response_prompt: [''],
+        ai_response_max_tokens: [300],
+        ai_response_temperature: ['0.5'],
+        
+        // Hybrid Configuration
+        hybrid_assign_tags: [false],
+        hybrid_ai_response: [false],
+        hybrid_call_api: [false],
+        hybrid_ai_prompt: ['']
       }),
       tags_to_assign: [[]]
     });
@@ -130,6 +146,8 @@ export class IntelligentRulesFormComponent implements OnInit {
       // Limpiar validaciones previas
       actionConfig?.get('api_endpoint')?.clearValidators();
       actionConfig?.get('escalation_message')?.clearValidators();
+      actionConfig?.get('ai_response_prompt')?.clearValidators();
+      this.ruleForm.get('tags_to_assign')?.clearValidators();
       
       // Aplicar validaciones según tipo
       switch (actionType) {
@@ -139,11 +157,20 @@ export class IntelligentRulesFormComponent implements OnInit {
         case 'escalate_human':
           actionConfig?.get('escalation_message')?.setValidators([Validators.required]);
           break;
+        case 'ai_response':
+          actionConfig?.get('ai_response_prompt')?.setValidators([Validators.required, Validators.minLength(10)]);
+          break;
+        case 'assign_tags':
+          // Para assign_tags, requerir al menos una etiqueta (ya sea automática o en action_config)
+          this.ruleForm.get('tags_to_assign')?.setValidators([this.minArrayLengthValidator(1)]);
+          break;
       }
       
       // Actualizar validaciones
       actionConfig?.get('api_endpoint')?.updateValueAndValidity();
       actionConfig?.get('escalation_message')?.updateValueAndValidity();
+      actionConfig?.get('ai_response_prompt')?.updateValueAndValidity();
+      this.ruleForm.get('tags_to_assign')?.updateValueAndValidity();
     });
 
     // Validaciones para extracción de IA
@@ -246,11 +273,8 @@ export class IntelligentRulesFormComponent implements OnInit {
   }
 
   onSubmit() {
-    if (this.ruleForm.invalid) {
-      this.markFormGroupTouched();
-      this.showWarning('Por favor completa todos los campos requeridos');
-      return;
-    }
+    this.markFormGroupTouched();
+   
 
     this.saving = true;
     const formData = this.prepareFormData();
@@ -335,6 +359,36 @@ export class IntelligentRulesFormComponent implements OnInit {
     this.router.navigate(['/intelligent-rules']);
   }
 
+  /**
+   * Obtener etiquetas seleccionadas con información completa
+   */
+  getSelectedTags() {
+    const selectedIds = this.ruleForm.get('tags_to_assign')?.value || [];
+    return this.availableTags.filter(tag => selectedIds.includes(tag.id));
+  }
+
+  /**
+   * Remover una etiqueta específica
+   */
+  removeTag(tagId: number) {
+    const currentTags = this.ruleForm.get('tags_to_assign')?.value || [];
+    const updatedTags = currentTags.filter((id: number) => id !== tagId);
+    this.ruleForm.get('tags_to_assign')?.setValue(updatedTags);
+  }
+
+  /**
+   * Validador personalizado para longitud mínima de array
+   */
+  minArrayLengthValidator(minLength: number) {
+    return (control: any) => {
+      const value = control.value;
+      if (!value || !Array.isArray(value) || value.length < minLength) {
+        return { minArrayLength: { requiredLength: minLength, actualLength: value ? value.length : 0 } };
+      }
+      return null;
+    };
+  }
+
   isFieldInvalid(fieldName: string): boolean {
     const field = this.ruleForm.get(fieldName);
     return !!(field && field.invalid && (field.dirty || field.touched));
@@ -346,6 +400,11 @@ export class IntelligentRulesFormComponent implements OnInit {
       if (field.errors['required']) return 'Este campo es requerido';
       if (field.errors['maxlength']) return 'Texto demasiado largo';
       if (field.errors['min']) return 'El valor debe ser mayor a 0';
+      if (field.errors['minArrayLength']) return 'Debe seleccionar al menos una etiqueta';
+      if (field.errors['pattern']) {
+        if (fieldName.includes('n8n_webhook_url')) return 'Debe ser una URL válida (http:// o https://)';
+        return 'Formato inválido';
+      }
     }
     return '';
   }

@@ -407,7 +407,7 @@
                           loading="lazy"
                         />
                         @if (message.content && message.content.trim()) {
-                          <p class="message-caption">{{ message.content }}</p>
+                          <div class="message-caption" [innerHTML]="message.content | linkify"></div>
                         }
                       } @else {
                         <!-- Imagen sin URL (error o no disponible) -->
@@ -423,7 +423,7 @@
                           </small>
                         </div>
                         @if (message.content && message.content.trim()) {
-                          <p class="message-caption">{{ message.content }}</p>
+                          <div class="message-caption" [innerHTML]="message.content | linkify"></div>
                         }
                       }
                     </div>
@@ -450,7 +450,7 @@
                           </audio>
                         </div>
                         @if (message.content && message.content.trim()) {
-                          <p class="message-caption">{{ message.content }}</p>
+                          <div class="message-caption" [innerHTML]="message.content | linkify"></div>
                         }
                       } @else {
                         <!-- Audio sin URL (error o no disponible) -->
@@ -466,7 +466,7 @@
                           </small>
                         </div>
                         @if (message.content && message.content.trim()) {
-                          <p class="message-caption">{{ message.content }}</p>
+                          <div class="message-caption" [innerHTML]="message.content | linkify"></div>
                         }
                       }
                     </div>
@@ -493,7 +493,7 @@
                           </div>
                         </div>
                         @if (message.content && message.content.trim()) {
-                          <p class="message-caption">{{ message.content }}</p>
+                          <div class="message-caption" [innerHTML]="message.content | linkify"></div>
                         }
                       } @else {
                         <!-- Video sin URL (error o no disponible) -->
@@ -509,7 +509,7 @@
                           </small>
                         </div>
                         @if (message.content && message.content.trim()) {
-                          <p class="message-caption">{{ message.content }}</p>
+                          <div class="message-caption" [innerHTML]="message.content | linkify"></div>
                         }
                       }
                     </div>
@@ -541,7 +541,7 @@
                           </div>
                         </div>
                         @if (message.content && message.content.trim()) {
-                          <p class="message-caption">{{ message.content }}</p>
+                          <div class="message-caption" [innerHTML]="message.content | linkify"></div>
                         }
                       } @else {
                         <!-- Documento sin URL (error o no disponible) -->
@@ -557,13 +557,13 @@
                           </small>
                         </div>
                         @if (message.content && message.content.trim()) {
-                          <p class="message-caption">{{ message.content }}</p>
+                          <div class="message-caption" [innerHTML]="message.content | linkify"></div>
                         }
                       }
                     </div>
                   } @else {
                     <!-- Mensaje de texto normal -->
-                    <p class="message-text">{{ message.content }}</p>
+                    <div class="message-text" [innerHTML]="message.content | linkify"></div>
                   }
                   
                   <div class="message-meta">

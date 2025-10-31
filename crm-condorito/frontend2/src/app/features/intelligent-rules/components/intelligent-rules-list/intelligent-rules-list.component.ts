@@ -328,7 +328,7 @@ export class IntelligentRulesListComponent implements OnInit, OnDestroy {
    * Crear nueva regla
    */
   createRule(): void {
-    this.router.navigate(['/intelligent-rules/new']);
+    this.router.navigate(['/intelligent-rules/create']);
   }
 
   /**
@@ -519,6 +519,17 @@ export class IntelligentRulesListComponent implements OnInit, OnDestroy {
   getTagColor(tagId: number): string {
     const tag = this.availableTags().find(t => t.id === tagId);
     return tag?.color || '#6c757d';
+  }
+
+  /**
+   * Obtener tooltip con etiquetas adicionales
+   */
+  getAdditionalTagsTooltip(tagIds: number[]): string {
+    if (!tagIds || tagIds.length <= 2) return '';
+    
+    const additionalTags = tagIds.slice(2);
+    const tagNames = additionalTags.map(id => this.getTagName(id));
+    return 'Etiquetas adicionales: ' + tagNames.join(', ');
   }
 
   /**

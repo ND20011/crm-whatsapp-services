@@ -1,34 +1,39 @@
-<div class="intelligent-rules-form-container">
-  <div class="form-header">
-    <h1 class="page-title">
-      <i class="fas fa-brain"></i>
-      {{ isEditMode ? 'Editar Regla Inteligente' : 'Nueva Regla Inteligente' }}
-    </h1>
-    <p class="page-subtitle">
-      {{ isEditMode ? 'Modifica la configuración de la regla' : 'Configura una nueva regla para el bot inteligente' }}
-    </p>
-  </div>
+<main class="intelligent-rules-form-container" role="main">
+  <header class="form-header">
+    <div class="header-content">
+      <h1 class="page-title">
+        <i class="fas fa-brain" aria-hidden="true"></i>
+        {{ isEditMode ? 'Editar Regla Inteligente' : 'Nueva Regla Inteligente' }}
+      </h1>
+      <p class="page-subtitle">
+        {{ isEditMode ? 'Modifica la configuración de la regla' : 'Configura una nueva regla para el bot inteligente' }}
+      </p>
+    </div>
+  </header>
 
-  <div *ngIf="loading" class="loading-state">
-    <div class="spinner-border text-primary" role="status">
+  <div *ngIf="loading" class="loading-state" role="status" aria-live="polite">
+    <div class="spinner-border text-primary" aria-hidden="true">
       <span class="visually-hidden">Cargando...</span>
     </div>
     <p>Cargando regla...</p>
   </div>
 
-  <form *ngIf="!loading" [formGroup]="ruleForm" (ngSubmit)="onSubmit()" class="rule-form">
+  <form *ngIf="!loading" [formGroup]="ruleForm" (ngSubmit)="onSubmit()" class="rule-form" novalidate>
     
     <!-- Información Básica -->
-    <div class="form-section">
-      <h3 class="section-title">
-        <i class="fas fa-info-circle"></i>
-        Información Básica
-      </h3>
+    <section class="form-section" aria-labelledby="basic-info-heading">
+      <h2 id="basic-info-heading" class="section-title">
+        <i class="fas fa-info-circle" aria-hidden="true"></i>
+        <span>Información Básica</span>
+      </h2>
       
       <div class="row">
         <div class="col-md-8">
           <div class="form-group">
-            <label for="name" class="form-label required">Nombre de la Regla</label>
+            <label for="name" class="form-label required">
+              Nombre de la Regla
+              <span class="required-indicator" aria-label="Campo obligatorio">*</span>
+            </label>
             <input 
               type="text" 
               id="name"
@@ -36,8 +41,14 @@
               [class.is-invalid]="isFieldInvalid('name')"
               formControlName="name"
               placeholder="Ej: Consulta de Pedidos"
+              [attr.aria-describedby]="isFieldInvalid('name') ? 'name-error' : 'name-help'"
+              [attr.aria-invalid]="isFieldInvalid('name')"
+              required
             >
-            <div *ngIf="isFieldInvalid('name')" class="invalid-feedback">
+            <div id="name-help" class="form-text" *ngIf="!isFieldInvalid('name')">
+              Ingresa un nombre descriptivo para identificar esta regla
+            </div>
+            <div *ngIf="isFieldInvalid('name')" id="name-error" class="invalid-feedback" role="alert">
               {{ getFieldError('name') }}
             </div>
           </div>
@@ -45,7 +56,10 @@
         
         <div class="col-md-4">
           <div class="form-group">
-            <label for="priority" class="form-label required">Prioridad</label>
+            <label for="priority" class="form-label required">
+              Prioridad
+              <span class="required-indicator" aria-label="Campo obligatorio">*</span>
+            </label>
             <input 
               type="number" 
               id="priority"
@@ -53,10 +67,16 @@
               [class.is-invalid]="isFieldInvalid('priority')"
               formControlName="priority"
               min="1"
+              max="999"
               placeholder="1"
+              [attr.aria-describedby]="isFieldInvalid('priority') ? 'priority-error' : 'priority-help'"
+              [attr.aria-invalid]="isFieldInvalid('priority')"
+              required
             >
-            <small class="form-text text-muted">1 = Mayor prioridad</small>
-            <div *ngIf="isFieldInvalid('priority')" class="invalid-feedback">
+            <div id="priority-help" class="form-text" *ngIf="!isFieldInvalid('priority')">
+              1 = Mayor prioridad
+            </div>
+            <div *ngIf="isFieldInvalid('priority')" id="priority-error" class="invalid-feedback" role="alert">
               {{ getFieldError('priority') }}
             </div>
           </div>
@@ -71,7 +91,11 @@
           formControlName="description"
           rows="3"
           placeholder="Describe qué hace esta regla y cuándo se debe activar..."
+          [attr.aria-describedby]="'description-help'"
         ></textarea>
+        <div id="description-help" class="form-text">
+          Proporciona una descripción clara del propósito de esta regla
+        </div>
       </div>
 
       <div class="form-check">
@@ -80,41 +104,55 @@
           type="checkbox" 
           id="is_active"
           formControlName="is_active"
+          [attr.aria-describedby]="'is-active-help'"
         >
         <label class="form-check-label" for="is_active">
           Regla activa
         </label>
-        <small class="form-text text-muted d-block">Solo las reglas activas se evalúan en los mensajes</small>
+        <div id="is-active-help" class="form-text">
+          Solo las reglas activas se evalúan en los mensajes
+        </div>
       </div>
-    </div>
+    </section>
 
     <!-- Palabras Clave -->
-    <div class="form-section">
-      <h3 class="section-title">
-        <i class="fas fa-key"></i>
-        Palabras Clave de Activación
-      </h3>
+    <section class="form-section" aria-labelledby="keywords-heading">
+      <h2 id="keywords-heading" class="section-title">
+        <i class="fas fa-key" aria-hidden="true"></i>
+        <span>Palabras Clave de Activación</span>
+      </h2>
       
       <div class="form-group">
-        <label class="form-label required">Palabras Clave</label>
-        <div formArrayName="trigger_keywords" class="keywords-container">
+        <label class="form-label required">
+          Palabras Clave
+          <span class="required-indicator" aria-label="Campo obligatorio">*</span>
+        </label>
+        <div formArrayName="trigger_keywords" class="keywords-container" role="group" aria-labelledby="keywords-heading">
           <div 
             *ngFor="let keyword of keywordsArray.controls; let i = index" 
             class="keyword-input-group"
           >
+            <label [for]="'keyword-' + i" class="visually-hidden">
+              Palabra clave {{ i + 1 }}
+            </label>
             <input 
               type="text" 
+              [id]="'keyword-' + i"
               class="form-control"
               [formControlName]="i"
               placeholder="Ej: pedido, orden, seguimiento"
+              [attr.aria-label]="'Palabra clave ' + (i + 1)"
             >
             <button 
               type="button" 
               class="btn btn-outline-danger btn-sm"
               (click)="removeKeyword(i)"
               [disabled]="keywordsArray.length <= 1"
+              [attr.aria-label]="'Eliminar palabra clave ' + (i + 1)"
+              title="Eliminar palabra clave"
             >
-              <i class="fas fa-times"></i>
+              <i class="fas fa-times" aria-hidden="true"></i>
+              <span class="visually-hidden">Eliminar</span>
             </button>
           </div>
         </div>
@@ -122,32 +160,44 @@
           type="button" 
           class="btn btn-outline-primary btn-sm mt-2"
           (click)="addKeyword()"
+          aria-label="Agregar nueva palabra clave"
         >
-          <i class="fas fa-plus"></i>
-          Agregar Palabra Clave
+          <i class="fas fa-plus" aria-hidden="true"></i>
+          <span>Agregar Palabra Clave</span>
         </button>
+        <div class="form-text">
+          Define las palabras o frases que activarán esta regla
+        </div>
       </div>
 
       <div class="form-group">
-        <label for="match_type" class="form-label required">Tipo de Coincidencia</label>
+        <label for="match_type" class="form-label required">
+          Tipo de Coincidencia
+          <span class="required-indicator" aria-label="Campo obligatorio">*</span>
+        </label>
         <select 
           id="match_type"
           class="form-select"
           formControlName="match_type"
+          [attr.aria-describedby]="'match-type-help'"
+          required
         >
           <option *ngFor="let type of matchTypes" [value]="type.value">
             {{ type.label }} - {{ type.description }}
           </option>
         </select>
+        <div id="match-type-help" class="form-text">
+          Determina cómo se evalúan las palabras clave en el mensaje
+        </div>
       </div>
-    </div>
+    </section>
 
     <!-- Extracción de Datos con IA -->
-    <div class="form-section">
-      <h3 class="section-title">
-        <i class="fas fa-brain"></i>
-        Extracción de Datos con IA
-      </h3>
+    <section class="form-section" aria-labelledby="ai-extraction-heading">
+      <h2 id="ai-extraction-heading" class="section-title">
+        <i class="fas fa-brain" aria-hidden="true"></i>
+        <span>Extracción de Datos con IA</span>
+      </h2>
       
       <div class="form-check mb-3">
         <input 
@@ -155,13 +205,14 @@
           type="checkbox" 
           id="ai_extraction_enabled"
           formControlName="ai_extraction_enabled"
+          [attr.aria-describedby]="'ai-extraction-help'"
         >
         <label class="form-check-label" for="ai_extraction_enabled">
           Habilitar extracción de datos con IA
         </label>
-        <small class="form-text text-muted d-block">
+        <div id="ai-extraction-help" class="form-text">
           Permite que la IA extraiga información específica del mensaje (números de pedido, productos, etc.)
-        </small>
+        </div>
       </div>
 
       <div *ngIf="ruleForm.get('ai_extraction_enabled')?.value">
@@ -173,7 +224,7 @@
             [class.is-invalid]="isFieldInvalid('ai_extraction_prompt')"
             formControlName="ai_extraction_prompt"
             rows="4"
-            placeholder="Ej: Extrae el número de pedido del mensaje. Responde SOLO JSON: {{ '{' }}'order_number': '12345'{{ '}' }}"
+            placeholder="Ej: Extrae el número de pedido del mensaje. Responde SOLO JSON: [order_number: 12345]"
           ></textarea>
           <div *ngIf="isFieldInvalid('ai_extraction_prompt')" class="invalid-feedback">
             {{ getFieldError('ai_extraction_prompt') }}
@@ -212,34 +263,47 @@
           </button>
         </div>
       </div>
-    </div>
+    </section>
 
     <!-- Acción a Ejecutar -->
-    <div class="form-section">
-      <h3 class="section-title">
-        <i class="fas fa-cog"></i>
-        Acción a Ejecutar
-      </h3>
+    <section class="form-section" aria-labelledby="action-heading">
+      <h2 id="action-heading" class="section-title">
+        <i class="fas fa-cog" aria-hidden="true"></i>
+        <span>Acción a Ejecutar</span>
+      </h2>
       
       <div class="form-group">
-        <label for="action_type" class="form-label required">Tipo de Acción</label>
+        <label for="action_type" class="form-label required">
+          Tipo de Acción
+          <span class="required-indicator" aria-label="Campo obligatorio">*</span>
+        </label>
         <select 
           id="action_type"
           class="form-select"
           formControlName="action_type"
+          [attr.aria-describedby]="'action-type-help'"
+          required
         >
           <option *ngFor="let action of actionTypes" [value]="action.value">
             {{ action.label }} - {{ action.description }}
           </option>
         </select>
+        <div id="action-type-help" class="form-text">
+          Selecciona qué acción se ejecutará cuando se active la regla
+        </div>
       </div>
 
       <!-- Configuración específica por tipo de acción -->
       <div formGroupName="action_config">
         
-        <!-- Configuración para Call API -->
+        <!-- Configuración para Call API / n8n -->
         <div *ngIf="ruleForm.get('action_type')?.value === 'call_api'" class="action-config-section">
-          <h4 class="config-subtitle">Configuración de API</h4>
+          <h4 class="config-subtitle">Configuración de API / n8n Webhook</h4>
+          
+          <div class="alert alert-info mb-3">
+            <i class="fas fa-info-circle me-2"></i>
+            <strong>Casos de uso:</strong> APIs externas, webhooks de n8n, integraciones con CRM, ERP, sistemas de facturación, etc.
+          </div>
           
           <div class="row">
             <div class="col-md-8">
@@ -250,10 +314,13 @@
                   id="api_endpoint"
                   class="form-control"
                   formControlName="api_endpoint"
-                  placeholder="https://api.empresa.com/orders/{{ '{' }}order_number{{ '}' }}"
+                  placeholder="https://n8n.empresa.com/webhook/crm-lead o https://api.empresa.com/orders/[order_number]"
                 >
                 <small class="form-text text-muted">
-                  Usa {{ '{' }}campo{{ '}' }} para reemplazar con datos extraídos por IA
+                  <strong>Ejemplos:</strong><br>
+                  • n8n: <code>https://n8n.empresa.com/webhook/crm-lead</code><br>
+                  • API con datos: <code>https://api.empresa.com/orders/[order_number]</code><br>
+                  Usa [campo] para reemplazar con datos extraídos por IA
                 </small>
               </div>
             </div>
@@ -277,10 +344,10 @@
               class="form-control"
               formControlName="response_template"
               rows="3"
-              placeholder="Tu pedido #{{ '{' }}order_number{{ '}' }} está {{ '{' }}status{{ '}' }}. Fecha estimada: {{ '{' }}delivery_date{{ '}' }}"
+              placeholder="Tu pedido #[order_number] está [status]. Fecha estimada: [delivery_date]"
             ></textarea>
             <small class="form-text text-muted">
-              Usa {{ '{' }}campo{{ '}' }} para mostrar datos de la respuesta de la API
+              Usa [campo] para mostrar datos de la respuesta de la API
             </small>
           </div>
         </div>
@@ -312,10 +379,16 @@
 
         <!-- Configuración para Assign Tags -->
         <div *ngIf="ruleForm.get('action_type')?.value === 'assign_tags'" class="action-config-section">
-          <h4 class="config-subtitle">Configuración de Etiquetas</h4>
+          <h4 class="config-subtitle">Configuración de Asignación de Etiquetas</h4>
+          
+          <div class="alert alert-info mb-3">
+            <i class="fas fa-info-circle me-2"></i>
+            <strong>Nota:</strong> Para este tipo de acción, debes seleccionar al menos una etiqueta en la sección 
+            "Etiquetas Automáticas" arriba. Esas etiquetas se aplicarán cuando se active la regla.
+          </div>
           
           <div class="form-group">
-            <label for="auto_response" class="form-label">Respuesta Automática</label>
+            <label for="auto_response" class="form-label">Respuesta Automática (Opcional)</label>
             <textarea 
               id="auto_response"
               class="form-control"
@@ -323,72 +396,233 @@
               rows="3"
               placeholder="Recibimos tu consulta. Te contactaremos pronto."
             ></textarea>
-            <small class="form-text text-muted">
-              Mensaje que se enviará automáticamente después de aplicar las etiquetas
-            </small>
+            <div class="form-text">
+              Mensaje que se enviará automáticamente después de aplicar las etiquetas. 
+              Si está vacío, no se enviará ningún mensaje adicional.
+            </div>
+          </div>
+        </div>
+
+        <!-- Configuración para AI Response -->
+        <div *ngIf="ruleForm.get('action_type')?.value === 'ai_response'" class="action-config-section">
+          <h4 class="config-subtitle">Configuración de Respuesta IA</h4>
+          
+          <div class="form-group">
+            <label for="ai_response_prompt" class="form-label required">
+              Prompt para la IA
+              <span class="required-indicator" aria-label="Campo obligatorio">*</span>
+            </label>
+            <textarea 
+              id="ai_response_prompt"
+              class="form-control"
+              [class.is-invalid]="isFieldInvalid('action_config.ai_response_prompt')"
+              formControlName="ai_response_prompt"
+              rows="4"
+              placeholder="Eres un asistente de atención al cliente. Responde de manera amable y profesional a la consulta del usuario sobre: [mensaje_usuario]. Usa un tono cordial y proporciona información útil."
+              [attr.aria-describedby]="isFieldInvalid('action_config.ai_response_prompt') ? 'ai-response-error' : 'ai-response-help'"
+              [attr.aria-invalid]="isFieldInvalid('action_config.ai_response_prompt')"
+              required
+            ></textarea>
+            <div id="ai-response-help" class="form-text" *ngIf="!isFieldInvalid('action_config.ai_response_prompt')">
+              Define cómo debe responder la IA. Usa [mensaje_usuario] para incluir el mensaje del cliente en el prompt
+            </div>
+            <div *ngIf="isFieldInvalid('action_config.ai_response_prompt')" id="ai-response-error" class="invalid-feedback" role="alert">
+              {{ getFieldError('action_config.ai_response_prompt') }}
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="ai_response_max_tokens" class="form-label">Máximo de Tokens</label>
+            <input 
+              type="number"
+              id="ai_response_max_tokens"
+              class="form-control"
+              formControlName="ai_response_max_tokens"
+              min="50"
+              max="1000"
+              placeholder="300"
+              [attr.aria-describedby]="'max-tokens-help'"
+            >
+            <div id="max-tokens-help" class="form-text">
+              Límite de tokens para la respuesta de la IA (50-1000). Más tokens = respuestas más largas
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="ai_response_temperature" class="form-label">Creatividad (Temperature)</label>
+            <select 
+              id="ai_response_temperature"
+              class="form-select"
+              formControlName="ai_response_temperature"
+              [attr.aria-describedby]="'temperature-help'"
+            >
+              <option value="0.1">Muy conservadora (0.1)</option>
+              <option value="0.3">Conservadora (0.3)</option>
+              <option value="0.5">Equilibrada (0.5)</option>
+              <option value="0.7">Creativa (0.7)</option>
+              <option value="0.9">Muy creativa (0.9)</option>
+            </select>
+            <div id="temperature-help" class="form-text">
+              Controla qué tan creativa o conservadora será la respuesta de la IA
+            </div>
+          </div>
+        </div>
+
+        <!-- Configuración para Hybrid -->
+        <div *ngIf="ruleForm.get('action_type')?.value === 'hybrid'" class="action-config-section">
+          <h4 class="config-subtitle">Configuración Híbrida</h4>
+          
+          <div class="form-group">
+            <label class="form-label">Acciones a Combinar</label>
+            <div class="hybrid-actions">
+              <div class="form-check">
+                <input 
+                  class="form-check-input" 
+                  type="checkbox" 
+                  id="hybrid_assign_tags"
+                  formControlName="hybrid_assign_tags"
+                >
+                <label class="form-check-label" for="hybrid_assign_tags">
+                  Asignar etiquetas
+                </label>
+              </div>
+              
+              <div class="form-check">
+                <input 
+                  class="form-check-input" 
+                  type="checkbox" 
+                  id="hybrid_ai_response"
+                  formControlName="hybrid_ai_response"
+                >
+                <label class="form-check-label" for="hybrid_ai_response">
+                  Respuesta con IA
+                </label>
+              </div>
+              
+              <div class="form-check">
+                <input 
+                  class="form-check-input" 
+                  type="checkbox" 
+                  id="hybrid_call_api"
+                  formControlName="hybrid_call_api"
+                >
+                <label class="form-check-label" for="hybrid_call_api">
+                  Llamar API
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Configuraciones específicas para híbrido -->
+          <div *ngIf="ruleForm.get('action_config.hybrid_ai_response')?.value" class="form-group">
+            <label for="hybrid_ai_prompt" class="form-label">Prompt para IA (Híbrido)</label>
+            <textarea 
+              id="hybrid_ai_prompt"
+              class="form-control"
+              formControlName="hybrid_ai_prompt"
+              rows="3"
+              placeholder="Prompt personalizado para la respuesta IA en modo híbrido..."
+            ></textarea>
           </div>
         </div>
       </div>
-    </div>
+    </section>
 
-    <!-- Etiquetas a Asignar -->
-    <div class="form-section">
-      <h3 class="section-title">
-        <i class="fas fa-tags"></i>
-        Etiquetas a Asignar
-      </h3>
+    <!-- Etiquetas a Asignar Automáticamente -->
+    <section 
+      class="form-section" 
+      aria-labelledby="tags-heading"
+    >
+      <h2 id="tags-heading" class="section-title">
+        <i class="fas fa-tags" aria-hidden="true"></i>
+        <span>Etiquetas Automáticas</span>
+      </h2>
+      
+      <p class="section-description">
+        Estas etiquetas se aplicarán automáticamente al contacto cuando se active esta regla, 
+        independientemente del tipo de acción configurada.
+      </p>
       
       <div class="form-group">
-        <label class="form-label">Seleccionar Etiquetas</label>
-        <div class="tags-selection">
-          <div 
-            *ngFor="let tag of availableTags" 
-            class="form-check form-check-inline"
+        <label class="form-label">
+          Seleccionar Etiquetas (Opcional)
+        </label>
+        
+        <!-- Selector múltiple de etiquetas -->
+        <div class="tags-selector">
+          <select 
+            multiple 
+            class="form-select tags-multiselect"
+            formControlName="tags_to_assign"
+            [attr.aria-describedby]="'tags-help'"
+            size="6"
           >
-            <input 
-              class="form-check-input" 
-              type="checkbox" 
-              [id]="'tag-' + tag.id"
+            <option 
+              *ngFor="let tag of availableTags" 
               [value]="tag.id"
-              (change)="onTagChange($event, tag.id)"
+              [attr.data-color]="tag.color"
             >
-            <label class="form-check-label" [for]="'tag-' + tag.id">
+              {{ tag.name }}
+            </option>
+          </select>
+          
+          <!-- Vista previa de etiquetas seleccionadas -->
+          <div class="selected-tags-preview" *ngIf="getSelectedTags().length > 0">
+            <div class="selected-tags-label">Etiquetas seleccionadas:</div>
+            <div class="selected-tags-list">
               <span 
-                class="tag-badge"
+                *ngFor="let tag of getSelectedTags()" 
+                class="tag-badge selected"
                 [style.background-color]="tag.color"
               >
                 {{ tag.name }}
+                <button 
+                  type="button" 
+                  class="tag-remove"
+                  (click)="removeTag(tag.id)"
+                  [attr.aria-label]="'Quitar etiqueta ' + tag.name"
+                >
+                  <i class="fas fa-times" aria-hidden="true"></i>
+                </button>
               </span>
-            </label>
+            </div>
           </div>
         </div>
-        <small class="form-text text-muted">
-          Estas etiquetas se aplicarán automáticamente cuando se active la regla
-        </small>
+        
+        <div id="tags-help" class="form-text">
+          <strong>Etiquetado automático:</strong> Las etiquetas seleccionadas se aplicarán al contacto cada vez que esta regla se active, 
+          sin importar el tipo de acción. Mantén presionado Ctrl (Cmd en Mac) para seleccionar múltiples etiquetas.
+        </div>
+        
+        <div *ngIf="isFieldInvalid('tags_to_assign')" class="invalid-feedback d-block" role="alert">
+          {{ getFieldError('tags_to_assign') }}
+        </div>
       </div>
-    </div>
+    </section>
 
     <!-- Botones de Acción -->
-    <div class="form-actions">
+    <footer class="form-actions">
       <button 
         type="button" 
         class="btn btn-secondary"
         (click)="cancel()"
         [disabled]="saving"
+        aria-label="Cancelar y volver a la lista de reglas"
       >
-        <i class="fas fa-times"></i>
-        Cancelar
+        <i class="fas fa-times" aria-hidden="true"></i>
+        <span>Cancelar</span>
       </button>
       
       <button 
         type="submit" 
         class="btn btn-primary"
-        [disabled]="ruleForm.invalid || saving"
+        [disabled]="saving"
+        [attr.aria-label]="saving ? 'Guardando regla...' : (isEditMode ? 'Actualizar regla inteligente' : 'Crear nueva regla inteligente')"
       >
-        <span *ngIf="saving" class="spinner-border spinner-border-sm me-2"></span>
-        <i *ngIf="!saving" class="fas fa-save"></i>
-        {{ saving ? 'Guardando...' : (isEditMode ? 'Actualizar Regla' : 'Crear Regla') }}
+        <span *ngIf="saving" class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+        <i *ngIf="!saving" class="fas fa-save" aria-hidden="true"></i>
+        <span>{{ saving ? 'Guardando...' : (isEditMode ? 'Actualizar Regla' : 'Crear Regla') }}</span>
       </button>
-    </div>
+    </footer>
   </form>
-</div>
+</main>

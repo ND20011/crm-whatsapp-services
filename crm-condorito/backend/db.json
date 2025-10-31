@@ -1,0 +1,2560 @@
+{
+    "ai_configurations": {
+        "id": {
+            "Field": "id",
+            "Type": "int(11)",
+            "Null": "NO",
+            "Key": "PRI",
+            "Default": null,
+            "Extra": "auto_increment"
+        },
+        "client_id": {
+            "Field": "client_id",
+            "Type": "int(11)",
+            "Null": "NO",
+            "Key": "UNI",
+            "Default": null,
+            "Extra": ""
+        },
+        "enabled": {
+            "Field": "enabled",
+            "Type": "tinyint(1)",
+            "Null": "YES",
+            "Key": "MUL",
+            "Default": "1",
+            "Extra": ""
+        },
+        "ai_mode": {
+            "Field": "ai_mode",
+            "Type": "enum('prompt_only','database_search')",
+            "Null": "YES",
+            "Key": "MUL",
+            "Default": "prompt_only",
+            "Extra": ""
+        },
+        "business_prompt": {
+            "Field": "business_prompt",
+            "Type": "text",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "max_tokens": {
+            "Field": "max_tokens",
+            "Type": "int(11)",
+            "Null": "YES",
+            "Key": "",
+            "Default": "500",
+            "Extra": ""
+        },
+        "temperature": {
+            "Field": "temperature",
+            "Type": "decimal(3,2)",
+            "Null": "YES",
+            "Key": "",
+            "Default": "0.70",
+            "Extra": ""
+        },
+        "max_history_messages": {
+            "Field": "max_history_messages",
+            "Type": "int(11)",
+            "Null": "YES",
+            "Key": "",
+            "Default": "10",
+            "Extra": ""
+        },
+        "response_timeout": {
+            "Field": "response_timeout",
+            "Type": "int(11)",
+            "Null": "YES",
+            "Key": "",
+            "Default": "30000",
+            "Extra": ""
+        },
+        "fallback_message": {
+            "Field": "fallback_message",
+            "Type": "text",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "working_hours_enabled": {
+            "Field": "working_hours_enabled",
+            "Type": "tinyint(1)",
+            "Null": "YES",
+            "Key": "",
+            "Default": "1",
+            "Extra": ""
+        },
+        "working_hours_start": {
+            "Field": "working_hours_start",
+            "Type": "time",
+            "Null": "YES",
+            "Key": "",
+            "Default": "00:00:00",
+            "Extra": ""
+        },
+        "working_hours_end": {
+            "Field": "working_hours_end",
+            "Type": "time",
+            "Null": "YES",
+            "Key": "",
+            "Default": "23:59:00",
+            "Extra": ""
+        },
+        "working_days": {
+            "Field": "working_days",
+            "Type": "longtext",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "created_at": {
+            "Field": "created_at",
+            "Type": "timestamp",
+            "Null": "YES",
+            "Key": "",
+            "Default": "current_timestamp()",
+            "Extra": ""
+        },
+        "updated_at": {
+            "Field": "updated_at",
+            "Type": "timestamp",
+            "Null": "YES",
+            "Key": "",
+            "Default": "current_timestamp()",
+            "Extra": "on update current_timestamp()"
+        }
+    },
+    "ai_suggestions": {
+        "id": {
+            "Field": "id",
+            "Type": "int(11)",
+            "Null": "NO",
+            "Key": "PRI",
+            "Default": null,
+            "Extra": "auto_increment"
+        },
+        "conversation_id": {
+            "Field": "conversation_id",
+            "Type": "int(11)",
+            "Null": "NO",
+            "Key": "MUL",
+            "Default": null,
+            "Extra": ""
+        },
+        "suggested_message": {
+            "Field": "suggested_message",
+            "Type": "text",
+            "Null": "NO",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "confidence_score": {
+            "Field": "confidence_score",
+            "Type": "decimal(3,2)",
+            "Null": "YES",
+            "Key": "MUL",
+            "Default": "0.00",
+            "Extra": ""
+        },
+        "context_data": {
+            "Field": "context_data",
+            "Type": "longtext",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "used": {
+            "Field": "used",
+            "Type": "tinyint(1)",
+            "Null": "YES",
+            "Key": "MUL",
+            "Default": "0",
+            "Extra": ""
+        },
+        "used_at": {
+            "Field": "used_at",
+            "Type": "timestamp",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "feedback": {
+            "Field": "feedback",
+            "Type": "enum('positive','negative','neutral')",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "created_at": {
+            "Field": "created_at",
+            "Type": "timestamp",
+            "Null": "YES",
+            "Key": "MUL",
+            "Default": "current_timestamp()",
+            "Extra": ""
+        }
+    },
+    "bot_configurations": {
+        "id": {
+            "Field": "id",
+            "Type": "int(11)",
+            "Null": "NO",
+            "Key": "PRI",
+            "Default": null,
+            "Extra": "auto_increment"
+        },
+        "client_id": {
+            "Field": "client_id",
+            "Type": "int(11)",
+            "Null": "NO",
+            "Key": "UNI",
+            "Default": null,
+            "Extra": ""
+        },
+        "is_enabled": {
+            "Field": "is_enabled",
+            "Type": "tinyint(1)",
+            "Null": "YES",
+            "Key": "MUL",
+            "Default": "1",
+            "Extra": ""
+        },
+        "working_hours_start": {
+            "Field": "working_hours_start",
+            "Type": "time",
+            "Null": "YES",
+            "Key": "",
+            "Default": "09:00:00",
+            "Extra": ""
+        },
+        "working_hours_end": {
+            "Field": "working_hours_end",
+            "Type": "time",
+            "Null": "YES",
+            "Key": "",
+            "Default": "18:00:00",
+            "Extra": ""
+        },
+        "working_days": {
+            "Field": "working_days",
+            "Type": "longtext",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "auto_response_delay": {
+            "Field": "auto_response_delay",
+            "Type": "int(11)",
+            "Null": "YES",
+            "Key": "",
+            "Default": "2000",
+            "Extra": ""
+        },
+        "custom_instructions": {
+            "Field": "custom_instructions",
+            "Type": "text",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "welcome_message": {
+            "Field": "welcome_message",
+            "Type": "text",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "fallback_message": {
+            "Field": "fallback_message",
+            "Type": "text",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "max_auto_responses_per_conversation": {
+            "Field": "max_auto_responses_per_conversation",
+            "Type": "int(11)",
+            "Null": "YES",
+            "Key": "",
+            "Default": "5",
+            "Extra": ""
+        },
+        "created_at": {
+            "Field": "created_at",
+            "Type": "timestamp",
+            "Null": "YES",
+            "Key": "",
+            "Default": "current_timestamp()",
+            "Extra": ""
+        },
+        "updated_at": {
+            "Field": "updated_at",
+            "Type": "timestamp",
+            "Null": "YES",
+            "Key": "",
+            "Default": "current_timestamp()",
+            "Extra": "on update current_timestamp()"
+        },
+        "product_search_enabled": {
+            "Field": "product_search_enabled",
+            "Type": "tinyint(1)",
+            "Null": "YES",
+            "Key": "",
+            "Default": "0",
+            "Extra": ""
+        },
+        "product_endpoint_url": {
+            "Field": "product_endpoint_url",
+            "Type": "varchar(500)",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "product_endpoint_method": {
+            "Field": "product_endpoint_method",
+            "Type": "enum('GET','POST')",
+            "Null": "YES",
+            "Key": "",
+            "Default": "GET",
+            "Extra": ""
+        },
+        "product_endpoint_body": {
+            "Field": "product_endpoint_body",
+            "Type": "text",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "product_endpoint_headers": {
+            "Field": "product_endpoint_headers",
+            "Type": "text",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "product_search_param_name": {
+            "Field": "product_search_param_name",
+            "Type": "varchar(100)",
+            "Null": "YES",
+            "Key": "",
+            "Default": "search",
+            "Extra": ""
+        },
+        "product_response_path": {
+            "Field": "product_response_path",
+            "Type": "varchar(200)",
+            "Null": "YES",
+            "Key": "",
+            "Default": "data",
+            "Extra": ""
+        },
+        "product_max_results": {
+            "Field": "product_max_results",
+            "Type": "int(11)",
+            "Null": "YES",
+            "Key": "",
+            "Default": "30",
+            "Extra": ""
+        },
+        "product_cache_ttl": {
+            "Field": "product_cache_ttl",
+            "Type": "int(11)",
+            "Null": "YES",
+            "Key": "",
+            "Default": "600",
+            "Extra": ""
+        },
+        "product_timeout": {
+            "Field": "product_timeout",
+            "Type": "int(11)",
+            "Null": "YES",
+            "Key": "",
+            "Default": "8000",
+            "Extra": ""
+        },
+        "product_link_enabled": {
+            "Field": "product_link_enabled",
+            "Type": "tinyint(1)",
+            "Null": "YES",
+            "Key": "",
+            "Default": "0",
+            "Extra": ""
+        },
+        "product_link_template": {
+            "Field": "product_link_template",
+            "Type": "varchar(500)",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "product_link_id_field": {
+            "Field": "product_link_id_field",
+            "Type": "varchar(100)",
+            "Null": "YES",
+            "Key": "",
+            "Default": "id",
+            "Extra": ""
+        },
+        "product_link_text": {
+            "Field": "product_link_text",
+            "Type": "varchar(200)",
+            "Null": "YES",
+            "Key": "",
+            "Default": "Ver producto",
+            "Extra": ""
+        },
+        "permiso_producto": {
+            "Field": "permiso_producto",
+            "Type": "tinyint(1)",
+            "Null": "YES",
+            "Key": "",
+            "Default": "0",
+            "Extra": ""
+        }
+    },
+    "bulk_messages": {
+        "id": {
+            "Field": "id",
+            "Type": "int(11)",
+            "Null": "NO",
+            "Key": "PRI",
+            "Default": null,
+            "Extra": "auto_increment"
+        },
+        "client_id": {
+            "Field": "client_id",
+            "Type": "int(11)",
+            "Null": "NO",
+            "Key": "MUL",
+            "Default": null,
+            "Extra": ""
+        },
+        "campaign_name": {
+            "Field": "campaign_name",
+            "Type": "varchar(255)",
+            "Null": "NO",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "template_id": {
+            "Field": "template_id",
+            "Type": "int(11)",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "content": {
+            "Field": "content",
+            "Type": "text",
+            "Null": "NO",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "scheduled_at": {
+            "Field": "scheduled_at",
+            "Type": "timestamp",
+            "Null": "YES",
+            "Key": "MUL",
+            "Default": null,
+            "Extra": ""
+        },
+        "status": {
+            "Field": "status",
+            "Type": "enum('draft','scheduled','pending','sending','completed','failed','cancelled')",
+            "Null": "YES",
+            "Key": "MUL",
+            "Default": "draft",
+            "Extra": ""
+        },
+        "contact_filter": {
+            "Field": "contact_filter",
+            "Type": "longtext",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "selected_contacts": {
+            "Field": "selected_contacts",
+            "Type": "longtext",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "total_contacts": {
+            "Field": "total_contacts",
+            "Type": "int(11)",
+            "Null": "YES",
+            "Key": "",
+            "Default": "0",
+            "Extra": ""
+        },
+        "sent_count": {
+            "Field": "sent_count",
+            "Type": "int(11)",
+            "Null": "YES",
+            "Key": "",
+            "Default": "0",
+            "Extra": ""
+        },
+        "failed_count": {
+            "Field": "failed_count",
+            "Type": "int(11)",
+            "Null": "YES",
+            "Key": "",
+            "Default": "0",
+            "Extra": ""
+        },
+        "success_rate": {
+            "Field": "success_rate",
+            "Type": "decimal(5,2)",
+            "Null": "YES",
+            "Key": "",
+            "Default": "0.00",
+            "Extra": ""
+        },
+        "started_at": {
+            "Field": "started_at",
+            "Type": "timestamp",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "completed_at": {
+            "Field": "completed_at",
+            "Type": "timestamp",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "error_message": {
+            "Field": "error_message",
+            "Type": "text",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "created_at": {
+            "Field": "created_at",
+            "Type": "timestamp",
+            "Null": "YES",
+            "Key": "MUL",
+            "Default": "current_timestamp()",
+            "Extra": ""
+        },
+        "updated_at": {
+            "Field": "updated_at",
+            "Type": "timestamp",
+            "Null": "YES",
+            "Key": "",
+            "Default": "current_timestamp()",
+            "Extra": "on update current_timestamp()"
+        }
+    },
+    "clients": {
+        "id": {
+            "Field": "id",
+            "Type": "int(11)",
+            "Null": "NO",
+            "Key": "PRI",
+            "Default": null,
+            "Extra": "auto_increment"
+        },
+        "client_code": {
+            "Field": "client_code",
+            "Type": "varchar(50)",
+            "Null": "NO",
+            "Key": "UNI",
+            "Default": null,
+            "Extra": ""
+        },
+        "password": {
+            "Field": "password",
+            "Type": "varchar(255)",
+            "Null": "NO",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "company_name": {
+            "Field": "company_name",
+            "Type": "varchar(255)",
+            "Null": "NO",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "email": {
+            "Field": "email",
+            "Type": "varchar(255)",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "phone": {
+            "Field": "phone",
+            "Type": "varchar(50)",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "status": {
+            "Field": "status",
+            "Type": "enum('active','inactive','suspended')",
+            "Null": "YES",
+            "Key": "MUL",
+            "Default": "active",
+            "Extra": ""
+        },
+        "created_at": {
+            "Field": "created_at",
+            "Type": "timestamp",
+            "Null": "YES",
+            "Key": "MUL",
+            "Default": "current_timestamp()",
+            "Extra": ""
+        },
+        "updated_at": {
+            "Field": "updated_at",
+            "Type": "timestamp",
+            "Null": "YES",
+            "Key": "",
+            "Default": "current_timestamp()",
+            "Extra": "on update current_timestamp()"
+        },
+        "monthly_bot_limit": {
+            "Field": "monthly_bot_limit",
+            "Type": "int(11)",
+            "Null": "YES",
+            "Key": "",
+            "Default": "2500",
+            "Extra": ""
+        },
+        "current_bot_usage": {
+            "Field": "current_bot_usage",
+            "Type": "int(11)",
+            "Null": "YES",
+            "Key": "",
+            "Default": "0",
+            "Extra": ""
+        },
+        "bot_usage_reset_date": {
+            "Field": "bot_usage_reset_date",
+            "Type": "date",
+            "Null": "YES",
+            "Key": "",
+            "Default": "date_format(current_timestamp(),_utf8mb4'%Y-%m-01')",
+            "Extra": ""
+        },
+        "monthly_token_limit": {
+            "Field": "monthly_token_limit",
+            "Type": "int(11)",
+            "Null": "YES",
+            "Key": "",
+            "Default": "100000",
+            "Extra": ""
+        },
+        "current_token_usage": {
+            "Field": "current_token_usage",
+            "Type": "int(11)",
+            "Null": "YES",
+            "Key": "",
+            "Default": "0",
+            "Extra": ""
+        },
+        "token_usage_reset_date": {
+            "Field": "token_usage_reset_date",
+            "Type": "date",
+            "Null": "YES",
+            "Key": "",
+            "Default": "date_format(current_timestamp(),_utf8mb4'%Y-%m-01')",
+            "Extra": ""
+        },
+        "code": {
+            "Field": "code",
+            "Type": "varchar(50)",
+            "Null": "YES",
+            "Key": "UNI",
+            "Default": null,
+            "Extra": ""
+        }
+    },
+    "contact_tag_relations": {
+        "contact_id": {
+            "Field": "contact_id",
+            "Type": "int(11)",
+            "Null": "NO",
+            "Key": "PRI",
+            "Default": null,
+            "Extra": ""
+        },
+        "tag_id": {
+            "Field": "tag_id",
+            "Type": "int(11)",
+            "Null": "NO",
+            "Key": "PRI",
+            "Default": null,
+            "Extra": ""
+        },
+        "created_at": {
+            "Field": "created_at",
+            "Type": "timestamp",
+            "Null": "YES",
+            "Key": "",
+            "Default": "current_timestamp()",
+            "Extra": ""
+        }
+    },
+    "contact_tags": {
+        "id": {
+            "Field": "id",
+            "Type": "int(11)",
+            "Null": "NO",
+            "Key": "PRI",
+            "Default": null,
+            "Extra": "auto_increment"
+        },
+        "client_id": {
+            "Field": "client_id",
+            "Type": "int(11)",
+            "Null": "NO",
+            "Key": "MUL",
+            "Default": null,
+            "Extra": ""
+        },
+        "name": {
+            "Field": "name",
+            "Type": "varchar(100)",
+            "Null": "NO",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "color": {
+            "Field": "color",
+            "Type": "varchar(7)",
+            "Null": "YES",
+            "Key": "",
+            "Default": "#007bff",
+            "Extra": ""
+        },
+        "description": {
+            "Field": "description",
+            "Type": "text",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "created_at": {
+            "Field": "created_at",
+            "Type": "timestamp",
+            "Null": "YES",
+            "Key": "",
+            "Default": "current_timestamp()",
+            "Extra": ""
+        },
+        "updated_at": {
+            "Field": "updated_at",
+            "Type": "timestamp",
+            "Null": "YES",
+            "Key": "",
+            "Default": "current_timestamp()",
+            "Extra": "on update current_timestamp()"
+        },
+        "auto_message_template_id": {
+            "Field": "auto_message_template_id",
+            "Type": "int(11)",
+            "Null": "YES",
+            "Key": "MUL",
+            "Default": null,
+            "Extra": ""
+        },
+        "auto_message_delay_hours": {
+            "Field": "auto_message_delay_hours",
+            "Type": "decimal(5,2)",
+            "Null": "YES",
+            "Key": "",
+            "Default": "24.00",
+            "Extra": ""
+        },
+        "auto_message_content": {
+            "Field": "auto_message_content",
+            "Type": "text",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "is_active_auto": {
+            "Field": "is_active_auto",
+            "Type": "tinyint(1)",
+            "Null": "YES",
+            "Key": "",
+            "Default": "1",
+            "Extra": ""
+        },
+        "has_auto_message": {
+            "Field": "has_auto_message",
+            "Type": "tinyint(1)",
+            "Null": "YES",
+            "Key": "",
+            "Default": "0",
+            "Extra": ""
+        }
+    },
+    "contacts": {
+        "id": {
+            "Field": "id",
+            "Type": "int(11)",
+            "Null": "NO",
+            "Key": "PRI",
+            "Default": null,
+            "Extra": "auto_increment"
+        },
+        "client_id": {
+            "Field": "client_id",
+            "Type": "int(11)",
+            "Null": "NO",
+            "Key": "MUL",
+            "Default": null,
+            "Extra": ""
+        },
+        "phone_number": {
+            "Field": "phone_number",
+            "Type": "varchar(50)",
+            "Null": "NO",
+            "Key": "MUL",
+            "Default": null,
+            "Extra": ""
+        },
+        "name": {
+            "Field": "name",
+            "Type": "varchar(255)",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "custom_name": {
+            "Field": "custom_name",
+            "Type": "varchar(255)",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "profile_pic_url": {
+            "Field": "profile_pic_url",
+            "Type": "text",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "comments": {
+            "Field": "comments",
+            "Type": "text",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "is_blocked": {
+            "Field": "is_blocked",
+            "Type": "tinyint(1)",
+            "Null": "YES",
+            "Key": "MUL",
+            "Default": "0",
+            "Extra": ""
+        },
+        "last_message_at": {
+            "Field": "last_message_at",
+            "Type": "timestamp",
+            "Null": "YES",
+            "Key": "MUL",
+            "Default": null,
+            "Extra": ""
+        },
+        "created_at": {
+            "Field": "created_at",
+            "Type": "timestamp",
+            "Null": "YES",
+            "Key": "",
+            "Default": "current_timestamp()",
+            "Extra": ""
+        },
+        "updated_at": {
+            "Field": "updated_at",
+            "Type": "timestamp",
+            "Null": "YES",
+            "Key": "",
+            "Default": "current_timestamp()",
+            "Extra": "on update current_timestamp()"
+        }
+    },
+    "conversation_group_relations": {
+        "conversation_id": {
+            "Field": "conversation_id",
+            "Type": "int(11)",
+            "Null": "NO",
+            "Key": "PRI",
+            "Default": null,
+            "Extra": ""
+        },
+        "group_id": {
+            "Field": "group_id",
+            "Type": "int(11)",
+            "Null": "NO",
+            "Key": "PRI",
+            "Default": null,
+            "Extra": ""
+        },
+        "created_at": {
+            "Field": "created_at",
+            "Type": "timestamp",
+            "Null": "YES",
+            "Key": "",
+            "Default": "current_timestamp()",
+            "Extra": ""
+        }
+    },
+    "conversation_groups": {
+        "id": {
+            "Field": "id",
+            "Type": "int(11)",
+            "Null": "NO",
+            "Key": "PRI",
+            "Default": null,
+            "Extra": "auto_increment"
+        },
+        "client_id": {
+            "Field": "client_id",
+            "Type": "int(11)",
+            "Null": "NO",
+            "Key": "MUL",
+            "Default": null,
+            "Extra": ""
+        },
+        "name": {
+            "Field": "name",
+            "Type": "varchar(255)",
+            "Null": "NO",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "color": {
+            "Field": "color",
+            "Type": "varchar(7)",
+            "Null": "YES",
+            "Key": "",
+            "Default": "#007bff",
+            "Extra": ""
+        },
+        "description": {
+            "Field": "description",
+            "Type": "text",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "sort_order": {
+            "Field": "sort_order",
+            "Type": "int(11)",
+            "Null": "YES",
+            "Key": "MUL",
+            "Default": "0",
+            "Extra": ""
+        },
+        "created_at": {
+            "Field": "created_at",
+            "Type": "timestamp",
+            "Null": "YES",
+            "Key": "",
+            "Default": "current_timestamp()",
+            "Extra": ""
+        },
+        "updated_at": {
+            "Field": "updated_at",
+            "Type": "timestamp",
+            "Null": "YES",
+            "Key": "",
+            "Default": "current_timestamp()",
+            "Extra": "on update current_timestamp()"
+        }
+    },
+    "conversations": {
+        "id": {
+            "Field": "id",
+            "Type": "int(11)",
+            "Null": "NO",
+            "Key": "PRI",
+            "Default": null,
+            "Extra": "auto_increment"
+        },
+        "client_id": {
+            "Field": "client_id",
+            "Type": "int(11)",
+            "Null": "NO",
+            "Key": "MUL",
+            "Default": null,
+            "Extra": ""
+        },
+        "contact_id": {
+            "Field": "contact_id",
+            "Type": "int(11)",
+            "Null": "NO",
+            "Key": "MUL",
+            "Default": null,
+            "Extra": ""
+        },
+        "contact_phone": {
+            "Field": "contact_phone",
+            "Type": "varchar(50)",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "contact_name": {
+            "Field": "contact_name",
+            "Type": "varchar(255)",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "last_message": {
+            "Field": "last_message",
+            "Type": "text",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "last_message_at": {
+            "Field": "last_message_at",
+            "Type": "timestamp",
+            "Null": "YES",
+            "Key": "MUL",
+            "Default": null,
+            "Extra": ""
+        },
+        "unread_count": {
+            "Field": "unread_count",
+            "Type": "int(11)",
+            "Null": "YES",
+            "Key": "MUL",
+            "Default": "0",
+            "Extra": ""
+        },
+        "is_bot_disabled": {
+            "Field": "is_bot_disabled",
+            "Type": "tinyint(1)",
+            "Null": "YES",
+            "Key": "MUL",
+            "Default": "0",
+            "Extra": ""
+        },
+        "bot_enabled": {
+            "Field": "bot_enabled",
+            "Type": "tinyint(1)",
+            "Null": "YES",
+            "Key": "",
+            "Default": "1",
+            "Extra": ""
+        },
+        "is_archived": {
+            "Field": "is_archived",
+            "Type": "tinyint(1)",
+            "Null": "YES",
+            "Key": "MUL",
+            "Default": "0",
+            "Extra": ""
+        },
+        "is_pinned": {
+            "Field": "is_pinned",
+            "Type": "tinyint(1)",
+            "Null": "YES",
+            "Key": "",
+            "Default": "0",
+            "Extra": ""
+        },
+        "created_at": {
+            "Field": "created_at",
+            "Type": "timestamp",
+            "Null": "YES",
+            "Key": "",
+            "Default": "current_timestamp()",
+            "Extra": ""
+        },
+        "updated_at": {
+            "Field": "updated_at",
+            "Type": "timestamp",
+            "Null": "YES",
+            "Key": "",
+            "Default": "current_timestamp()",
+            "Extra": "on update current_timestamp()"
+        }
+    },
+    "google_calendar_tokens": {
+        "id": {
+            "Field": "id",
+            "Type": "int(11)",
+            "Null": "NO",
+            "Key": "PRI",
+            "Default": null,
+            "Extra": "auto_increment"
+        },
+        "client_id": {
+            "Field": "client_id",
+            "Type": "int(11)",
+            "Null": "NO",
+            "Key": "UNI",
+            "Default": null,
+            "Extra": ""
+        },
+        "access_token": {
+            "Field": "access_token",
+            "Type": "text",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "refresh_token": {
+            "Field": "refresh_token",
+            "Type": "text",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "token_expires_at": {
+            "Field": "token_expires_at",
+            "Type": "datetime",
+            "Null": "YES",
+            "Key": "MUL",
+            "Default": null,
+            "Extra": ""
+        },
+        "is_connected": {
+            "Field": "is_connected",
+            "Type": "tinyint(1)",
+            "Null": "YES",
+            "Key": "MUL",
+            "Default": "0",
+            "Extra": ""
+        },
+        "last_export_at": {
+            "Field": "last_export_at",
+            "Type": "datetime",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "total_exports": {
+            "Field": "total_exports",
+            "Type": "int(11)",
+            "Null": "YES",
+            "Key": "",
+            "Default": "0",
+            "Extra": ""
+        },
+        "calendar_id": {
+            "Field": "calendar_id",
+            "Type": "varchar(255)",
+            "Null": "YES",
+            "Key": "",
+            "Default": "primary",
+            "Extra": ""
+        },
+        "created_at": {
+            "Field": "created_at",
+            "Type": "timestamp",
+            "Null": "YES",
+            "Key": "",
+            "Default": "current_timestamp()",
+            "Extra": ""
+        },
+        "updated_at": {
+            "Field": "updated_at",
+            "Type": "timestamp",
+            "Null": "YES",
+            "Key": "",
+            "Default": "current_timestamp()",
+            "Extra": "on update current_timestamp()"
+        }
+    },
+    "message_templates": {
+        "id": {
+            "Field": "id",
+            "Type": "int(11)",
+            "Null": "NO",
+            "Key": "PRI",
+            "Default": null,
+            "Extra": "auto_increment"
+        },
+        "client_id": {
+            "Field": "client_id",
+            "Type": "int(11)",
+            "Null": "NO",
+            "Key": "MUL",
+            "Default": null,
+            "Extra": ""
+        },
+        "name": {
+            "Field": "name",
+            "Type": "varchar(255)",
+            "Null": "NO",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "content": {
+            "Field": "content",
+            "Type": "text",
+            "Null": "NO",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "variables": {
+            "Field": "variables",
+            "Type": "longtext",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "category": {
+            "Field": "category",
+            "Type": "varchar(100)",
+            "Null": "YES",
+            "Key": "MUL",
+            "Default": "general",
+            "Extra": ""
+        },
+        "is_active": {
+            "Field": "is_active",
+            "Type": "tinyint(1)",
+            "Null": "YES",
+            "Key": "MUL",
+            "Default": "1",
+            "Extra": ""
+        },
+        "usage_count": {
+            "Field": "usage_count",
+            "Type": "int(11)",
+            "Null": "YES",
+            "Key": "",
+            "Default": "0",
+            "Extra": ""
+        },
+        "created_at": {
+            "Field": "created_at",
+            "Type": "timestamp",
+            "Null": "YES",
+            "Key": "",
+            "Default": "current_timestamp()",
+            "Extra": ""
+        },
+        "updated_at": {
+            "Field": "updated_at",
+            "Type": "timestamp",
+            "Null": "YES",
+            "Key": "",
+            "Default": "current_timestamp()",
+            "Extra": "on update current_timestamp()"
+        }
+    },
+    "messages": {
+        "id": {
+            "Field": "id",
+            "Type": "int(11)",
+            "Null": "NO",
+            "Key": "PRI",
+            "Default": null,
+            "Extra": "auto_increment"
+        },
+        "conversation_id": {
+            "Field": "conversation_id",
+            "Type": "int(11)",
+            "Null": "NO",
+            "Key": "MUL",
+            "Default": null,
+            "Extra": ""
+        },
+        "message_id": {
+            "Field": "message_id",
+            "Type": "varchar(255)",
+            "Null": "NO",
+            "Key": "UNI",
+            "Default": null,
+            "Extra": ""
+        },
+        "sender_type": {
+            "Field": "sender_type",
+            "Type": "enum('contact','client','bot')",
+            "Null": "NO",
+            "Key": "MUL",
+            "Default": null,
+            "Extra": ""
+        },
+        "message_type": {
+            "Field": "message_type",
+            "Type": "enum('text','image','document','audio','video','sticker','location','contact_card')",
+            "Null": "YES",
+            "Key": "MUL",
+            "Default": "text",
+            "Extra": ""
+        },
+        "content": {
+            "Field": "content",
+            "Type": "text",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "media_url": {
+            "Field": "media_url",
+            "Type": "text",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "file_name": {
+            "Field": "file_name",
+            "Type": "varchar(255)",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "file_size": {
+            "Field": "file_size",
+            "Type": "int(11)",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "mime_type": {
+            "Field": "mime_type",
+            "Type": "varchar(100)",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "is_read": {
+            "Field": "is_read",
+            "Type": "tinyint(1)",
+            "Null": "YES",
+            "Key": "MUL",
+            "Default": "0",
+            "Extra": ""
+        },
+        "from_me": {
+            "Field": "from_me",
+            "Type": "tinyint(1)",
+            "Null": "NO",
+            "Key": "MUL",
+            "Default": null,
+            "Extra": ""
+        },
+        "is_from_bot": {
+            "Field": "is_from_bot",
+            "Type": "tinyint(1)",
+            "Null": "YES",
+            "Key": "MUL",
+            "Default": "0",
+            "Extra": ""
+        },
+        "quoted_message_id": {
+            "Field": "quoted_message_id",
+            "Type": "varchar(255)",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "sent_at": {
+            "Field": "sent_at",
+            "Type": "timestamp",
+            "Null": "YES",
+            "Key": "MUL",
+            "Default": "current_timestamp()",
+            "Extra": ""
+        },
+        "delivered_at": {
+            "Field": "delivered_at",
+            "Type": "timestamp",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "read_at": {
+            "Field": "read_at",
+            "Type": "timestamp",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "created_at": {
+            "Field": "created_at",
+            "Type": "timestamp",
+            "Null": "YES",
+            "Key": "MUL",
+            "Default": "current_timestamp()",
+            "Extra": ""
+        }
+    },
+    "product_search_cache": {
+        "id": {
+            "Field": "id",
+            "Type": "int(11)",
+            "Null": "NO",
+            "Key": "PRI",
+            "Default": null,
+            "Extra": "auto_increment"
+        },
+        "client_id": {
+            "Field": "client_id",
+            "Type": "int(11)",
+            "Null": "NO",
+            "Key": "MUL",
+            "Default": null,
+            "Extra": ""
+        },
+        "search_term": {
+            "Field": "search_term",
+            "Type": "varchar(255)",
+            "Null": "NO",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "search_hash": {
+            "Field": "search_hash",
+            "Type": "varchar(64)",
+            "Null": "NO",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "response_data": {
+            "Field": "response_data",
+            "Type": "text",
+            "Null": "NO",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "created_at": {
+            "Field": "created_at",
+            "Type": "timestamp",
+            "Null": "YES",
+            "Key": "",
+            "Default": "current_timestamp()",
+            "Extra": ""
+        },
+        "expires_at": {
+            "Field": "expires_at",
+            "Type": "timestamp",
+            "Null": "NO",
+            "Key": "MUL",
+            "Default": null,
+            "Extra": ""
+        }
+    },
+    "push_notification_logs": {
+        "id": {
+            "Field": "id",
+            "Type": "int(11)",
+            "Null": "NO",
+            "Key": "PRI",
+            "Default": null,
+            "Extra": "auto_increment"
+        },
+        "subscription_id": {
+            "Field": "subscription_id",
+            "Type": "int(11)",
+            "Null": "NO",
+            "Key": "MUL",
+            "Default": null,
+            "Extra": ""
+        },
+        "client_id": {
+            "Field": "client_id",
+            "Type": "int(11)",
+            "Null": "NO",
+            "Key": "MUL",
+            "Default": null,
+            "Extra": ""
+        },
+        "notification_type": {
+            "Field": "notification_type",
+            "Type": "enum('message','system','alert','reminder')",
+            "Null": "YES",
+            "Key": "MUL",
+            "Default": "message",
+            "Extra": ""
+        },
+        "title": {
+            "Field": "title",
+            "Type": "varchar(255)",
+            "Null": "NO",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "body": {
+            "Field": "body",
+            "Type": "text",
+            "Null": "NO",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "data": {
+            "Field": "data",
+            "Type": "longtext",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "status": {
+            "Field": "status",
+            "Type": "enum('sent','failed','expired')",
+            "Null": "YES",
+            "Key": "MUL",
+            "Default": "sent",
+            "Extra": ""
+        },
+        "error_message": {
+            "Field": "error_message",
+            "Type": "text",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "sent_at": {
+            "Field": "sent_at",
+            "Type": "timestamp",
+            "Null": "YES",
+            "Key": "MUL",
+            "Default": "current_timestamp()",
+            "Extra": ""
+        }
+    },
+    "push_subscriptions": {
+        "id": {
+            "Field": "id",
+            "Type": "int(11)",
+            "Null": "NO",
+            "Key": "PRI",
+            "Default": null,
+            "Extra": "auto_increment"
+        },
+        "client_id": {
+            "Field": "client_id",
+            "Type": "int(11)",
+            "Null": "NO",
+            "Key": "MUL",
+            "Default": null,
+            "Extra": ""
+        },
+        "user_id": {
+            "Field": "user_id",
+            "Type": "int(11)",
+            "Null": "NO",
+            "Key": "MUL",
+            "Default": null,
+            "Extra": ""
+        },
+        "endpoint": {
+            "Field": "endpoint",
+            "Type": "text",
+            "Null": "NO",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "p256dh_key": {
+            "Field": "p256dh_key",
+            "Type": "text",
+            "Null": "NO",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "auth_key": {
+            "Field": "auth_key",
+            "Type": "text",
+            "Null": "NO",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "user_agent": {
+            "Field": "user_agent",
+            "Type": "text",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "is_active": {
+            "Field": "is_active",
+            "Type": "tinyint(1)",
+            "Null": "YES",
+            "Key": "MUL",
+            "Default": "1",
+            "Extra": ""
+        },
+        "created_at": {
+            "Field": "created_at",
+            "Type": "timestamp",
+            "Null": "YES",
+            "Key": "MUL",
+            "Default": "current_timestamp()",
+            "Extra": ""
+        },
+        "updated_at": {
+            "Field": "updated_at",
+            "Type": "timestamp",
+            "Null": "YES",
+            "Key": "",
+            "Default": "current_timestamp()",
+            "Extra": "on update current_timestamp()"
+        },
+        "last_used_at": {
+            "Field": "last_used_at",
+            "Type": "timestamp",
+            "Null": "YES",
+            "Key": "MUL",
+            "Default": null,
+            "Extra": ""
+        },
+        "client_code": {
+            "Field": "client_code",
+            "Type": "varchar(50)",
+            "Null": "YES",
+            "Key": "MUL",
+            "Default": null,
+            "Extra": ""
+        }
+    },
+    "scheduled_message_executions": {
+        "id": {
+            "Field": "id",
+            "Type": "int(11)",
+            "Null": "NO",
+            "Key": "PRI",
+            "Default": null,
+            "Extra": "auto_increment"
+        },
+        "scheduled_message_id": {
+            "Field": "scheduled_message_id",
+            "Type": "int(11)",
+            "Null": "NO",
+            "Key": "MUL",
+            "Default": null,
+            "Extra": ""
+        },
+        "execution_date": {
+            "Field": "execution_date",
+            "Type": "datetime",
+            "Null": "NO",
+            "Key": "MUL",
+            "Default": null,
+            "Extra": ""
+        },
+        "status": {
+            "Field": "status",
+            "Type": "enum('pending','running','completed','success','error','failed','skipped','cancelled')",
+            "Null": "YES",
+            "Key": "MUL",
+            "Default": "pending",
+            "Extra": ""
+        },
+        "messages_sent": {
+            "Field": "messages_sent",
+            "Type": "int(11)",
+            "Null": "YES",
+            "Key": "",
+            "Default": "0",
+            "Extra": ""
+        },
+        "messages_failed": {
+            "Field": "messages_failed",
+            "Type": "int(11)",
+            "Null": "YES",
+            "Key": "",
+            "Default": "0",
+            "Extra": ""
+        },
+        "recipients_processed": {
+            "Field": "recipients_processed",
+            "Type": "int(11)",
+            "Null": "YES",
+            "Key": "",
+            "Default": "0",
+            "Extra": ""
+        },
+        "error_message": {
+            "Field": "error_message",
+            "Type": "text",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "execution_time_ms": {
+            "Field": "execution_time_ms",
+            "Type": "int(11)",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "details": {
+            "Field": "details",
+            "Type": "longtext",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "created_at": {
+            "Field": "created_at",
+            "Type": "timestamp",
+            "Null": "YES",
+            "Key": "",
+            "Default": "current_timestamp()",
+            "Extra": ""
+        },
+        "started_at": {
+            "Field": "started_at",
+            "Type": "datetime",
+            "Null": "YES",
+            "Key": "MUL",
+            "Default": null,
+            "Extra": ""
+        },
+        "completed_at": {
+            "Field": "completed_at",
+            "Type": "datetime",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        }
+    },
+    "scheduled_message_recipients": {
+        "id": {
+            "Field": "id",
+            "Type": "int(11)",
+            "Null": "NO",
+            "Key": "PRI",
+            "Default": null,
+            "Extra": "auto_increment"
+        },
+        "scheduled_message_id": {
+            "Field": "scheduled_message_id",
+            "Type": "int(11)",
+            "Null": "NO",
+            "Key": "MUL",
+            "Default": null,
+            "Extra": ""
+        },
+        "execution_id": {
+            "Field": "execution_id",
+            "Type": "int(11)",
+            "Null": "YES",
+            "Key": "MUL",
+            "Default": null,
+            "Extra": ""
+        },
+        "contact_id": {
+            "Field": "contact_id",
+            "Type": "int(11)",
+            "Null": "YES",
+            "Key": "MUL",
+            "Default": null,
+            "Extra": ""
+        },
+        "phone_number": {
+            "Field": "phone_number",
+            "Type": "varchar(50)",
+            "Null": "NO",
+            "Key": "MUL",
+            "Default": null,
+            "Extra": ""
+        },
+        "contact_name": {
+            "Field": "contact_name",
+            "Type": "varchar(255)",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "status": {
+            "Field": "status",
+            "Type": "enum('pending','sent','failed','skipped')",
+            "Null": "YES",
+            "Key": "MUL",
+            "Default": "pending",
+            "Extra": ""
+        },
+        "sent_at": {
+            "Field": "sent_at",
+            "Type": "datetime",
+            "Null": "YES",
+            "Key": "MUL",
+            "Default": null,
+            "Extra": ""
+        },
+        "message_id": {
+            "Field": "message_id",
+            "Type": "varchar(255)",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "error_message": {
+            "Field": "error_message",
+            "Type": "text",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "final_message_content": {
+            "Field": "final_message_content",
+            "Type": "text",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "created_at": {
+            "Field": "created_at",
+            "Type": "timestamp",
+            "Null": "YES",
+            "Key": "",
+            "Default": "current_timestamp()",
+            "Extra": ""
+        }
+    },
+    "scheduled_messages": {
+        "id": {
+            "Field": "id",
+            "Type": "int(11)",
+            "Null": "NO",
+            "Key": "PRI",
+            "Default": null,
+            "Extra": "auto_increment"
+        },
+        "client_id": {
+            "Field": "client_id",
+            "Type": "int(11)",
+            "Null": "NO",
+            "Key": "MUL",
+            "Default": null,
+            "Extra": ""
+        },
+        "contact_id": {
+            "Field": "contact_id",
+            "Type": "int(11)",
+            "Null": "YES",
+            "Key": "MUL",
+            "Default": null,
+            "Extra": ""
+        },
+        "template_id": {
+            "Field": "template_id",
+            "Type": "int(11)",
+            "Null": "YES",
+            "Key": "MUL",
+            "Default": null,
+            "Extra": ""
+        },
+        "content": {
+            "Field": "content",
+            "Type": "text",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "scheduled_at": {
+            "Field": "scheduled_at",
+            "Type": "timestamp",
+            "Null": "NO",
+            "Key": "MUL",
+            "Default": null,
+            "Extra": ""
+        },
+        "sent_at": {
+            "Field": "sent_at",
+            "Type": "timestamp",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "status": {
+            "Field": "status",
+            "Type": "enum('pending','active','paused','completed','cancelled','error')",
+            "Null": "YES",
+            "Key": "MUL",
+            "Default": "pending",
+            "Extra": ""
+        },
+        "is_bulk": {
+            "Field": "is_bulk",
+            "Type": "tinyint(1)",
+            "Null": "YES",
+            "Key": "MUL",
+            "Default": "0",
+            "Extra": ""
+        },
+        "bulk_contacts": {
+            "Field": "bulk_contacts",
+            "Type": "longtext",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "error_message": {
+            "Field": "error_message",
+            "Type": "text",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "created_at": {
+            "Field": "created_at",
+            "Type": "timestamp",
+            "Null": "YES",
+            "Key": "",
+            "Default": "current_timestamp()",
+            "Extra": ""
+        },
+        "updated_at": {
+            "Field": "updated_at",
+            "Type": "timestamp",
+            "Null": "YES",
+            "Key": "",
+            "Default": "current_timestamp()",
+            "Extra": "on update current_timestamp()"
+        },
+        "is_active": {
+            "Field": "is_active",
+            "Type": "tinyint(1)",
+            "Null": "YES",
+            "Key": "MUL",
+            "Default": "1",
+            "Extra": ""
+        },
+        "name": {
+            "Field": "name",
+            "Type": "varchar(255)",
+            "Null": "NO",
+            "Key": "",
+            "Default": "Mensaje Programado",
+            "Extra": ""
+        },
+        "description": {
+            "Field": "description",
+            "Type": "text",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "send_type": {
+            "Field": "send_type",
+            "Type": "enum('individual','bulk_tags','bulk_all')",
+            "Null": "NO",
+            "Key": "MUL",
+            "Default": "individual",
+            "Extra": ""
+        },
+        "recipient_phone": {
+            "Field": "recipient_phone",
+            "Type": "varchar(50)",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "recipient_contact_id": {
+            "Field": "recipient_contact_id",
+            "Type": "int(11)",
+            "Null": "YES",
+            "Key": "MUL",
+            "Default": null,
+            "Extra": ""
+        },
+        "target_tag_ids": {
+            "Field": "target_tag_ids",
+            "Type": "longtext",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "message_type": {
+            "Field": "message_type",
+            "Type": "enum('text','template')",
+            "Null": "NO",
+            "Key": "MUL",
+            "Default": "text",
+            "Extra": ""
+        },
+        "message_content": {
+            "Field": "message_content",
+            "Type": "text",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "timezone": {
+            "Field": "timezone",
+            "Type": "varchar(50)",
+            "Null": "YES",
+            "Key": "",
+            "Default": "America/Argentina/Buenos_Aires",
+            "Extra": ""
+        },
+        "is_recurring": {
+            "Field": "is_recurring",
+            "Type": "tinyint(1)",
+            "Null": "YES",
+            "Key": "MUL",
+            "Default": "0",
+            "Extra": ""
+        },
+        "recurrence_type": {
+            "Field": "recurrence_type",
+            "Type": "enum('minutes','hours','days','weeks','months')",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "recurrence_interval": {
+            "Field": "recurrence_interval",
+            "Type": "int(11)",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "recurrence_end_date": {
+            "Field": "recurrence_end_date",
+            "Type": "datetime",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "max_executions": {
+            "Field": "max_executions",
+            "Type": "int(11)",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "next_execution": {
+            "Field": "next_execution",
+            "Type": "datetime",
+            "Null": "YES",
+            "Key": "MUL",
+            "Default": null,
+            "Extra": ""
+        },
+        "last_execution": {
+            "Field": "last_execution",
+            "Type": "datetime",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "execution_count": {
+            "Field": "execution_count",
+            "Type": "int(11)",
+            "Null": "YES",
+            "Key": "",
+            "Default": "0",
+            "Extra": ""
+        },
+        "success_count": {
+            "Field": "success_count",
+            "Type": "int(11)",
+            "Null": "YES",
+            "Key": "",
+            "Default": "0",
+            "Extra": ""
+        },
+        "error_count": {
+            "Field": "error_count",
+            "Type": "int(11)",
+            "Null": "YES",
+            "Key": "",
+            "Default": "0",
+            "Extra": ""
+        },
+        "template_variables": {
+            "Field": "template_variables",
+            "Type": "longtext",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "source_tag_id": {
+            "Field": "source_tag_id",
+            "Type": "int(11)",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "source_contact_id": {
+            "Field": "source_contact_id",
+            "Type": "int(11)",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "auto_generated": {
+            "Field": "auto_generated",
+            "Type": "tinyint(1)",
+            "Null": "YES",
+            "Key": "MUL",
+            "Default": "0",
+            "Extra": ""
+        }
+    },
+    "task_reminders": {
+        "id": {
+            "Field": "id",
+            "Type": "int(11)",
+            "Null": "NO",
+            "Key": "PRI",
+            "Default": null,
+            "Extra": "auto_increment"
+        },
+        "task_id": {
+            "Field": "task_id",
+            "Type": "int(11)",
+            "Null": "NO",
+            "Key": "MUL",
+            "Default": null,
+            "Extra": ""
+        },
+        "reminder_type": {
+            "Field": "reminder_type",
+            "Type": "enum('notification','whatsapp','email')",
+            "Null": "NO",
+            "Key": "MUL",
+            "Default": null,
+            "Extra": ""
+        },
+        "reminder_phone": {
+            "Field": "reminder_phone",
+            "Type": "varchar(20)",
+            "Null": "YES",
+            "Key": "MUL",
+            "Default": null,
+            "Extra": ""
+        },
+        "reminder_datetime": {
+            "Field": "reminder_datetime",
+            "Type": "datetime",
+            "Null": "NO",
+            "Key": "MUL",
+            "Default": null,
+            "Extra": ""
+        },
+        "message_content": {
+            "Field": "message_content",
+            "Type": "text",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "status": {
+            "Field": "status",
+            "Type": "enum('pending','sent','failed')",
+            "Null": "YES",
+            "Key": "MUL",
+            "Default": "pending",
+            "Extra": ""
+        },
+        "sent_at": {
+            "Field": "sent_at",
+            "Type": "datetime",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "error_message": {
+            "Field": "error_message",
+            "Type": "text",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "created_at": {
+            "Field": "created_at",
+            "Type": "timestamp",
+            "Null": "YES",
+            "Key": "",
+            "Default": "current_timestamp()",
+            "Extra": ""
+        }
+    },
+    "tasks": {
+        "id": {
+            "Field": "id",
+            "Type": "int(11)",
+            "Null": "NO",
+            "Key": "PRI",
+            "Default": null,
+            "Extra": "auto_increment"
+        },
+        "client_id": {
+            "Field": "client_id",
+            "Type": "int(11)",
+            "Null": "NO",
+            "Key": "MUL",
+            "Default": null,
+            "Extra": ""
+        },
+        "title": {
+            "Field": "title",
+            "Type": "varchar(255)",
+            "Null": "NO",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "description": {
+            "Field": "description",
+            "Type": "text",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "priority": {
+            "Field": "priority",
+            "Type": "enum('low','medium','high','urgent')",
+            "Null": "YES",
+            "Key": "MUL",
+            "Default": "medium",
+            "Extra": ""
+        },
+        "category": {
+            "Field": "category",
+            "Type": "enum('meeting','call','follow_up','reminder','task','other')",
+            "Null": "YES",
+            "Key": "MUL",
+            "Default": "task",
+            "Extra": ""
+        },
+        "tags": {
+            "Field": "tags",
+            "Type": "longtext",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "due_date": {
+            "Field": "due_date",
+            "Type": "datetime",
+            "Null": "NO",
+            "Key": "MUL",
+            "Default": null,
+            "Extra": ""
+        },
+        "reminder_datetime": {
+            "Field": "reminder_datetime",
+            "Type": "datetime",
+            "Null": "YES",
+            "Key": "MUL",
+            "Default": null,
+            "Extra": ""
+        },
+        "estimated_duration": {
+            "Field": "estimated_duration",
+            "Type": "int(11)",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "related_contact_id": {
+            "Field": "related_contact_id",
+            "Type": "int(11)",
+            "Null": "YES",
+            "Key": "MUL",
+            "Default": null,
+            "Extra": ""
+        },
+        "related_phone": {
+            "Field": "related_phone",
+            "Type": "varchar(50)",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "status": {
+            "Field": "status",
+            "Type": "enum('pending','in_progress','completed','cancelled','overdue')",
+            "Null": "YES",
+            "Key": "MUL",
+            "Default": "pending",
+            "Extra": ""
+        },
+        "completion_percentage": {
+            "Field": "completion_percentage",
+            "Type": "int(11)",
+            "Null": "YES",
+            "Key": "MUL",
+            "Default": "0",
+            "Extra": ""
+        },
+        "completed_at": {
+            "Field": "completed_at",
+            "Type": "datetime",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "is_recurring": {
+            "Field": "is_recurring",
+            "Type": "tinyint(1)",
+            "Null": "YES",
+            "Key": "MUL",
+            "Default": "0",
+            "Extra": ""
+        },
+        "recurrence_pattern": {
+            "Field": "recurrence_pattern",
+            "Type": "longtext",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "parent_task_id": {
+            "Field": "parent_task_id",
+            "Type": "int(11)",
+            "Null": "YES",
+            "Key": "MUL",
+            "Default": null,
+            "Extra": ""
+        },
+        "last_exported_to_google": {
+            "Field": "last_exported_to_google",
+            "Type": "datetime",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "google_export_count": {
+            "Field": "google_export_count",
+            "Type": "int(11)",
+            "Null": "YES",
+            "Key": "",
+            "Default": "0",
+            "Extra": ""
+        },
+        "created_at": {
+            "Field": "created_at",
+            "Type": "timestamp",
+            "Null": "YES",
+            "Key": "MUL",
+            "Default": "current_timestamp()",
+            "Extra": ""
+        },
+        "updated_at": {
+            "Field": "updated_at",
+            "Type": "timestamp",
+            "Null": "YES",
+            "Key": "",
+            "Default": "current_timestamp()",
+            "Extra": "on update current_timestamp()"
+        }
+    },
+    "whatsapp_sessions": {
+        "id": {
+            "Field": "id",
+            "Type": "int(11)",
+            "Null": "NO",
+            "Key": "PRI",
+            "Default": null,
+            "Extra": "auto_increment"
+        },
+        "client_id": {
+            "Field": "client_id",
+            "Type": "int(11)",
+            "Null": "NO",
+            "Key": "MUL",
+            "Default": null,
+            "Extra": ""
+        },
+        "session_id": {
+            "Field": "session_id",
+            "Type": "varchar(100)",
+            "Null": "YES",
+            "Key": "UNI",
+            "Default": null,
+            "Extra": ""
+        },
+        "phone_number": {
+            "Field": "phone_number",
+            "Type": "varchar(50)",
+            "Null": "YES",
+            "Key": "MUL",
+            "Default": null,
+            "Extra": ""
+        },
+        "session_data": {
+            "Field": "session_data",
+            "Type": "longtext",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "qr_code": {
+            "Field": "qr_code",
+            "Type": "text",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "status": {
+            "Field": "status",
+            "Type": "enum('connecting','connected','disconnected','error')",
+            "Null": "YES",
+            "Key": "MUL",
+            "Default": "disconnected",
+            "Extra": ""
+        },
+        "connected_at": {
+            "Field": "connected_at",
+            "Type": "timestamp",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "disconnected_at": {
+            "Field": "disconnected_at",
+            "Type": "timestamp",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "last_activity": {
+            "Field": "last_activity",
+            "Type": "timestamp",
+            "Null": "YES",
+            "Key": "MUL",
+            "Default": "current_timestamp()",
+            "Extra": "on update current_timestamp()"
+        },
+        "retry_count": {
+            "Field": "retry_count",
+            "Type": "int(11)",
+            "Null": "YES",
+            "Key": "",
+            "Default": "0",
+            "Extra": ""
+        },
+        "error_message": {
+            "Field": "error_message",
+            "Type": "text",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        "created_at": {
+            "Field": "created_at",
+            "Type": "timestamp",
+            "Null": "YES",
+            "Key": "",
+            "Default": "current_timestamp()",
+            "Extra": ""
+        },
+        "updated_at": {
+            "Field": "updated_at",
+            "Type": "timestamp",
+            "Null": "YES",
+            "Key": "",
+            "Default": "current_timestamp()",
+            "Extra": "on update current_timestamp()"
+        }
+    }
+}

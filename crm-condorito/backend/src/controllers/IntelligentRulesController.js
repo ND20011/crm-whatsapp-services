@@ -587,7 +587,20 @@ class IntelligentRulesController {
             const rule = rules[0];
 
             // Simular evaluación de la regla
-            const keywords = JSON.parse(rule.trigger_keywords);
+            // Manejar keywords que pueden estar ya parseadas por MySQL o como string
+            let keywords;
+            if (typeof rule.trigger_keywords === 'object' && Array.isArray(rule.trigger_keywords)) {
+                keywords = rule.trigger_keywords;
+            } else if (typeof rule.trigger_keywords === 'string') {
+                keywords = JSON.parse(rule.trigger_keywords);
+            } else {
+                return res.status(500).json({
+                    success: false,
+                    message: 'Formato de palabras clave no válido',
+                    error: `Tipo inesperado: ${typeof rule.trigger_keywords}`
+                });
+            }
+            
             const messageWords = testMessage.toLowerCase();
             
             let matches = false;

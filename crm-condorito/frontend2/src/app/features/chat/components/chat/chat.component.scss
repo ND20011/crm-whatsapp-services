@@ -2,7 +2,7 @@
 // Los colores están disponibles globalmente desde styles.scss
 
 .chat-container {
-  height: 100vh;
+  height: 94vh;
   display: flex;
   flex-direction: column;
   background-color: var(--color-bg-secondary);
@@ -11,6 +11,7 @@
   @media (max-width: 768px) {
     // Solo en móvil necesitamos ajustar para el header global fijo
     padding-top: 60px; // Altura del header global en móvil
+    height: 100vh;
 
     
     // MEJORA: Evitar que el sidebar se cierre cuando aparece el teclado
@@ -931,6 +932,16 @@
     font-size: 0.9rem;
     color: var(--color-text-primary);
     line-height: 1.4;
+    white-space: pre-wrap; /* Preserva saltos de línea y espacios */
+    
+    .message-link {
+      color: #007bff !important;
+      text-decoration: underline;
+      
+      &:hover {
+        color: #0056b3 !important;
+      }
+    }
   }
 }
 
@@ -1369,6 +1380,7 @@
         color: white;
         line-height: 1.5;
         font-weight: 400;
+        white-space: pre-wrap; /* Preserva saltos de línea y espacios */
       }
       
       .message-meta {
@@ -1398,6 +1410,7 @@
       .message-text {
         color: #2c3e50;
         line-height: 1.5;
+        white-space: pre-wrap; /* Preserva saltos de línea y espacios */
       }
       
       .message-meta {
@@ -1419,6 +1432,7 @@
     .message-text {
       color: #155724;
       font-weight: 500;
+      white-space: pre-wrap; /* Preserva saltos de línea y espacios */
     }
     
     .message-meta {
@@ -1446,6 +1460,28 @@
   margin: 0 0 4px 0;
   line-height: 1.4;
   word-wrap: break-word;
+  white-space: pre-wrap; /* Preserva saltos de línea y espacios */
+}
+
+/* Estilos para enlaces en mensajes */
+.message-link {
+  color: #007bff !important;
+  text-decoration: underline;
+  cursor: pointer;
+  transition: color 0.2s ease;
+  
+  &:hover {
+    color: #0056b3 !important;
+    text-decoration: underline;
+  }
+  
+  &:visited {
+    color: #6f42c1 !important;
+  }
+  
+  &:active {
+    color: #004085 !important;
+  }
 }
 
 .message-meta {

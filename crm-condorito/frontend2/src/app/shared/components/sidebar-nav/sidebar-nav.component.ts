@@ -212,7 +212,7 @@ export class SidebarNavComponent implements OnInit, OnDestroy {
         {
           id: 'intelligent-rules',
           label: 'Reglas Inteligentes',
-          icon: 'robot',
+          icon: 'settings',
           route: '/intelligent-rules'
         },
         {
