@@ -30,6 +30,16 @@ import { MessageTemplate } from '../../../../core/models/template.models';
 import { TaskService } from '../../../tasks/services/task.service';
 import { TaskPriority, TaskCategory, ReminderType } from '../../../tasks/models/task.models';
 
+// Interface para el estado del reproductor de audio
+interface AudioPlayerState {
+  isPlaying: boolean;
+  isLoaded: boolean;
+  currentTime: number;
+  duration: number;
+  playbackRate: number;
+  progress: number;
+}
+
 /**
  * Componente principal del Chat
  * Maneja la lista de conversaciones y el chat activo
@@ -76,6 +86,9 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
 
   // Exponer Math para el template
   public Math = Math;
+
+  // Audio player state
+  public audioStates = signal<Map<string, AudioPlayerState>>(new Map());
 
   // File handling signals
   public selectedFiles = signal<ChatFile[]>([]);
@@ -2936,6 +2949,259 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
         this.analysisResult.set('Error al cargar los mensajes para análisis');
         this.isAnalyzing.set(false);
       }
+    });
+  }
+
+  // ============================================================================
+  // AUDIO PLAYER METHODS
+  // ============================================================================
+
+  /**
+   * Obtiene el estado del reproductor de audio para un mensaje
+   */
+  private getAudioState(message: Message): AudioPlayerState {
+    const messageId = message.id.toString();
+    const currentStates = this.audioStates();
+    
+    if (!currentStates.has(messageId)) {
+      const newState: AudioPlayerState = {
+        isPlaying: false,
+        isLoaded: false,
+        currentTime: 0,
+        duration: 0,
+        playbackRate: 1,
+        progress: 0
+      };
+      currentStates.set(messageId, newState);
+      this.audioStates.set(new Map(currentStates));
+    }
+    
+    return currentStates.get(messageId)!;
+  }
+
+  /**
+   * Actualiza el estado del reproductor de audio
+   */
+  private updateAudioState(message: Message, updates: Partial<AudioPlayerState>): void {
+    const messageId = message.id.toString();
+    const currentStates = this.audioStates();
+    const currentState = this.getAudioState(message);
+    
+    const newState = { ...currentState, ...updates };
+    currentStates.set(messageId, newState);
+    this.audioStates.set(new Map(currentStates));
+  }
+
+  /**
+   * Verifica si el audio está cargado
+   */
+  isAudioLoaded(message: Message): boolean {
+    return this.getAudioState(message).isLoaded;
+  }
+
+  /**
+   * Verifica si el audio se está reproduciendo
+   */
+  isAudioPlaying(message: Message): boolean {
+    return this.getAudioState(message).isPlaying;
+  }
+
+  /**
+   * Obtiene el progreso del audio en porcentaje
+   */
+  getAudioProgress(message: Message): number {
+    return this.getAudioState(message).progress;
+  }
+
+  /**
+   * Obtiene la duración total del audio
+   */
+  getAudioDuration(message: Message): number {
+    return this.getAudioState(message).duration;
+  }
+
+  /**
+   * Obtiene el tiempo actual del audio
+   */
+  getAudioCurrentTime(message: Message): number {
+    return this.getAudioState(message).currentTime;
+  }
+
+  /**
+   * Obtiene la etiqueta de velocidad actual
+   */
+  getAudioSpeedLabel(message: Message): string {
+    const rate = this.getAudioState(message).playbackRate;
+    return `${rate}x`;
+  }
+
+  /**
+   * Formatea el tiempo en formato mm:ss
+   */
+  formatAudioTime(seconds: number): string {
+    if (!seconds || isNaN(seconds)) return '0:00';
+    
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = Math.floor(seconds % 60);
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+  }
+
+  /**
+   * Maneja cuando se cargan los metadatos del audio
+   */
+  onAudioLoadedMetadata(event: Event, message: Message): void {
+    const audio = event.target as HTMLAudioElement;
+    this.updateAudioState(message, {
+      isLoaded: true,
+      duration: audio.duration
+    });
+  }
+
+  /**
+   * Maneja la actualización del tiempo del audio
+   */
+  onAudioTimeUpdate(event: Event, message: Message): void {
+    const audio = event.target as HTMLAudioElement;
+    const currentTime = audio.currentTime;
+    const duration = audio.duration || 1;
+    const progress = (currentTime / duration) * 100;
+
+    this.updateAudioState(message, {
+      currentTime,
+      progress
+    });
+  }
+
+  /**
+   * Maneja cuando termina la reproducción del audio
+   */
+  onAudioEnded(event: Event, message: Message): void {
+    this.updateAudioState(message, {
+      isPlaying: false,
+      currentTime: 0,
+      progress: 0
+    });
+  }
+
+  /**
+   * Maneja cuando inicia la reproducción del audio
+   */
+  onAudioPlay(event: Event, message: Message): void {
+    // Pausar todos los otros audios
+    this.pauseAllOtherAudios(message);
+    
+    this.updateAudioState(message, {
+      isPlaying: true
+    });
+  }
+
+  /**
+   * Maneja cuando se pausa el audio
+   */
+  onAudioPause(event: Event, message: Message): void {
+    this.updateAudioState(message, {
+      isPlaying: false
+    });
+  }
+
+  /**
+   * Pausa todos los audios excepto el especificado
+   */
+  private pauseAllOtherAudios(currentMessage: Message): void {
+    const currentStates = this.audioStates();
+    const currentMessageId = currentMessage.id.toString();
+    
+    // Buscar todos los elementos de audio en el DOM y pausarlos
+    const audioElements = document.querySelectorAll('audio');
+    audioElements.forEach((audio) => {
+      if (audio.parentElement) {
+        const messageElement = audio.closest('.message');
+        if (messageElement) {
+          // Usar el índice como identificador temporal
+          const allMessages = document.querySelectorAll('.message');
+          const messageIndex = Array.from(allMessages).indexOf(messageElement);
+          const messages = this.messages();
+          
+          if (messageIndex >= 0 && messageIndex < messages.length) {
+            const messageId = messages[messageIndex].id.toString();
+            if (messageId !== currentMessageId) {
+              audio.pause();
+            }
+          }
+        }
+      }
+    });
+
+    // Actualizar estados
+    currentStates.forEach((state, messageId) => {
+      if (messageId !== currentMessageId && state.isPlaying) {
+        currentStates.set(messageId, { ...state, isPlaying: false });
+      }
+    });
+    
+    this.audioStates.set(new Map(currentStates));
+  }
+
+  /**
+   * Alterna entre reproducir y pausar el audio
+   */
+  toggleAudioPlayback(audioElement: HTMLAudioElement, message: Message): void {
+    const state = this.getAudioState(message);
+    
+    if (state.isPlaying) {
+      audioElement.pause();
+    } else {
+      // Aplicar la velocidad actual
+      audioElement.playbackRate = state.playbackRate;
+      audioElement.play().catch(error => {
+        console.error('Error playing audio:', error);
+      });
+    }
+  }
+
+  /**
+   * Cambia la velocidad de reproducción
+   */
+  toggleAudioSpeed(audioElement: HTMLAudioElement, message: Message): void {
+    const currentRate = this.getAudioState(message).playbackRate;
+    let newRate: number;
+
+    // Ciclar entre 1x, 1.5x, 2x
+    switch (currentRate) {
+      case 1:
+        newRate = 1.5;
+        break;
+      case 1.5:
+        newRate = 2;
+        break;
+      case 2:
+        newRate = 1;
+        break;
+      default:
+        newRate = 1;
+    }
+
+    audioElement.playbackRate = newRate;
+    this.updateAudioState(message, {
+      playbackRate: newRate
+    });
+  }
+
+  /**
+   * Busca a una posición específica del audio
+   */
+  seekAudio(audioElement: HTMLAudioElement, message: Message, event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const seekTime = parseFloat(input.value);
+    
+    audioElement.currentTime = seekTime;
+    
+    const duration = audioElement.duration || 1;
+    const progress = (seekTime / duration) * 100;
+    
+    this.updateAudioState(message, {
+      currentTime: seekTime,
+      progress
     });
   }
 }

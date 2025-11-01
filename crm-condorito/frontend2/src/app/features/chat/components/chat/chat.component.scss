@@ -2,7 +2,7 @@
 // Los colores están disponibles globalmente desde styles.scss
 
 .chat-container {
-  height: 94vh;
+  height: 93vh;
   display: flex;
   flex-direction: column;
   background-color: var(--color-bg-secondary);
@@ -981,6 +981,226 @@
 .message-audio-container {
   max-width: 350px;
   
+  // Nuevo reproductor estilo WhatsApp
+  .whatsapp-audio-player {
+    background-color: var(--color-bg-secondary);
+    border-radius: 12px;
+    padding: 12px;
+    border: 1px solid var(--color-border-light);
+    min-width: 280px;
+    
+    // Ocultar elemento audio nativo
+    .hidden-audio {
+      display: none;
+    }
+    
+    // Controles principales
+    .audio-controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 8px;
+      
+      // Botón play/pause estilo WhatsApp
+      .audio-play-btn {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        border: none;
+        background: #00a884;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        flex-shrink: 0;
+        
+        &:hover:not(:disabled) {
+          background: #008f72;
+          transform: scale(1.05);
+        }
+        
+        &:active:not(:disabled) {
+          transform: scale(0.95);
+        }
+        
+        &:disabled {
+          background: #8696a0;
+          cursor: not-allowed;
+          transform: none;
+        }
+        
+        i {
+          font-size: 14px;
+        }
+      }
+      
+      // Información del audio (waveform + tiempo)
+      .audio-info {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        
+        .audio-waveform {
+          .progress-container {
+            position: relative;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            
+            // Barra de progreso visual
+            .progress-bar {
+              width: 100%;
+              height: 4px;
+              background: #e9ecef;
+              border-radius: 2px;
+              position: relative;
+              overflow: hidden;
+              
+              .progress-fill {
+                height: 100%;
+                background: #00a884;
+                border-radius: 2px;
+                transition: width 0.1s ease;
+              }
+            }
+            
+            // Slider invisible para interacción
+            .progress-slider {
+              position: absolute;
+              top: 0;
+              left: 0;
+              width: 100%;
+              height: 20px;
+              opacity: 0;
+              cursor: pointer;
+              margin: 0;
+              
+              &::-webkit-slider-thumb {
+                appearance: none;
+                width: 12px;
+                height: 12px;
+                border-radius: 50%;
+                background: #00a884;
+                cursor: pointer;
+                opacity: 0;
+                transition: opacity 0.2s ease;
+              }
+              
+              &:hover::-webkit-slider-thumb {
+                opacity: 1;
+              }
+              
+              &::-moz-range-thumb {
+                width: 12px;
+                height: 12px;
+                border-radius: 50%;
+                background: #00a884;
+                cursor: pointer;
+                border: none;
+                opacity: 0;
+                transition: opacity 0.2s ease;
+              }
+              
+              &:hover::-moz-range-thumb {
+                opacity: 1;
+              }
+            }
+          }
+        }
+        
+        // Tiempo actual/total
+        .audio-time {
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          font-size: 11px;
+          color: var(--color-text-muted);
+          font-family: 'Roboto Mono', monospace;
+          
+          .current-time {
+            color: var(--color-text-primary);
+            font-weight: 500;
+          }
+          
+          .separator {
+            color: var(--color-text-muted);
+          }
+          
+          .total-time {
+            color: var(--color-text-muted);
+          }
+        }
+      }
+      
+      // Control de velocidad
+      .speed-control {
+        .speed-btn {
+          width: 32px;
+          height: 24px;
+          border-radius: 12px;
+          border: 1px solid #e9ecef;
+          background: white;
+          color: #00a884;
+          font-size: 10px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          
+          &:hover:not(:disabled) {
+            background: #f8f9fa;
+            border-color: #00a884;
+          }
+          
+          &:active:not(:disabled) {
+            transform: scale(0.95);
+          }
+          
+          &:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+          }
+        }
+      }
+    }
+    
+    // Metadatos del archivo
+    .audio-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding-top: 4px;
+      border-top: 1px solid var(--color-border-light);
+      margin-top: 8px;
+      
+      .audio-title {
+        font-size: 12px;
+        color: var(--color-text-muted);
+        flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      
+      .audio-size {
+        font-size: 11px;
+        color: var(--color-text-muted);
+        background: var(--color-bg-tertiary);
+        padding: 2px 6px;
+        border-radius: 8px;
+        flex-shrink: 0;
+      }
+    }
+  }
+  
+  // Reproductor antiguo (mantener como fallback)
   .audio-player {
     background-color: var(--color-bg-secondary);
     border-radius: 12px;
@@ -1027,6 +1247,46 @@
       &::-webkit-media-controls-pause-button {
         background-color: var(--color-primary);
         border-radius: 50%;
+      }
+    }
+  }
+  
+  // Responsive para móvil
+  @media (max-width: 768px) {
+    max-width: 280px;
+    
+    .whatsapp-audio-player {
+      min-width: 260px;
+      padding: 10px;
+      
+      .audio-controls {
+        gap: 10px;
+        
+        .audio-play-btn {
+          width: 36px;
+          height: 36px;
+          
+          i {
+            font-size: 12px;
+          }
+        }
+        
+        .speed-control .speed-btn {
+          width: 28px;
+          height: 20px;
+          font-size: 9px;
+        }
+      }
+      
+      .audio-meta {
+        .audio-title {
+          font-size: 11px;
+        }
+        
+        .audio-size {
+          font-size: 10px;
+          padding: 1px 4px;
+        }
       }
     }
   }

@@ -428,26 +428,90 @@
                       }
                     </div>
                   } @else if (message.message_type === 'audio') {
-                    <!-- Mensaje de audio -->
+                    <!-- Mensaje de audio estilo WhatsApp -->
                     <div class="message-audio-container">
                       @if (message.media_url) {
-                        <div class="audio-player">
-                          <div class="audio-info">
-                            <i class="fas fa-volume-up audio-icon"></i>
+                        <div class="whatsapp-audio-player">
+                          <!-- Audio element oculto -->
+                          <audio 
+                            #audioElement
+                            preload="metadata"
+                            class="hidden-audio"
+                            (loadedmetadata)="onAudioLoadedMetadata($event, message)"
+                            (timeupdate)="onAudioTimeUpdate($event, message)"
+                            (ended)="onAudioEnded($event, message)"
+                            (play)="onAudioPlay($event, message)"
+                            (pause)="onAudioPause($event, message)">
+                            <source [src]="message.media_url | mediaUrl" type="audio/mpeg">
+                            <source [src]="message.media_url | mediaUrl" type="audio/ogg">
+                            <source [src]="message.media_url | mediaUrl" type="audio/wav">
+                          </audio>
+
+                          <!-- Controles personalizados -->
+                          <div class="audio-controls">
+                            <!-- Botón Play/Pause -->
+                            <button 
+                              type="button"
+                              class="audio-play-btn"
+                              (click)="toggleAudioPlayback(audioElement, message)"
+                              [disabled]="!isAudioLoaded(message)">
+                              @if (isAudioPlaying(message)) {
+                                <i class="fas fa-pause"></i>
+                              } @else {
+                                <i class="fas fa-play"></i>
+                              }
+                            </button>
+
+                            <!-- Información del audio -->
+                            <div class="audio-info">
+                              <div class="audio-waveform">
+                                <!-- Barra de progreso estilo WhatsApp -->
+                                <div class="progress-container">
+                                  <div class="progress-bar">
+                                    <div 
+                                      class="progress-fill"
+                                      [style.width.%]="getAudioProgress(message)">
+                                    </div>
+                                  </div>
+                                  <input 
+                                    type="range" 
+                                    class="progress-slider"
+                                    min="0" 
+                                    [max]="getAudioDuration(message)"
+                                    [value]="getAudioCurrentTime(message)"
+                                    (input)="seekAudio(audioElement, message, $event)"
+                                    [disabled]="!isAudioLoaded(message)">
+                                </div>
+                              </div>
+                              
+                              <!-- Duración y tiempo actual -->
+                              <div class="audio-time">
+                                <span class="current-time">{{ formatAudioTime(getAudioCurrentTime(message)) }}</span>
+                                <span class="separator">/</span>
+                                <span class="total-time">{{ formatAudioTime(getAudioDuration(message)) }}</span>
+                              </div>
+                            </div>
+
+                            <!-- Control de velocidad -->
+                            <div class="speed-control">
+                              <button 
+                                type="button"
+                                class="speed-btn"
+                                (click)="toggleAudioSpeed(audioElement, message)"
+                                [disabled]="!isAudioLoaded(message)"
+                                title="Cambiar velocidad de reproducción">
+                                {{ getAudioSpeedLabel(message) }}
+                              </button>
+                            </div>
+                          </div>
+
+                          <!-- Información adicional del archivo -->
+                          <div class="audio-meta">
                             <span class="audio-title">{{ message.file_name || 'Audio' }}</span>
                             @if (message.media_size) {
                               <span class="audio-size">{{ formatFileSize(message.media_size) }}</span>
                             }
                           </div>
-                          <audio 
-                            controls 
-                            preload="metadata"
-                            class="audio-element">
-                            <source [src]="message.media_url | mediaUrl" type="audio/mpeg">
-                            <source [src]="message.media_url | mediaUrl" type="audio/ogg">
-                            <source [src]="message.media_url | mediaUrl" type="audio/wav">
-                            Tu navegador no soporta la reproducción de audio.
-                          </audio>
                         </div>
                         @if (message.content && message.content.trim()) {
                           <div class="message-caption" [innerHTML]="message.content | linkify"></div>
